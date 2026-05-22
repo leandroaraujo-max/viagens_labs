@@ -18,8 +18,9 @@ _bq_service = BigQueryService(
     table_funcionarios="maga-bigdata.mlpap.mag_v_funcionarios_ativos",
 )
 
-# Valores de SITUACAO que indicam ausência por férias
-_SITUACOES_FERIAS = {"férias", "ferias"}
+# Substring que indica ausência por férias (match parcial para cobrir
+# variações como "Férias Coletivas", "Em Férias", "Ferias Programadas" etc.)
+_SUBSTRING_FERIAS = "ferias"
 
 
 class AprovacaoService:
@@ -264,12 +265,20 @@ class AprovacaoService:
 
     def _aprovador_esta_de_ferias(self, email: str) -> bool:
         """
-        Consulta o BigQuery para verificar se o colaborador está com SITUACAO = 'Férias'.
+        Consulta o BigQuery para verificar se o aprovador está de Férias.
+        Usa matching por SUBSTRING para cobrir variações como 'Férias Coletivas',
+        'Em Férias', 'Ferias Programadas', etc.
         Em caso de falha na consulta, retorna False (fail-safe: não bloqueia o fluxo).
         """
         try:
             situacao = _bq_service.buscar_situacao_por_email(email)
-            return situacao is not None and situacao.strip().lower() in _SITUACOES_FERIAS
+            if situacao is None:
+                return False
+            esta_de_ferias = _SUBSTRING_FERIAS in situacao.strip().lower().replace("é", "e").replace("ê", "e")
+            logger.info(
+                f"Verificação de férias para '{email}': SITUACAO='{situacao}' → {'FÉRIAS' if esta_de_ferias else 'ATIVO'}"
+            )
+            return esta_de_ferias
         except Exception as e:
             logger.error(
                 f"Erro ao verificar férias para '{email}' no BQ: {e}. "

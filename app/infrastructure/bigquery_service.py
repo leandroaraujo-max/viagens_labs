@@ -128,21 +128,30 @@ class BigQueryService:
     def buscar_situacao_por_email(self, email: str) -> Optional[str]:
         """
         Retorna a coluna SITUACAO de mag_v_funcionarios_ativos para o e-mail informado.
-        Usado para verificar se o aprovador N1 esta de Ferias antes de iniciar o fluxo.
-        Retorna None se o colaborador nao for encontrado ou se o BQ estiver indisponivel.
+        Tenta três variações do e-mail para garantir o match:
+          1. email exato (ex: thiago.pereira@magazineluiza.com.br)
+          2. apenas o prefixo sem domínio (ex: thiago.pereira)
+          3. via user_name exato (mesma lógica do buscar_colaborador)
+        Retorna None se não encontrar ou se o BQ estiver indisponível.
         """
         if not self.client or not email:
             return None
 
-        email_safe = email.strip().lower().replace("'", "").replace("\\", "")
+        email_limpo = email.strip().lower().replace("'", "").replace("\\", "")
+        prefixo     = email_limpo.split("@")[0]   # parte antes do @
 
         query = f"""
             SELECT t2.SITUACAO AS situacao
             FROM `{self.table_assignee}` AS t1
             INNER JOIN `{self.table_funcionarios}` AS t2
               ON t1.CUSTOM1 = CAST(t2.ID AS STRING)
-            WHERE LOWER(t1.email) = '{email_safe}'
-              AND t1.active = TRUE
+            WHERE (
+              LOWER(t1.email)     = '{email_limpo}'
+              OR LOWER(t1.email)  = '{prefixo}'
+              OR LOWER(SPLIT(t1.user_name, '@')[SAFE_OFFSET(0)]) = '{prefixo}'
+              OR LOWER(t1.user_name) = '{email_limpo}'
+            )
+            AND t1.active = TRUE
             LIMIT 1
         """
 
@@ -150,6 +159,7 @@ class BigQueryService:
             resultado = list(self.client.query(query).result())
             if resultado:
                 return getattr(resultado[0], "situacao", None)
+            logging.warning(f"Nenhum registro BQ encontrado para o e-mail '{email_limpo}'.")
             return None
         except Exception as e:
             logging.error(f"Falha ao buscar situacao para {email}: {e}")
