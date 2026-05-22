@@ -27,12 +27,13 @@ class ViagensService:
         agora = datetime.now()
         antecedencia_dias = (data_ida - agora).days
 
-        # REGRA DE NEGÓCIO: aéreo com < 15 dias = Emergencial → exige N1 + N2
+        # Classificação: aéreo com < 15 dias = Emergencial (altera SLA, mas não o fluxo hierárquico)
+        # N2 só é envolvido como escalação (N1 ausente / SLA vencido) — nunca como etapa obrigatória
         servicos = solicitacao_data.tipo_servico
         tem_aereo = 'Aereo' in servicos
         classificacao = 'Emergencial' if (tem_aereo and antecedencia_dias < 15) else 'Comum'
-        exige_diretoria = classificacao == 'Emergencial'
-        status_inicial = 'AGUARDANDO_DIRETORIA' if exige_diretoria else 'AGUARDANDO_N1'
+        exige_diretoria = False  # N2 nunca é obrigatório no fluxo normal
+        status_inicial = 'AGUARDANDO_N1'
 
         protocolo = self._gerar_protocolo()
 

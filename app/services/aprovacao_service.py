@@ -205,29 +205,9 @@ class AprovacaoService:
     # -------------------------------------------------------------------------
 
     def _processar_aprovacao(self, solicitacao: SolicitacaoModel, token: TokenAprovacaoModel) -> None:
-        if token.nivel == "N1":
-            if solicitacao.exige_aprovacao_diretoria:
-                if solicitacao.aprovador_n2_email:
-                    solicitacao.status = "AGUARDANDO_N2"
-                    self.db.flush()
-                    token_n2 = self._criar_token(solicitacao, "N2")
-                    self.db.commit()
-                    self._enviar_email_aprovacao(solicitacao, token_n2)
-                else:
-                    logger.warning(
-                        f"Solicitação {solicitacao.protocolo} exige N2, mas e-mail N2 não cadastrado. "
-                        "Marcando CADEIA_INCOMPLETA."
-                    )
-                    solicitacao.status = "CADEIA_INCOMPLETA"
-            else:
-                # N1 aprovou via fluxo comum → aguarda pré-aprovação do Setor
-                solicitacao.status = "PENDENTE_PRE_APROVACAO_SETOR"
-                self.db.flush()
-                _casamento_svc.processar_casamentos(self.db, solicitacao)
-                self._enviar_email_setor(solicitacao)
-
-        elif token.nivel == "N2":
-            # N2 aprovou (emergêncial) → aguarda pré-aprovação do Setor
+        # Fluxo: N1 aprova → Setor de Viagens (sempre)
+        # N2 só atua como escalação (N1 de férias / SLA vencido) — ao aprovar, também vai para o Setor
+        if token.nivel in ("N1", "N2"):
             solicitacao.status = "PENDENTE_PRE_APROVACAO_SETOR"
             self.db.flush()
             _casamento_svc.processar_casamentos(self.db, solicitacao)

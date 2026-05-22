@@ -270,10 +270,7 @@ class EmailService:
         if aprovado:
             faixa = _faixa(_VERDE_BG, _VERDE, "✅", "Solicitação Aprovada",
                            f"Aprovação {nivel} concluída com sucesso")
-            if nivel == "N1" and getattr(solicitacao, "exige_aprovacao_diretoria", False):
-                proximo = _alerta("Sua solicitação avançou para <strong>Aprovação N2 (Diretoria)</strong>. Aguarde o próximo e-mail.", _AZUL_CLARO, _AZUL_ESCURO)
-            else:
-                proximo = _alerta("🎉 Aprovação concluída! Sua solicitação foi encaminhada à agência de viagens para cotação.", _VERDE_BG, _VERDE)
+            proximo = _alerta("🎉 Aprovação concluída! Sua solicitação foi encaminhada ao Setor de Viagens para pré-aprovação e cotação.", _VERDE_BG, _VERDE)
         else:
             faixa  = _faixa(_VERMELHO_BG, _VERMELHO, "❌", "Solicitação Reprovada",
                             f"Reprovação {nivel}")
