@@ -65,13 +65,16 @@ class ViagensService:
             preferencia_hotel_nome=solicitacao_data.preferencia_hotel_nome,
             quarto_excecao_saude=solicitacao_data.quarto_excecao_saude,
             # Passo 3 - Carro
-            carro_cidade_retirada=solicitacao_data.carro_cidade_retirada,
+            carro_data_retirada=solicitacao_data.carro_data_retirada,
             carro_hora_retirada=solicitacao_data.carro_hora_retirada,
-            carro_cidade_devolucao=solicitacao_data.carro_cidade_devolucao,
+            carro_cidade_retirada=solicitacao_data.carro_cidade_retirada,
+            carro_data_devolucao=solicitacao_data.carro_data_devolucao,
             carro_hora_devolucao=solicitacao_data.carro_hora_devolucao,
+            carro_cidade_devolucao=solicitacao_data.carro_cidade_devolucao,
             # Obs
             observacoes_viajante=solicitacao_data.observacoes_viajante,
             preferencia_voo=solicitacao_data.preferencia_voo,
+            preferencia_voo_volta=solicitacao_data.preferencia_voo_volta,
             # Cadeia de aprovação
             aprovador_n1_email=solicitacao_data.aprovador_n1_email,
             aprovador_n1_nome=solicitacao_data.aprovador_n1_nome,

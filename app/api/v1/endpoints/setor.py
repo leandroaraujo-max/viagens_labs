@@ -3,11 +3,23 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 
 from app.api.dependencies import get_db_session, require_setor
-from app.domain.models.schemas import SolicitacaoSetorResponse, SetorAcaoRequest
+from app.domain.models.schemas import SolicitacaoSetorResponse, SetorAcaoRequest, CotacaoResponse
 from app.services.setor_service import SetorService
 
 router = APIRouter()
 _setor_svc = SetorService()
+
+
+def _build_setor_response(sol, cot_tastur, cot_kontrip, casamentos) -> SolicitacaoSetorResponse:
+    """Constrói SolicitacaoSetorResponse a partir do ORM e dados relacionados."""
+    data = {
+        col.name: getattr(sol, col.name)
+        for col in sol.__table__.columns
+    }
+    data['cotacao_tastur']  = CotacaoResponse.model_validate(cot_tastur)  if cot_tastur  else None
+    data['cotacao_kontrip'] = CotacaoResponse.model_validate(cot_kontrip) if cot_kontrip else None
+    data['casamentos'] = casamentos
+    return SolicitacaoSetorResponse.model_validate(data)
 
 
 @router.get("/solicitacoes", response_model=List[SolicitacaoSetorResponse])
@@ -27,43 +39,10 @@ def listar_solicitacoes(
         agencia_filtro=agencia,
         busca=busca,
     )
-    resultado = []
-    for sol in solicitacoes:
-        _, cot_tastur, cot_kontrip, casamentos = _setor_svc.get_solicitacao(db, sol.id)
-        from app.domain.models.schemas import CotacaoResponse
-        resultado.append(
-            SolicitacaoSetorResponse(
-                id=sol.id,
-                protocolo=sol.protocolo,
-                solicitante_username=sol.solicitante_username,
-                destino_cidade=sol.destino_cidade,
-                destino_estado=sol.destino_estado,
-                origem_cidade=sol.origem_cidade or "",
-                data_ida=sol.data_ida,
-                data_volta=sol.data_volta,
-                tipo_servico=sol.tipo_servico,
-                classificacao=sol.classificacao,
-                status=sol.status,
-                motivo_viagem=sol.motivo_viagem,
-                aereo_periodo_preferido=sol.aereo_periodo_preferido or "",
-                aereo_tipo_trecho=sol.aereo_tipo_trecho or "",
-                bagagem_extra=sol.bagagem_extra or False,
-                assento_especial=sol.assento_especial or "",
-                rodov_periodo_preferido=sol.rodov_periodo_preferido or "",
-                rodov_tipo_onibus=sol.rodov_tipo_onibus or "",
-                preferencia_hotel_nome=sol.preferencia_hotel_nome or "",
-                carro_cidade_retirada=sol.carro_cidade_retirada or "",
-                carro_hora_retirada=sol.carro_hora_retirada or "",
-                carro_cidade_devolucao=sol.carro_cidade_devolucao or "",
-                carro_hora_devolucao=sol.carro_hora_devolucao or "",
-                observacoes_viajante=sol.observacoes_viajante or "",
-                agencia_vencedora=sol.agencia_vencedora,
-                cotacao_tastur=CotacaoResponse.model_validate(cot_tastur) if cot_tastur else None,
-                cotacao_kontrip=CotacaoResponse.model_validate(cot_kontrip) if cot_kontrip else None,
-                casamentos=casamentos,
-            )
-        )
-    return resultado
+    return [
+        _build_setor_response(*_setor_svc.get_solicitacao(db, sol.id))
+        for sol in solicitacoes
+    ]
 
 
 @router.get("/solicitacoes/{solicitacao_id}", response_model=SolicitacaoSetorResponse)
@@ -76,38 +55,7 @@ def detalhar_solicitacao(
     sol, cot_tastur, cot_kontrip, casamentos = _setor_svc.get_solicitacao(db, solicitacao_id)
     if not sol:
         raise HTTPException(status_code=404, detail="Solicitação não encontrada.")
-
-    from app.domain.models.schemas import CotacaoResponse
-    return SolicitacaoSetorResponse(
-        id=sol.id,
-        protocolo=sol.protocolo,
-        solicitante_username=sol.solicitante_username,
-        destino_cidade=sol.destino_cidade,
-        destino_estado=sol.destino_estado,
-        origem_cidade=sol.origem_cidade or "",
-        data_ida=sol.data_ida,
-        data_volta=sol.data_volta,
-        tipo_servico=sol.tipo_servico,
-        classificacao=sol.classificacao,
-        status=sol.status,
-        motivo_viagem=sol.motivo_viagem,
-        aereo_periodo_preferido=sol.aereo_periodo_preferido or "",
-        aereo_tipo_trecho=sol.aereo_tipo_trecho or "",
-        bagagem_extra=sol.bagagem_extra or False,
-        assento_especial=sol.assento_especial or "",
-        rodov_periodo_preferido=sol.rodov_periodo_preferido or "",
-        rodov_tipo_onibus=sol.rodov_tipo_onibus or "",
-        preferencia_hotel_nome=sol.preferencia_hotel_nome or "",
-        carro_cidade_retirada=sol.carro_cidade_retirada or "",
-        carro_hora_retirada=sol.carro_hora_retirada or "",
-        carro_cidade_devolucao=sol.carro_cidade_devolucao or "",
-        carro_hora_devolucao=sol.carro_hora_devolucao or "",
-        observacoes_viajante=sol.observacoes_viajante or "",
-        agencia_vencedora=sol.agencia_vencedora,
-        cotacao_tastur=CotacaoResponse.model_validate(cot_tastur) if cot_tastur else None,
-        cotacao_kontrip=CotacaoResponse.model_validate(cot_kontrip) if cot_kontrip else None,
-        casamentos=casamentos,
-    )
+    return _build_setor_response(sol, cot_tastur, cot_kontrip, casamentos)
 
 
 @router.post("/solicitacoes/{solicitacao_id}/acao", status_code=status.HTTP_200_OK)

@@ -35,6 +35,10 @@ def _migracoes_seguras():
         "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS viajante_data_admissao    VARCHAR(20)  DEFAULT '';",
         "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS viajante_celular          VARCHAR(20)  DEFAULT '';",
         "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS viajante_data_nascimento  VARCHAR(20)  DEFAULT '';",
+        # Fase 7 — datas independentes do carro + voo de volta
+        "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS carro_data_retirada  VARCHAR(20) DEFAULT '';",
+        "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS carro_data_devolucao VARCHAR(20) DEFAULT '';",
+        "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS preferencia_voo_volta TEXT;",
     ]
     with engine.connect() as conn:
         for sql in sqls:

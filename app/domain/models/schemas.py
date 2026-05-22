@@ -35,16 +35,19 @@ class SolicitacaoCreate(BaseModel):
     quarto_excecao_saude: bool = False
 
     # Passo 3 - Preferências Carro
+    carro_data_retirada:   str = ''
+    carro_hora_retirada:   str = ''
     carro_cidade_retirada: str = ''
-    carro_hora_retirada: str = ''
+    carro_data_devolucao:  str = ''
+    carro_hora_devolucao:  str = ''
     carro_cidade_devolucao: str = ''
-    carro_hora_devolucao: str = ''
 
     # Observações
     observacoes_viajante: str = ''
 
     # Preferência de voo consultiva (Duffel) — preenchida pelo frontend opcionalmente
-    preferencia_voo: Optional[str] = None
+    preferencia_voo:       Optional[str] = None
+    preferencia_voo_volta: Optional[str] = None
 
     # Cadeia de aprovação (extraída do BQ no frontend — Passo 1)
     aprovador_n1_email: str = ''
@@ -190,14 +193,25 @@ class SolicitacaoAgenciaResponse(BaseModel):
     aereo_tipo_trecho: str
     bagagem_extra: bool
     assento_especial: str
+    preferencia_voo: str = ''
+    preferencia_voo_volta: str = ''
     rodov_periodo_preferido: str
     rodov_tipo_onibus: str
+    rodov_tipo_trecho: str = ''
     preferencia_hotel_nome: str
-    carro_cidade_retirada: str
+    quarto_excecao_saude: bool = False
+    carro_data_retirada: str = ''
     carro_hora_retirada: str
-    carro_cidade_devolucao: str
+    carro_cidade_retirada: str
+    carro_data_devolucao: str = ''
     carro_hora_devolucao: str
+    carro_cidade_devolucao: str
     observacoes_viajante: str
+    # Perfil do viajante (para cotação)
+    viajante_nome: str = ''
+    viajante_matricula: str = ''
+    viajante_cargo: str = ''
+    viajante_filial: str = ''
     cotacao: Optional[CotacaoResponse] = None
     casamentos: List[dict] = []
 
@@ -231,29 +245,59 @@ class SolicitacaoSetorResponse(BaseModel):
     id: int
     protocolo: str
     solicitante_username: str
+    via_delegacao: bool = False
     destino_cidade: str
     destino_estado: str
     origem_cidade: str
+    origem_estado: str = ''
     data_ida: datetime
     data_volta: Optional[datetime]
     tipo_servico: str
     classificacao: str
     status: str
     motivo_viagem: str
+    # Preferências Aéreo
     aereo_periodo_preferido: str
     aereo_tipo_trecho: str
     bagagem_extra: bool
     assento_especial: str
+    preferencia_voo: str = ''
+    preferencia_voo_volta: str = ''
+    # Preferências Rodoviário
     rodov_periodo_preferido: str
     rodov_tipo_onibus: str
+    rodov_tipo_trecho: str = ''
+    # Preferências Hospedagem
     preferencia_hotel_nome: str
-    carro_cidade_retirada: str
+    quarto_excecao_saude: bool = False
+    # Preferências Carro
+    carro_data_retirada: str = ''
     carro_hora_retirada: str
-    carro_cidade_devolucao: str
+    carro_cidade_retirada: str
+    carro_data_devolucao: str = ''
     carro_hora_devolucao: str
+    carro_cidade_devolucao: str
+    # Observações
     observacoes_viajante: str
+    # Cadeia de aprovação
+    aprovador_n1_email: str = ''
+    aprovador_n1_nome: str = ''
+    aprovador_n2_email: str = ''
+    aprovador_n2_nome: str = ''
+    # Perfil do viajante (snapshot)
+    viajante_nome: str = ''
+    viajante_cpf: str = ''
+    viajante_matricula: str = ''
+    viajante_email: str = ''
+    viajante_cargo: str = ''
+    viajante_filial: str = ''
+    viajante_centro_custo: str = ''
+    viajante_cod_centro_custo: str = ''
+    viajante_data_admissao: str = ''
+    viajante_celular: str = ''
+    viajante_data_nascimento: str = ''
+    # Agência e cotações
     agencia_vencedora: Optional[str] = None
-    # Cotações das duas agências (preenchidas quando ambas cotarem)
     cotacao_tastur: Optional[CotacaoResponse] = None
     cotacao_kontrip: Optional[CotacaoResponse] = None
     casamentos: List[dict] = []

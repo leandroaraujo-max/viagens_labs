@@ -44,16 +44,19 @@ class SolicitacaoModel(Base):
     quarto_excecao_saude = Column(Boolean, default=False)
 
     # Passo 3 - Preferências Carro
+    carro_data_retirada   = Column(String(20), default='')
+    carro_hora_retirada   = Column(String(10), default='')
     carro_cidade_retirada = Column(String(200), default='')
-    carro_hora_retirada = Column(String(10), default='')
+    carro_data_devolucao  = Column(String(20), default='')
+    carro_hora_devolucao  = Column(String(10), default='')
     carro_cidade_devolucao = Column(String(200), default='')
-    carro_hora_devolucao = Column(String(10), default='')
 
     # Observações
     observacoes_viajante = Column(Text, default='')
 
-    # Preferência de voo consultiva (Duffel) — texto livre, ex: "LATAM LA3001 GRU→GIG 07:00→08:30"
-    preferencia_voo = Column(Text, nullable=True)
+    # Preferência de voo consultiva (Duffel) — texto livre
+    preferencia_voo       = Column(Text, nullable=True)
+    preferencia_voo_volta = Column(Text, nullable=True)
 
     # Aprovação — N1 e N2
     aprovador_n1_email = Column(String(200), default='')
