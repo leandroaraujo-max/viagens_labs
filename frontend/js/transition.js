@@ -66,7 +66,8 @@
     el.style.cssText = 'position:fixed;inset:0;z-index:99999'
       + ';background:linear-gradient(135deg,#0f172a 0%,#001e7a 100%)'
       + ';display:flex;align-items:center;justify-content:center'
-      + ';overflow:hidden;opacity:0;transition:opacity .2s ease;pointer-events:all';
+      + ';overflow:hidden;pointer-events:all'
+      + ';opacity:1;transition:opacity .35s ease';
 
     var clouds = '<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice">'
       + '<ellipse cx="150" cy="120" rx="130" ry="40" fill="white" opacity="0.05"/>'
@@ -97,19 +98,10 @@
     return el;
   }
 
-  function fadeIn(el) {
-    requestAnimationFrame(function () {
-      requestAnimationFrame(function () {
-        el.style.opacity = '1';
-      });
-    });
-  }
-
   function onArrival() {
     sessionStorage.removeItem(KEY);
     function run() {
-      var ov = makeOverlay();
-      ov.style.opacity = '1';
+      var ov = makeOverlay(); // ja em opacity:1
       document.body.style.overflow = 'hidden';
       document.body.appendChild(ov);
       // Remove o body::before agora que o overlay real cobre tudo
@@ -132,12 +124,16 @@
   window.vlNavigate = function (url) {
     if (window._vln) return;
     window._vln = true;
-    var ov = makeOverlay();
-    document.body.style.overflow = 'hidden';
-    document.body.appendChild(ov);
-    fadeIn(ov);
+    // Cobre a pagina atual instantaneamente (sem aviao na saida).
+    // O aviao voa UMA UNICA VEZ na chegada, via onArrival().
+    var snap = document.createElement('div');
+    snap.style.cssText = 'position:fixed;inset:0;z-index:99999;'
+      + 'background:linear-gradient(135deg,#0f172a 0%,#001e7a 100%);'
+      + 'pointer-events:all';
+    document.body.appendChild(snap);
     sessionStorage.setItem(KEY, '1');
-    setTimeout(function () { window.location.href = url; }, 480);
+    // Navegar apos um frame para garantir que o snap foi pintado
+    requestAnimationFrame(function () { window.location.href = url; });
   };
 
 })();
