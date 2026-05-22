@@ -1,5 +1,5 @@
 /**
- * ViagensLabs — Relay de Aprovação via Google Apps Script
+ * Viagens Labs — Relay de Aprovação via Google Apps Script
  * ─────────────────────────────────────────────────────────
  * Script ID : 1VqosNh6_Sqv8vr_210MKHp0G5anbZJDmYtIAUw1WnfbPCVWOXtwMI8lY
  *
@@ -40,7 +40,7 @@ function _json(obj) {
 function _html(content) {
   return HtmlService
     .createHtmlOutput(content)
-    .setTitle('ViagensLabs — Aprovação de Viagem')
+    .setTitle('Viagens Labs — Aprovação de Viagem')
     .setSandboxMode(HtmlService.SandboxMode.IFRAME);
 }
 
@@ -62,7 +62,7 @@ function _buscarPorToken(sheet, token) {
 // ── Setup (executar uma vez) ──────────────────────────────────────────────────
 
 function setup() {
-  var ss     = SpreadsheetApp.create('ViagensLabs — Fila de Aprovações');
+  var ss     = SpreadsheetApp.create('Viagens Labs — Fila de Aprovações');
   var padrao = ss.getSheets()[0];
 
   var shPend = ss.insertSheet('pendentes');
@@ -261,11 +261,11 @@ var _CSS = [
 function _tplBase(titulo, corpo) {
   return '<!DOCTYPE html><html lang="pt-BR"><head>'
     + '<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-    + '<title>ViagensLabs \u2014 ' + titulo + '</title>'
+    + '<title>Viagens Labs \u2014 ' + titulo + '</title>'
     + '<link rel="preconnect" href="https://fonts.googleapis.com">'
     + '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">'
     + '<style>' + _CSS + '</style></head>'
-    + '<body><div class="card"><div class="logo">&#9992; ViagensLabs</div>'
+    + '<body><div class="card"><div class="logo">&#9992; Viagens Labs</div>'
     + corpo
     + '</div></body></html>';
 }
