@@ -148,12 +148,14 @@ def _alerta(texto: str, cor_bg: str, cor_texto: str) -> str:
 class EmailService:
 
     def __init__(self):
-        self.smtp_host  = settings.SMTP_HOST
-        self.smtp_port  = settings.SMTP_PORT
-        self.smtp_from  = settings.SMTP_FROM
-        self.from_name  = getattr(settings, "SMTP_FROM_NAME", "ViagensLabs | Luizalabs")
-        self.reply_to   = getattr(settings, "SMTP_REPLY_TO", "")
-        self.base_url   = settings.BASE_URL
+        self.smtp_host       = settings.SMTP_HOST
+        self.smtp_port       = settings.SMTP_PORT
+        self.smtp_from       = settings.SMTP_FROM
+        self.from_name       = getattr(settings, "SMTP_FROM_NAME", "ViagensLabs | Luizalabs")
+        self.reply_to        = getattr(settings, "SMTP_REPLY_TO", "")
+        self.base_url        = settings.BASE_URL
+        # URL usada nos links para agências externas (pode ser diferente — publica/VPN)
+        self.base_url_agencia = getattr(settings, "BASE_URL_AGENCIA", settings.BASE_URL)
 
     # ── Envio base ────────────────────────────────────────────────────────────
 
@@ -424,8 +426,10 @@ class EmailService:
 
     # ── Setor: solicitar cotações às agências ─────────────────────────────────
 
-    def enviar_email_agencias_cotacao(self, solicitacao) -> bool:
-        """Envia pedido de cotação para Tastur e Kontrip após pré-aprovação do setor."""
+    def enviar_email_agencias_cotacao(self, solicitacao, tokens: dict | None = None) -> bool:
+        """Envia pedido de cotação para Tastur e Kontrip após pré-aprovação do setor.
+        tokens = {'Tastur': uuid_str, 'Kontrip': uuid_str} — se None, usa link genérico (reenvio).
+        """
         enviado = False
         for agencia_nome, email_agencia in [
             ("Tastur",  settings.AGENCIA_TASTUR_EMAIL),
@@ -434,13 +438,14 @@ class EmailService:
             if not email_agencia:
                 logger.warning(f"[Email] E-mail da {agencia_nome} não configurado. Pulando.")
                 continue
+            token_uuid = (tokens or {}).get(agencia_nome)
             assunto = f"[ViagensLabs] {solicitacao.protocolo} — Solicitação de Cotação"
-            html    = self._tpl_agencia_cotacao(solicitacao, agencia_nome)
+            html    = self._tpl_agencia_cotacao(solicitacao, agencia_nome, token_uuid)
             if self._enviar(email_agencia, assunto, html):
                 enviado = True
         return enviado
 
-    def _tpl_agencia_cotacao(self, solicitacao, agencia_nome: str) -> str:
+    def _tpl_agencia_cotacao(self, solicitacao, agencia_nome: str, token_uuid: str | None = None) -> str:
         data_volta = solicitacao.data_volta.strftime("%d/%m/%Y") if solicitacao.data_volta else "—"
         faixa = _faixa(_AZUL_CLARO, _AZUL_ESCURO, "✈", f"Solicitação de Cotação — {agencia_nome}",
                        f"Protocolo: {solicitacao.protocolo}")
@@ -470,16 +475,31 @@ class EmailService:
         if solicitacao.observacoes_viajante:
             linhas.append(("Observações",     solicitacao.observacoes_viajante))
         dados = _tabela_dados(linhas)
-        link = f"{self.base_url}/agencia.html"
+
+        if token_uuid:
+            link   = f"{self.base_url_agencia}/agencia.html?token={token_uuid}"
+            instrucao = _alerta(
+                "⚠ Este link é único e pessoal para esta solicitação. É válido por <strong>7 dias</strong>. "
+                "Clique no botão abaixo para registrar sua cotação diretamente — sem necessidade de login.",
+                _AZUL_CLARO, _AZUL_ESCURO
+            )
+            botao  = _botao(link, "&#128196;&nbsp; Registrar Cotação", _AZUL_MEDIO)
+        else:
+            # Reenvio sem novo token (link genérico com orientação manual)
+            instrucao = _alerta(
+                "Solicitação de reenvio. Por favor, entre em contato com o setor de viagens para obter o link de acesso.",
+                _AMARELO_BG, _AMARELO
+            )
+            botao = ""
+
         corpo = f"""
           <p style="margin:0 0 16px">Prezada <strong>{agencia_nome}</strong>,</p>
           <p style="margin:0 0 16px;color:#64748b">
             Solicitamos cotação para a seguinte viagem corporativa.
-            Por favor, registre sua cotação no portal da agência até a data combinada.
           </p>
           {dados}
-          {_botao(link, f"Acessar o Portal da Agência", _AZUL_MEDIO)}
-          {_alerta("Acesse o portal, localize o protocolo acima e registre sua cotação.", _AZUL_CLARO, _AZUL_ESCURO)}"""
+          {instrucao}
+          {botao}"""
         return _base_html(faixa, corpo)
 
     # ── Setor: ambas as cotações recebidas — aguarda decisão ──────────────────
@@ -534,8 +554,8 @@ class EmailService:
 
     # ── Notificar agência vencedora ────────────────────────────────────────────
 
-    def enviar_email_agencia_vencedora(self, solicitacao, agencia_nome: str) -> bool:
-        """Notifica a agência vencedora escolhida pelo setor."""
+    def enviar_email_agencia_vencedora(self, solicitacao, agencia_nome: str, token_voucher_uuid: str = "") -> bool:
+        """Notifica a agência vencedora escolhida pelo setor, com link token para upload de vouchers."""
         email_map = {
             "Tastur":  settings.AGENCIA_TASTUR_EMAIL,
             "Kontrip": settings.AGENCIA_KONTRIP_EMAIL,
@@ -545,10 +565,10 @@ class EmailService:
             logger.warning(f"[Email] E-mail da {agencia_nome} não configurado. Notificação não enviada.")
             return False
         assunto = f"[ViagensLabs] {solicitacao.protocolo} — Cotação Aprovada ✓"
-        html    = self._tpl_agencia_vencedora(solicitacao, agencia_nome)
+        html    = self._tpl_agencia_vencedora(solicitacao, agencia_nome, token_voucher_uuid)
         return self._enviar(email_destino, assunto, html)
 
-    def _tpl_agencia_vencedora(self, solicitacao, agencia_nome: str) -> str:
+    def _tpl_agencia_vencedora(self, solicitacao, agencia_nome: str, token_voucher_uuid: str = "") -> str:
         data_volta = solicitacao.data_volta.strftime("%d/%m/%Y") if solicitacao.data_volta else "—"
         faixa = _faixa(_VERDE_BG, _VERDE, "🏆", f"Cotação Aprovada — {agencia_nome}",
                        f"Protocolo {solicitacao.protocolo} foi aprovado para vocês")
@@ -560,15 +580,28 @@ class EmailService:
             ("Retorno",     data_volta),
             ("Serviços",    solicitacao.tipo_servico.replace(",", " + ")),
         ])
-        link = f"{self.base_url}/agencia.html"
+        if token_voucher_uuid:
+            link  = f"{self.base_url_agencia}/agencia.html?token={token_voucher_uuid}"
+            instrucao = _alerta(
+                "🎫 Parabéns! Por favor, emita os vouchers e anexe-os clicando no botão abaixo. "
+                "O link é único e pessoal — válido por <strong>14 dias</strong>.",
+                _VERDE_BG, _VERDE
+            )
+            botao = _botao(link, "📂&nbsp; Enviar Vouchers", _VERDE)
+        else:
+            instrucao = _alerta(
+                "Em caso de dúvidas, entre em contato com o setor de viagens respondendo este e-mail.",
+                _VERDE_BG, _VERDE
+            )
+            botao = ""
         corpo = f"""
           <p style="margin:0 0 16px">Prezada <strong>{agencia_nome}</strong>,</p>
           <p style="margin:0 0 16px;color:#64748b">
             O setor de viagens selecionou sua cotação. Por favor, inicie o processo de reserva assim que possível.
           </p>
           {dados}
-          {_botao(link, "Acessar o Portal da Agência", _VERDE)}
-          {_alerta("Em caso de dúvidas, entre em contato com o setor de viagens pelo Reply-To deste e-mail.", _VERDE_BG, _VERDE)}"""
+          {instrucao}
+          {botao}"""
         return _base_html(faixa, corpo)
 
     # ── Notificar agência PERDEDORA ───────────────────────────────────────────

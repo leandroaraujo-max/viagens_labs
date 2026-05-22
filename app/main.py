@@ -39,6 +39,18 @@ def _migracoes_seguras():
         "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS carro_data_retirada  VARCHAR(20) DEFAULT '';",
         "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS carro_data_devolucao VARCHAR(20) DEFAULT '';",
         "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS preferencia_voo_volta TEXT;",
+        # Fase 5A — tokens de acesso por link para agências externas (sem login / sem intranet)
+        """CREATE TABLE IF NOT EXISTS tokens_agencia (
+            id             SERIAL PRIMARY KEY,
+            uuid           VARCHAR(36) UNIQUE NOT NULL,
+            solicitacao_id INTEGER REFERENCES solicitacoes(id) NOT NULL,
+            agencia_nome   VARCHAR(100) NOT NULL,
+            finalidade     VARCHAR(20)  DEFAULT 'COTACAO',
+            status         VARCHAR(20)  DEFAULT 'PENDENTE',
+            data_expiracao TIMESTAMP    NOT NULL,
+            data_criacao   TIMESTAMPTZ  DEFAULT NOW()
+        );""",
+        "CREATE INDEX IF NOT EXISTS ix_tokens_agencia_uuid ON tokens_agencia(uuid);",
     ]
     with engine.connect() as conn:
         for sql in sqls:

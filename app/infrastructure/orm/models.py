@@ -198,6 +198,25 @@ class UserProfileModel(Base):
     username         = Column(String(100), primary_key=True, index=True)
     celular          = Column(String(20),  default='')
     data_nascimento  = Column(String(20),  default='')
+
+
+class TokenAgenciaModel(Base):
+    """
+    Token de acesso por link para agências externas (Tastur / Kontrip).
+    Gerado pelo setor ao pré-aprovar (finalidade=COTACAO) ou ao escolher vencedora (finalidade=VOUCHER).
+    Permite acesso sem login — a agência clica no link do e-mail e acessa diretamente.
+    """
+    __tablename__ = "tokens_agencia"
+
+    id             = Column(Integer, primary_key=True, index=True)
+    uuid           = Column(String(36), unique=True, index=True, nullable=False)
+    solicitacao_id = Column(Integer, ForeignKey("solicitacoes.id"), nullable=False)
+    agencia_nome   = Column(String(100), nullable=False)          # Tastur / Kontrip
+    finalidade     = Column(String(20),  default='COTACAO')       # COTACAO / VOUCHER
+    # PENDENTE / USADO / EXPIRADO
+    status         = Column(String(20),  default='PENDENTE')
+    data_expiracao = Column(DateTime, nullable=False)
+    data_criacao   = Column(DateTime(timezone=True), server_default=func.now())
     updated_at       = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 

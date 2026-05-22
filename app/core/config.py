@@ -11,8 +11,13 @@ class Settings(BaseSettings):
     SMTP_FROM_NAME: str = "ViagensLabs | Luizalabs"
     SMTP_REPLY_TO: str = "rubia.paim@luizalabs.com"  # respostas redirecionadas aqui
 
-    # URL pública do sistema (para links nos e-mails)
+    # URL pública do sistema (para links nos e-mails — painel setor, portal aprovação)
     BASE_URL: str = "http://viagenslabs.magazineluiza.intranet"
+
+    # URL usada nos links enviados às AGÊNCIAS EXTERNAS (Tastur / Kontrip).
+    # Pode ser diferente de BASE_URL: quando o sistema for exposto à internet ou VPN
+    # disponível, basta trocar este valor no .env sem mexer no código.
+    BASE_URL_AGENCIA: str = "http://viagenslabs.magazineluiza.intranet"
 
     # Duffel API — busca consultiva de voos (token via .env, nunca hardcoded)
     DUFFEL_TOKEN: str = ""
