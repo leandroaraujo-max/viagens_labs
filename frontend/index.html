@@ -40,11 +40,15 @@
         }
         .fade-enter-active, .fade-leave-active { transition: opacity 0.4s ease; }
         .fade-enter-from, .fade-leave-to { opacity: 0; }
+        /* Evita flash de login antes do Vue montar */
+        [v-cloak] { display: none !important; }
+        body { background: #0f172a; }
     </style>
+    <script src="/js/transition.js"></script>
 </head>
-<body class="font-sans antialiased text-gray-800 bg-gray-50 selection:bg-labs-blue selection:text-white">
+<body class="font-sans antialiased text-gray-800 selection:bg-labs-blue selection:text-white">
 
-    <div id="app" class="min-h-screen flex flex-col">
+    <div id="app" v-cloak class="min-h-screen flex flex-col">
 
         <!-- TELA DE LOGIN -->
         <transition name="fade">
@@ -109,7 +113,7 @@
                             </div>
                             <div class="h-6 w-px bg-gray-300 mx-2"></div>
                             <!-- Link para o Painel do Setor (só aparece para usuários do setor) -->
-                            <a v-if="perfilUsuario === 'setor'" href="/painel.html"
+                            <a v-if="perfilUsuario === 'setor'" href="#" @click.prevent="vlNavigate('/painel.html')"
                                class="flex items-center gap-1.5 text-sm font-semibold text-white bg-blue-700 hover:bg-blue-800 px-3 py-1.5 rounded-lg transition-colors duration-200 shadow-sm"
                                title="Acessar o Painel do Setor">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
@@ -899,7 +903,7 @@
                         perfilUsuario.value = dados.perfil;
                         // Setor é redirecionado para o painel; viajantes ficam no portal de solicitação
                         if (dados.perfil === 'setor') {
-                            window.location.href = '/painel.html';
+                            vlNavigate('/painel.html');
                             return;
                         }
                         if (tipo_solicitacao.value === 'proprio') buscarProprioUsuario();

@@ -7,6 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="/js/transition.js"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -99,7 +100,7 @@
         </div>
         <div class="h-6 w-px bg-gray-200 mx-1"></div>
         <!-- Minha Viagem -->
-        <a href="/index.html"
+        <a href="#" @click.prevent="vlNavigate('/index.html')"
            class="flex items-center gap-1.5 text-xs font-semibold text-labs-blue hover:text-labs-dark border border-blue-200 hover:border-blue-400 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-all duration-200"
            title="Acessar o Portal do Viajante">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -667,7 +668,7 @@ createApp({
     onMounted(() => {
       const perfil = localStorage.getItem('perfil');
       if (!token.value || perfil !== 'setor') {
-        window.location.href = '/index.html';
+        vlNavigate('/index.html');
         return;
       }
       carregarSolicitacoes();
@@ -808,7 +809,7 @@ createApp({
     // ── Helpers ───────────────────────────────────────────────────────────────
     const sair = () => {
       localStorage.clear();
-      window.location.href = '/index.html';
+      vlNavigate('/index.html');
     };
 
     const fmtData = (iso) => {
