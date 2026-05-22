@@ -136,6 +136,12 @@ AGENCIA_KONTRIP_EMAIL=viagens@kontrip.com.br
 #   Produção c/ URL pública:      BASE_URL_AGENCIA=https://viagenslabs.magazineluiza.com.br
 BASE_URL_AGENCIA=http://viagenslabs.magazineluiza.intranet
 
+# ── URL base dos links de APROVAÇÃO enviados por e-mail (N1/N2) ───────────────
+# Gestores aprovam pelo celular fora da intranet — basta trocar esta linha.
+#   Testes (você na intranet):     BASE_URL_APROVACAO=http://viagenslabs.magazineluiza.intranet
+#   Produção c/ VPN ou internet:  BASE_URL_APROVACAO=https://viagenslabs.magazineluiza.com.br
+BASE_URL_APROVACAO=http://viagenslabs.magazineluiza.intranet
+
 # ── Duffel API — busca consultiva de voos ──────────────────────────────────
 DUFFEL_TOKEN=duffel_test_xxxxxxxxxxxx
 
@@ -466,6 +472,21 @@ BASE_URL_AGENCIA=http://viagenslabs.magazineluiza.intranet
 # Sistema exposto à internet (DMZ / cloud):
 BASE_URL_AGENCIA=https://viagenslabs.magazineluiza.com.br
 ```
+
+### Configuração de URL para aprovações (N1/N2 pelo celular)
+
+Os gestores N1/N2 recebem o link de aprovação por e-mail e frequentemente aprovam **pelo celular**, fora da intranet. A URL usada nos botões de aprovação é configurada separadamente:
+
+```dotenv
+# Intranet (testes):
+BASE_URL_APROVACAO=http://viagenslabs.magazineluiza.intranet
+
+# Quando o sistema tiver VPN ou URL pública (aprovação pelo celular funciona):
+BASE_URL_APROVACAO=https://viagenslabs.magazineluiza.com.br
+```
+
+> Basta alterar `BASE_URL_APROVACAO` no `.env`. Nenhum código precisa ser alterado.
+> Os templates de e-mail de N1, N2, lembretes e escala N2 usam esta URL.
 
 ### JWT
 - Algoritmo: HS256 — Expiração: 8 horas
@@ -822,6 +843,7 @@ Variáveis de ambiente importantes (.env):
   AGENCIA_TASTUR_EMAIL  = e-mail definitivo da Tastur (testes: leandro.araujo@luizalabs.com)
   AGENCIA_KONTRIP_EMAIL = e-mail definitivo da Kontrip (testes: leandro.araujo@luizalabs.com)
   BASE_URL_AGENCIA      = URL base dos links enviados às agências por e-mail
+  BASE_URL_APROVACAO    = URL base dos links de aprovação N1/N2 (celular/fora da intranet)
   QA_APROVADOR_EMAIL    = redireciona tokens de aprovação N1/N2 para testador
 
 Tabelas ORM (app/infrastructure/orm/models.py):
@@ -869,6 +891,7 @@ PRÓXIMOS PASSOS:
   Fase 5C: Casamento completo (vincular/ignorar no painel do setor)
   Fase 6: Histórico com linha do tempo no portal do viajante
   Fase 7 (acesso agências): trocar BASE_URL_AGENCIA no .env quando VPN/internet
+  Fase 7 (aprovações celular): trocar BASE_URL_APROVACAO no .env quando VPN/internet
 
 Regra crítica ao gerar código: NUNCA use '...', '# ...' ou '#existing code'.
 Sempre fornecer o código completo do método/função alterado.

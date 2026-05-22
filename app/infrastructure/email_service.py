@@ -156,6 +156,8 @@ class EmailService:
         self.base_url        = settings.BASE_URL
         # URL usada nos links para agências externas (pode ser diferente — publica/VPN)
         self.base_url_agencia = getattr(settings, "BASE_URL_AGENCIA", settings.BASE_URL)
+        # URL usada nos links de aprovação (N1/N2 — acessam fora da intranet, ex: celular)
+        self.base_url_aprovacao = getattr(settings, "BASE_URL_APROVACAO", settings.BASE_URL)
 
     # ── Envio base ────────────────────────────────────────────────────────────
 
@@ -182,7 +184,7 @@ class EmailService:
     def enviar_email_aprovacao(self, solicitacao, token) -> bool:
         nivel_label = "Aprovação N1 — Gestor Direto" if token.nivel == "N1" else "Aprovação N2 — Diretoria"
         assunto = f"[ViagensLabs] {solicitacao.protocolo} — {nivel_label} Necessária"
-        link    = f"{self.base_url}/portal_aprovacao.html?token={token.uuid}"
+        link    = f"{self.base_url_aprovacao}/portal_aprovacao.html?token={token.uuid}"
         html    = self._tpl_aprovacao(solicitacao, token, link, nivel_label)
         return self._enviar(token.email_aprovador, assunto, html)
 
@@ -771,7 +773,7 @@ class EmailService:
         return self._enviar(email_dest, assunto, html)
 
     def _tpl_lembrete_n1(self, solicitacao, token, numero_lembrete: int) -> str:
-        link         = f"{self.base_url}/portal_aprovacao.html?token={token.uuid}"
+        link         = f"{self.base_url_aprovacao}/portal_aprovacao.html?token={token.uuid}"
         urgencia_cor = _VERMELHO if numero_lembrete >= 2 else _AMARELO
         urgencia_bg  = _VERMELHO_BG if numero_lembrete >= 2 else _AMARELO_BG
         faixa = _faixa(urgencia_bg, urgencia_cor, "⏰",
@@ -798,7 +800,7 @@ class EmailService:
 
     def enviar_email_escala_n2(self, solicitacao, token_n2) -> bool:
         """Notifica N2 e setor quando N1 emergencial não respondeu no prazo."""
-        link    = f"{self.base_url}/portal_aprovacao.html?token={token_n2.uuid}"
+        link    = f"{self.base_url_aprovacao}/portal_aprovacao.html?token={token_n2.uuid}"
         assunto = f"[ESCALADO N2] {solicitacao.protocolo} — N1 não respondeu a tempo"
         html    = self._tpl_escala_n2(solicitacao, token_n2, link)
         return self._enviar([token_n2.email_aprovador, settings.SETOR_EMAIL], assunto, html)

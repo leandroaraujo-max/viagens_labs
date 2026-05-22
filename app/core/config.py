@@ -19,6 +19,11 @@ class Settings(BaseSettings):
     # disponível, basta trocar este valor no .env sem mexer no código.
     BASE_URL_AGENCIA: str = "http://viagenslabs.magazineluiza.intranet"
 
+    # URL usada nos links de APROVAÇÃO enviados por e-mail para gestores N1/N2.
+    # Aprovadores podem acessar via celular fora da intranet — basta apontar para
+    # a URL pública/VPN sem alterar código. Padrão: mesmo valor de BASE_URL.
+    BASE_URL_APROVACAO: str = "http://viagenslabs.magazineluiza.intranet"
+
     # Duffel API — busca consultiva de voos (token via .env, nunca hardcoded)
     DUFFEL_TOKEN: str = ""
     DUFFEL_BASE_URL: str = "https://api.duffel.com"
