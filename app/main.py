@@ -51,6 +51,8 @@ def _migracoes_seguras():
             data_criacao   TIMESTAMPTZ  DEFAULT NOW()
         );""",
         "CREATE INDEX IF NOT EXISTS ix_tokens_agencia_uuid ON tokens_agencia(uuid);",
+        # Fase 6 — campo de e-mail para usuários de agência (adicionado via migração segura)
+        "ALTER TABLE usuarios_agencia ADD COLUMN IF NOT EXISTS email VARCHAR(200) DEFAULT '';",
     ]
     with engine.connect() as conn:
         for sql in sqls:

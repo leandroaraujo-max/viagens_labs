@@ -4,8 +4,13 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 
 from app.api.dependencies import get_db_session, require_setor
-from app.domain.models.schemas import SolicitacaoSetorResponse, SetorAcaoRequest, CotacaoResponse
+from app.domain.models.schemas import (
+    SolicitacaoSetorResponse, SetorAcaoRequest, CotacaoResponse,
+    AgenciaCreate, AgenciaUpdate, AgenciaResponse,
+)
 from app.services.setor_service import SetorService
+from app.core.security import get_password_hash
+from app.infrastructure.orm.models import UsuarioAgenciaModel
 
 router = APIRouter()
 _setor_svc = SetorService()
@@ -145,3 +150,95 @@ def ignorar_casamento(
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
+
+# ── Agências ──────────────────────────────────────────────────────────────────
+
+def _agencia_to_response(ag: UsuarioAgenciaModel) -> AgenciaResponse:
+    return AgenciaResponse(
+        id=ag.id,
+        agencia_nome=ag.agencia_nome,
+        username=ag.username,
+        nome=ag.nome or '',
+        email=ag.email if hasattr(ag, 'email') and ag.email else '',
+        ativo=ag.ativo,
+        data_criacao=ag.data_criacao.isoformat() if ag.data_criacao else None,
+    )
+
+
+@router.get("/agencias", response_model=List[AgenciaResponse])
+def listar_agencias(
+    db: Session = Depends(get_db_session),
+    _: str = Depends(require_setor),
+):
+    """Lista todos os usuários de agências cadastrados."""
+    agencias = db.query(UsuarioAgenciaModel).order_by(
+        UsuarioAgenciaModel.agencia_nome, UsuarioAgenciaModel.username
+    ).all()
+    return [_agencia_to_response(a) for a in agencias]
+
+
+@router.post("/agencias", response_model=AgenciaResponse, status_code=status.HTTP_201_CREATED)
+def cadastrar_agencia(
+    body: AgenciaCreate,
+    db: Session = Depends(get_db_session),
+    _: str = Depends(require_setor),
+):
+    """Cadastra novo usuário de agência de viagens."""
+    username_normalizado = body.username.strip().lower()
+    if db.query(UsuarioAgenciaModel).filter(UsuarioAgenciaModel.username == username_normalizado).first():
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username já cadastrado.")
+
+    nova = UsuarioAgenciaModel(
+        agencia_nome=body.agencia_nome.strip(),
+        username=username_normalizado,
+        nome=body.nome.strip(),
+        senha_hash=get_password_hash(body.senha),
+        ativo=True,
+    )
+    if hasattr(nova, 'email'):
+        nova.email = body.email.strip()
+
+    db.add(nova)
+    db.commit()
+    db.refresh(nova)
+    return _agencia_to_response(nova)
+
+
+@router.put("/agencias/{agencia_id}", response_model=AgenciaResponse)
+def atualizar_agencia(
+    agencia_id: int,
+    body: AgenciaUpdate,
+    db: Session = Depends(get_db_session),
+    _: str = Depends(require_setor),
+):
+    """Atualiza dados, status ou senha de uma agência."""
+    ag = db.query(UsuarioAgenciaModel).filter(UsuarioAgenciaModel.id == agencia_id).first()
+    if not ag:
+        raise HTTPException(status_code=404, detail="Agência não encontrada.")
+
+    if body.nome is not None:
+        ag.nome = body.nome.strip()
+    if body.email is not None and hasattr(ag, 'email'):
+        ag.email = body.email.strip()
+    if body.ativo is not None:
+        ag.ativo = body.ativo
+    if body.senha is not None and body.senha.strip():
+        ag.senha_hash = get_password_hash(body.senha.strip())
+
+    db.commit()
+    db.refresh(ag)
+    return _agencia_to_response(ag)
+
+
+@router.delete("/agencias/{agencia_id}", status_code=status.HTTP_204_NO_CONTENT)
+def excluir_agencia(
+    agencia_id: int,
+    db: Session = Depends(get_db_session),
+    _: str = Depends(require_setor),
+):
+    """Remove permanentemente uma agência do sistema."""
+    ag = db.query(UsuarioAgenciaModel).filter(UsuarioAgenciaModel.id == agencia_id).first()
+    if not ag:
+        raise HTTPException(status_code=404, detail="Agência não encontrada.")
+    db.delete(ag)
+    db.commit()

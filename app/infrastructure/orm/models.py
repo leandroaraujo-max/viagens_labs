@@ -186,6 +186,7 @@ class UsuarioAgenciaModel(Base):
     username     = Column(String(100), unique=True, index=True, nullable=False)
     nome         = Column(String(200), default='')
     agencia_nome = Column(String(100), nullable=False)  # Tastur / Kontrip
+    email        = Column(String(200), default='')
     senha_hash   = Column(String(200), nullable=False)
     ativo        = Column(Boolean, default=True)
     data_criacao = Column(DateTime(timezone=True), server_default=func.now())

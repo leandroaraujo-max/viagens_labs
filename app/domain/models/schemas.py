@@ -303,3 +303,35 @@ class SolicitacaoSetorResponse(BaseModel):
     casamentos: List[dict] = []
 
     model_config = ConfigDict(from_attributes=True)
+
+
+# --- SCHEMAS DE AGÊNCIAS (gestão pelo setor) ---
+
+class AgenciaCreate(BaseModel):
+    """Dados para cadastrar nova agência de viagens."""
+    agencia_nome: str
+    username:     str
+    nome:         str = ''
+    email:        str = ''
+    senha:        str
+
+
+class AgenciaUpdate(BaseModel):
+    """Atualização parcial de agência (todos opcionais)."""
+    nome:         Optional[str] = None
+    email:        Optional[str] = None
+    ativo:        Optional[bool] = None
+    senha:        Optional[str] = None
+
+
+class AgenciaResponse(BaseModel):
+    """Visão da agência retornada ao painel do setor."""
+    id:           int
+    agencia_nome: str
+    username:     str
+    nome:         str = ''
+    email:        str = ''
+    ativo:        bool
+    data_criacao: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
