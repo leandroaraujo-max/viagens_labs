@@ -1,11 +1,29 @@
 /**
  * ViagensLabs — Transicao de pagina com aviao vetorizado
  * Uso: vlNavigate('/pagina.html') ao inves de window.location.href
+ *
+ * Anti-flash: ao detectar chegada (sessionStorage key), injeta body::before
+ * escuro no <head> ANTES que qualquer conteudo do body seja pintado.
+ * Isso elimina o flash branco/cinza entre a pagina de origem e o overlay.
  */
 (function () {
   'use strict';
 
   var KEY = 'vl_pg_trans';
+
+  /* ─── Anti-flash imediato ──────────────────────────────────────────────────
+     Executado sincronamente no <head>, antes de <body> existir.
+     O body::before cobre todo o viewport assim que o browser cria o <body>,
+     impedindo qualquer frame com bg-labs-gray / bg-aviao / conteudo visivel. */
+  if (sessionStorage.getItem(KEY)) {
+    var cover = document.createElement('style');
+    cover.id = 'vl-cover';
+    cover.textContent = 'body::before{'
+      + 'content:"";position:fixed;inset:0;'
+      + 'background:linear-gradient(135deg,#0f172a 0%,#001e7a 100%);'
+      + 'z-index:99998;pointer-events:none}';
+    document.head.appendChild(cover);
+  }
 
   var PLANE = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 88" fill="none">'
     + '<path d="M42,44 Q90,30 162,36 L200,36 Q222,36 234,44 Q222,52 200,52 L162,52 Q90,58 42,44Z" fill="white"/>'
@@ -48,7 +66,7 @@
     el.style.cssText = 'position:fixed;inset:0;z-index:99999'
       + ';background:linear-gradient(135deg,#0f172a 0%,#001e7a 100%)'
       + ';display:flex;align-items:center;justify-content:center'
-      + ';overflow:hidden;opacity:0;transition:opacity .4s ease;pointer-events:all';
+      + ';overflow:hidden;opacity:0;transition:opacity .2s ease;pointer-events:all';
 
     var clouds = '<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice">'
       + '<ellipse cx="150" cy="120" rx="130" ry="40" fill="white" opacity="0.05"/>'
@@ -94,6 +112,9 @@
       ov.style.opacity = '1';
       document.body.style.overflow = 'hidden';
       document.body.appendChild(ov);
+      // Remove o body::before agora que o overlay real cobre tudo
+      var c = document.getElementById('vl-cover');
+      if (c) c.remove();
       setTimeout(function () {
         ov.style.opacity = '0';
         setTimeout(function () {
