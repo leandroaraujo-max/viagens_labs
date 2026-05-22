@@ -36,12 +36,12 @@ Viajante solicita  →  N1 aprova  →  N2 aprova (se aplicável)
 ```
 
 **Portais:**
-| Portal | URL | Público |
-|---|---|---|
-| Portal do Viajante | `/index.html` | Colaboradores Magalu (AD) |
-| Portal de Aprovação | `/portal_aprovacao.html?token=...` | Gestores N1/N2 (link por e-mail) |
-| Portal da Agência | `/agencia.html` | Agências de viagem parceiras (Tastur, Kontrip) |
-| Painel do Setor | `/painel.html` | Equipe interna de viagens (AD — grupo admins) |
+| Portal | URL | Público | Acesso |
+|---|---|---|---|
+| Portal do Viajante | `/index.html` | Colaboradores Magalu (AD) | Login AD |
+| Portal de Aprovação | `/portal_aprovacao.html?token=...` | Gestores N1/N2 | Link por e-mail |
+| Portal da Agência | `/agencia.html` | Agências externas (Tastur, Kontrip) | Link por e-mail (sem login) |
+| Painel do Setor | `/painel.html` | Equipe interna de viagens (AD — grupo admins) | Login AD |
 
 ---
 
@@ -99,7 +99,88 @@ Viajante solicita  →  N1 aprova  →  N2 aprova (se aplicável)
 
 > **Nota:** O sistema foi projetado para rodar on-premises na intranet da Magalu. A integração com BigQuery e AD exige conectividade com a infraestrutura interna.
 
-O projeto foi refatorado do zero adotando o padrão **Clean Architecture**, visando testabilidade, independência de frameworks e alta coesão das regras de negócio corporativas (Luizalabs/Magalu).
+---
+
+## 🚀 Instalação e Configuração
+
+### 1. Clonar e preparar o ambiente
+
+```powershell
+git clone https://github.com/leandroaraujo-max/viagens_labs.git
+cd viagens_labs
+python -m venv venv
+.\venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+### 2. Configurar o arquivo `.env`
+
+Crie um arquivo `.env` na raiz do projeto (nunca commitar) baseado no `.env.example`:
+
+```dotenv
+# ── Banco de Dados ─────────────────────────────────────────────────────────
+DATABASE_URL=postgresql://postgres:SuaSenha@127.0.0.1:5433/solicitacao_viagens?client_encoding=utf8
+
+# ── Agências — E-mails definitivos das agências parceiras ─────────────────────
+# Durante testes, use seu próprio e-mail para receber os links de cotação/voucher.
+AGENCIA_TASTUR_EMAIL=tastur@tastur.com.br
+AGENCIA_KONTRIP_EMAIL=viagens@kontrip.com.br
+
+# ── URL base dos links enviados ÀS AGÊNCIAS por e-mail ────────────────────────
+# As agências são externas — não têm acesso à intranet, VPN ou internet do sistema.
+# Este valor é a URL que aparece no botão do e-mail para as agências.
+#
+# Quando mudar de ambiente, só precisará alterar ESTA linha:
+#   Testes (você na intranet):     BASE_URL_AGENCIA=http://viagenslabs.magazineluiza.intranet
+#   Produção c/ VPN:              BASE_URL_AGENCIA=http://viagenslabs.magazineluiza.intranet
+#   Produção c/ URL pública:      BASE_URL_AGENCIA=https://viagenslabs.magazineluiza.com.br
+BASE_URL_AGENCIA=http://viagenslabs.magazineluiza.intranet
+
+# ── Duffel API — busca consultiva de voos ──────────────────────────────────
+DUFFEL_TOKEN=duffel_test_xxxxxxxxxxxx
+
+# ── QA Override — redireciona aprovações para testador ─────────────────────
+# Quando definido, TODOS os e-mails de aprovação (N1/N2) vão para este endereço.
+# Remova ou deixe vazio em produção.
+QA_APROVADOR_EMAIL=seu.email@luizalabs.com
+```
+
+> **Atenção `BASE_URL_AGENCIA`:** Quando as agências tiverem acesso via VPN ou quando o sistema
+> for exposto à internet, basta trocar este valor no `.env`. Nenhum código precisa ser alterado.
+
+### 3. Iniciar o backend
+
+```powershell
+cd C:\Projetos\viagens_labs
+$env:PYTHONPATH="."; .\venv\Scripts\uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+> O startup executa `_migracoes_seguras()` automaticamente — todas as tabelas e colunas
+> novas são criadas via `ADD COLUMN IF NOT EXISTS` sem risco de perda de dados.
+
+### 4. Iniciar o Nginx (servidor web)
+
+```powershell
+nginx.exe -c C:\Projetos\viagens_labs\nginx_config\nginx.conf
+```
+
+### 5. Criar usuários de agência (primeira vez)
+
+```powershell
+python seed_agencia.py
+```
+
+---
+
+## 💻 Como Usar
+
+1. Acesse `http://viagenslabs.magazineluiza.intranet` (porta 80)
+2. **Colaborador:** faz login com usuário/senha da rede → preenche solicitação
+3. **Gestor N1/N2:** recebe e-mail com botão → clica → aprova/reprova sem login
+4. **Setor:** acessa `/painel.html` → pré-aprova → agências recebem e-mail com link
+5. **Agência:** clica no link do e-mail → registra cotação direto (sem login)
+6. **Setor:** painel mostra comparativo → escolhe vencedora → agência vencedora recebe link de vouchers
+7. **Agência vencedora:** clica no link → anexa vouchers por serviço → solicitação concluída, visando testabilidade, independência de frameworks e alta coesão das regras de negócio corporativas (Luizalabs/Magalu).
 
 *   **Front-end:** Single Page Application (SPA) usando **HTML5, Vue.js 3 (via CDN) e TailwindCSS**. Interface imersiva (glassmorphism) e aderente ao brandbook do Luizalabs (foco em minimalismo, azul sóbrio e sem o amarelo de varejo). O código está em um único arquivo `frontend/index.html`.
 *   **Web Server (Reverse Proxy):** **Nginx** no Windows Server, servindo o front-end estático na porta 80 e roteando requisições `/api/*` para o Uvicorn (backend Python).
@@ -175,16 +256,17 @@ viagens_labs/
 │   │   └── duffel_service.py           # API Duffel para pesquisa de voos reais
 │   ├── repositories/
 │   │   └── viagens_repository.py       # Acesso ao banco (queries SQLAlchemy)
-│   └── services/
+│   ├── services/
 │       ├── viagens_service.py          # Lógica de criação de solicitações
 │       ├── aprovacao_service.py        # Lógica de aprovação N1/N2
 │       ├── cotacao_service.py          # Lógica de cotação das agências
 │       ├── casamento_service.py        # Deduplica viagens com mesmo trecho
-│       └── setor_service.py            # Painel do setor — listagem e ações
+│       ├── setor_service.py            # Painel do setor — listagem e ações + criação de tokens
+│       └── voucher_service.py          # Upload e verificação de conclusão de vouchers
 ├── frontend/
 │   ├── index.html                      # Portal do Viajante (SPA principal)
 │   ├── portal_aprovacao.html           # Portal de Aprovação N1/N2 (link por e-mail)
-│   ├── agencia.html                    # Portal da Agência (Tastur / Kontrip)
+│   ├── agencia.html                    # Portal da Agência (Tastur / Kontrip) — login + modo token
 │   ├── painel.html                     # Painel do Setor de Viagens
 │   └── img/
 │       └── bg-aviao.jpg                # Foto aérea de fundo (servida localmente)
@@ -240,7 +322,19 @@ viagens_labs/
 | `agencia_vencedora` | String | `Tastur` ou `Kontrip` (após decisão) |
 | `created_at` | DateTime | Timestamp de criação |
 
-### Tabela `aprovacoes`
+### Tabela `tokens_agencia`
+| Coluna | Tipo | Descrição |
+|---|---|---|
+| `id` | Integer PK | — |
+| `uuid` | String unique | Token UUID enviado no link do e-mail |
+| `solicitacao_id` | FK | Referência à solicitação |
+| `agencia_nome` | String | `Tastur` ou `Kontrip` |
+| `finalidade` | String | `COTACAO` (7 dias) ou `VOUCHER` (14 dias) |
+| `status` | String | `PENDENTE`, `USADO`, `EXPIRADO` |
+| `data_expiracao` | DateTime | Prazo de validade do link |
+| `data_criacao` | DateTime | Timestamp de criação |
+
+### Tabela `tokens_aprovacao`
 | Coluna | Tipo | Descrição |
 |---|---|---|
 | `id` | Integer PK | — |
@@ -286,39 +380,47 @@ viagens_labs/
 [Viajante cria]
        │
        ▼
-AGUARDANDO_N1  ──(reprovado)──▶  REPROVADA
+AGUARDANDO_N1  ──(N1 está de Férias — BQ)──▶  AGUARDANDO_N2
+       │                                              │
+    (N1 aprova                                  (N2 aprova)
+     + exige N2)                                      │
+       │                                              │
+       ▼                                              │
+AGUARDANDO_N2 ◀───────────────────────────────────────┘
        │
-    (aprovado)
+    (N2 aprova)──(qualquer etapa reprova)──▶  REPROVADA
        │
        ▼
-AGUARDANDO_N2  ──(reprovado)──▶  REPROVADA
-  (se aplicável)
-       │
-    (aprovado ou emergencial)
-       │
-       ▼
-PENDENTE_PRE_APROVACAO_SETOR  ──(setor reprova)──▶  REPROVADA
+PENDENTE_PRE_APROVACAO_SETOR  ──(reprova)──▶  REPROVADA
        │
     (setor pré-aprova)
+    Cria token COTACAO (Tastur) + token COTACAO (Kontrip)
+    Envia e-mail com botão → agencia.html?token=UUID
        │
        ▼
-AGUARDANDO_COTACAO  ──── e-mail enviado para Tastur + Kontrip
+AGUARDANDO_COTACAO
        │
-    (agência envia cotação)
+    (agências cotam via link token — sem login)
+       │
+    1 agência ──▶  COTACAO_ENVIADA
+    2 agências ──▶  PENDENTE_APROVACAO_SETOR_COTACAO
+       │
+    (setor escolhe vencedora)
+    Cria token VOUCHER para vencedora
+    Envia e-mails: vencedora (link vouchers), perdedora, viajante
        │
        ▼
-COTACAO_ENVIADA  ─── (2ª agência envia)
+APROVADA_AGUARDANDO_VOUCHER
+       │
+    (agência sobe vouchers por serviço via link token)
        │
        ▼
-PENDENTE_APROVACAO_SETOR_COTACAO  ──(setor reprova)──▶  REPROVADA
-       │
-    (setor escolhe Tastur ou Kontrip)
-       │
-       ▼
-CONCLUIDA
+CONCLUIDA  ── e-mail com vouchers enviado ao viajante
 ```
 
-**Regra emergencial:** Solicitações com `data_ida` em menos de 15 dias pulam as aprovações N1/N2 e vão direto para `PENDENTE_PRE_APROVACAO_SETOR`.
+**Regra de férias:** Se `SITUACAO` do N1 no BigQuery contém a substring `"ferias"` (sem acento), ele é considerado ausente e o fluxo vai direto para N2.
+
+**Regra emergencial:** Solicitações com `data_ida` em menos de 15 dias são classificadas como `Emergencial` e exigem aprovação N2 diretamente.
 
 ---
 
@@ -340,9 +442,30 @@ ldap://ML-HB-AD01.magazineluiza.intranet
 | `G_ACCESS_VIAGENSLABS_AGENCIAS` | `agencia_ad` | Reservado (VPN+AD futuro) |
 | *(qualquer outro colaborador)* | `viajante` | Portal principal `/index.html` |
 
-### Agências (PostgreSQL)
-Login via `POST /api/v1/agencia/login` com bcrypt. Perfil `agencia` no JWT.  
-Seed inicial: `python seed_agencia.py`
+### Agência (acesso por token — sem login)
+As agências (Tastur, Kontrip) são externas e não têm acesso à intranet ou VPN.
+O acesso funciona via **link único enviado por e-mail**, sem necessidade de login:
+
+1. Setor pré-aprova → sistema cria um UUID por agência (finalidade `COTACAO`) e envia e-mail
+2. Agência clica no botão do e-mail → `agencia.html?token=UUID`
+3. Frontend detecta `?token=` e chama `GET /api/v1/agencia/token/{uuid}` sem auth
+4. Mostra o formulário direto (sem tela de login)
+5. Após setor escolher vencedora → sistema cria novo UUID (finalidade `VOUCHER`) e envia e-mail
+6. Agência vencedora acessa link de vouchers pelo mesmo mecanismo
+
+> Login via usuário/senha também permanece funcíonal para uso interno (quando VPN estiver disponível).
+
+### Configuração de URL para as agências
+```dotenv
+# Intranet (testes — você está na rede):
+BASE_URL_AGENCIA=http://viagenslabs.magazineluiza.intranet
+
+# VPN disponível para as agências:
+BASE_URL_AGENCIA=http://viagenslabs.magazineluiza.intranet
+
+# Sistema exposto à internet (DMZ / cloud):
+BASE_URL_AGENCIA=https://viagenslabs.magazineluiza.com.br
+```
 
 ### JWT
 - Algoritmo: HS256 — Expiração: 8 horas
@@ -371,12 +494,15 @@ Seed inicial: `python seed_agencia.py`
 | `GET` | `/api/v1/aprovacao/{token}` | Carrega dados do token de aprovação |
 | `POST` | `/api/v1/aprovacao/{token}` | Submete decisão (aprovar/reprovar) |
 
-### Agência
+### Agência (link token — sem auth)
 | Método | Rota | Descrição |
 |---|---|---|
-| `POST` | `/api/v1/agencia/login` | Login da agência |
-| `GET` | `/api/v1/agencia/solicitacoes` | Lista solicitações em `AGUARDANDO_COTACAO` |
-| `POST` | `/api/v1/agencia/solicitacoes/{id}/cotacao` | Envia ou atualiza cotação |
+| `POST` | `/api/v1/agencia/login` | Login da agência (credencial bcrypt) |
+| `GET` | `/api/v1/agencia/solicitacoes` | Lista solicitações (autenticado) |
+| `POST` | `/api/v1/agencia/solicitacoes/{id}/cotacao` | Envia ou atualiza cotação (autenticado) |
+| `GET` | `/api/v1/agencia/token/{uuid}` | Carrega solicitação pelo token do e-mail (**sem auth**) |
+| `POST` | `/api/v1/agencia/token/{uuid}/cotacao` | Registra cotação pelo token do e-mail (**sem auth**) |
+| `POST` | `/api/v1/agencia/token/{uuid}/voucher` | Upload de voucher pelo token de voucher (**sem auth**) |
 
 ### Setor (requer perfil `setor`)
 | Método | Rota | Descrição |
@@ -384,6 +510,11 @@ Seed inicial: `python seed_agencia.py`
 | `GET` | `/api/v1/setor/solicitacoes` | Lista com filtros (status, período, agência, busca) |
 | `GET` | `/api/v1/setor/solicitacoes/{id}` | Detalhe + cotações das duas agências |
 | `POST` | `/api/v1/setor/solicitacoes/{id}/acao` | Executa ação: `PRE_APROVAR`, `PRE_REPROVAR`, `APROVAR_TASTUR`, `APROVAR_KONTRIP`, `REPROVAR`, `REENVIAR_AGENCIAS` |
+
+### Vouchers
+| Método | Rota | Descrição |
+|---|---|---|
+| `POST` | `/api/v1/vouchers/{id}/upload` | Upload de voucher (autenticado — agência login) |
 
 ### Duffel (pesquisa de voos — experimental)
 | Método | Rota | Descrição |
@@ -420,10 +551,13 @@ Todos os portais usam **Vue.js 3 (CDN) + TailwindCSS (CDN)** — sem node_module
 - Botões de Aprovar / Reprovar com campo de observação
 
 ### Portal da Agência (`agencia.html`)
-- Login com usuário/senha específico da agência
-- Lista solicitações aguardando cotação
+- **Modo token** (padrão para agências externas): detecta `?token=` na URL → carrega solicitação direto, sem tela de login
+  - Token `COTACAO`: exibe formulário de cotação pré-preenchido com dados da solicitação
+  - Token `VOUCHER`: exibe tela de upload de vouchers (1 PDF por tipo de serviço)
+- **Modo login** (quando VPN disponível): login com usuário/senha bcrypt, lista todas as solicitações da agência
 - Formulário de cotação por serviço (aéreo, hotel, rodoviário, carro)
-- Suporta 2 cotações simultâneas para a mesma solicitação (Tastur + Kontrip)
+- Suporta 2 cotações simultâneas (Tastur + Kontrip)
+- Tela de loading e tela de erro para tokens inválidos/expirados
 
 ### Painel do Setor (`painel.html`)
 - Requer perfil `setor` (verificado no `onMounted` via `localStorage`)
@@ -440,17 +574,27 @@ Todos os portais usam **Vue.js 3 (CDN) + TailwindCSS (CDN)** — sem node_module
 ## 📧 Notificações por E-mail
 
 **SMTP:** `smtpml.magazineluiza.intranet:25`  
-**De:** `vagenslabs@luizalabs.com`  
+**De:** `viagenslabs@luizalabs.com`  
 **Reply-To:** `rubia.paim@luizalabs.com`
 
 | Template | Disparado quando | Destinatário |
 |---|---|---|
+| Solicitação recebida | Criação da solicitação | Solicitante |
 | Aprovação N1 | Solicitação criada com sucesso | Gestor N1 (BigQuery) |
 | Aprovação N2 | N1 aprova | Gestor N2 (BigQuery) |
-| Setor — pré-aprovação | N1 ou N2 aprova (emergencial ou comum) | `vagenslabs@luizalabs.com` |
-| Agências — cotação | Setor pré-aprova | Tastur + Kontrip (config) |
-| Setor — comparativo | 2ª agência envia cotação | `vagenslabs@luizalabs.com` |
-| Agência vencedora | Setor escolhe agência | Agência escolhida |
+| Setor — pré-aprovação | N1 ou N2 aprova | `viagenslabs@luizalabs.com` |
+| Agências — cotação | Setor pré-aprova | Tastur + Kontrip (link `?token=UUID` por agência) |
+| Setor — comparativo | 2ª agência envia cotação | `viagenslabs@luizalabs.com` |
+| Agência vencedora | Setor escolhe agência | Agência escolhida (link `?token=UUID` de voucher) |
+| Agência perdedora | Setor escolhe agência | Agência não selecionada |
+| Viajante aprovado | Setor escolhe agência | Solicitante |
+| Resultado (aprovado/reprovado) | N1/N2 decide | Solicitante |
+| Reprovação geral | Qualquer etapa | Solicitante |
+| Vouchers emitidos | Todos vouchers enviados | Solicitante |
+
+> **URL dos links para agências:** usam `BASE_URL_AGENCIA` (configurável no `.env`),
+> independente de `BASE_URL` — permite apontar para URLs diferentes quando as agências
+> tiverem VPN ou acesso público.
 
 ---
 
@@ -466,15 +610,32 @@ Todos os portais usam **Vue.js 3 (CDN) + TailwindCSS (CDN)** — sem node_module
 
 **Autenticação**
 - [x] Login AD (ldap3) com verificação de grupo para perfil (setor / viajante)
-- [x] Login de agências via bcrypt + PostgreSQL
+- [x] Login de agências via bcrypt + PostgreSQL (para uso com VPN)
+- [x] Acesso de agências via token no e-mail — sem login, sem VPN, sem intranet
 - [x] JWT HS256 com perfil embarcado no token
 - [x] Guards de rota no frontend por `localStorage.perfil`
 
 **Fluxo de Aprovação**
-- [x] Cadeia N1 → N2 → Setor → Agências → Decisão do setor
-- [x] Tokens UUID de aprovação com expiração
+- [x] Cadeia N1 → N2 → Setor → Agências → Decisão do setor → Vouchers → Concluído
+- [x] Tokens UUID de aprovação com expiração (N1: 4h/24h, N2: 8h)
 - [x] Portal de aprovação standalone (sem login) para gestores
 - [x] Detecção de viagem emergencial (< 15 dias)
+- [x] Detecção de N1 de férias via BigQuery → redireciona automaticamente ao N2
+
+**Agências por Link de E-mail (Fase 5A — tokens)**
+- [x] `tokens_agencia` — tabela no banco com finalidade `COTACAO` / `VOUCHER`
+- [x] Token criado ao pré-aprovar (COTACAO, TTL 7 dias) e ao escolher vencedora (VOUCHER, TTL 14 dias)
+- [x] E-mail para agências inclui botão com `agencia.html?token=UUID` — link único por agência/solicitação
+- [x] `agencia.html` detecta `?token=` → carrega solicitação sem login
+- [x] Rotas sem auth: `GET /agencia/token/{uuid}`, `POST /agencia/token/{uuid}/cotacao`, `POST /agencia/token/{uuid}/voucher`
+- [x] `BASE_URL_AGENCIA` configurável no `.env` — independente de `BASE_URL`
+
+**Vouchers**
+- [x] `VoucherModel` + tabela `vouchers` no banco
+- [x] `voucher_service.py`: upload PDF/JPG/PNG (máx 20 MB) por tipo de serviço
+- [x] `_verificar_conclusao_vouchers()`: quando todos os tipos foram entregues → `CONCLUIDA` + e-mail ao viajante
+- [x] `POST /api/v1/vouchers/{id}/upload` (autenticado) + `POST /agencia/token/{uuid}/voucher` (por token)
+- [x] `agencia.html` exibe tela de upload por serviço quando `APROVADA_AGUARDANDO_VOUCHER`
 
 **Cotação Dupla**
 - [x] Duas agências cotam a mesma solicitação independentemente
@@ -482,35 +643,26 @@ Todos os portais usam **Vue.js 3 (CDN) + TailwindCSS (CDN)** — sem node_module
 - [x] Upsert de cotação por `(solicitacao_id, agencia_nome)`
 
 **E-mails**
-- [x] 5 templates HTML responsivos via SMTP relay corporativo
-- [x] Envio simultâneo para Tastur e Kontrip na etapa de cotação
+- [x] 12+ templates HTML responsivos via SMTP relay corporativo
+- [x] Links para agências usam `BASE_URL_AGENCIA` (configurável)
+- [x] Token UUID embutido no link do e-mail — sem necessidade de login
 
 **Frontend**
 - [x] Portal do Viajante completo (login → formulário → histórico)
-- [x] Portal de Aprovação (link por e-mail)
-- [x] Portal da Agência (login + envio de cotação)
+- [x] Portal de Aprovação (link por e-mail, sem login)
+- [x] Portal da Agência: modo token (link por e-mail) + modo login (VPN)
 - [x] Painel do Setor (tabela + filtros + indicadores + KPIs + gráficos)
 
 **UX e Formulário (Fase 7)**
-- [x] Máscaras de data (DD/MM/AAAA) nos campos de data_ida, data_volta e data_nascimento
-- [x] Máscara de telefone com auto-detecção fixo/celular
+- [x] Máscaras de data e telefone
 - [x] Cálculo automático de distância (Nominatim + Haversine) com sidebar de políticas
-- [x] Bloco de preferências aéreas antes da busca Duffel (trecho, período, bagagem, assento)
 - [x] Integração Duffel bidirecional: busca de ida e volta em chamadas separadas
-- [x] Seleção de voo de volta (`selecionarVoo(voo, 'volta')`) persistida em `preferencia_voo_volta`
 - [x] Datas independentes para locação de veículo (`carro_data_retirada` / `carro_data_devolucao`)
 - [x] Painel do setor exibe dados completos: colaborador, aprovadores N1/N2, preferências por serviço
 
 ---
 
 ### 🔜 Próximos Passos
-
-#### Fase 5A — Vouchers e conclusão do fluxo
-- [ ] `setor_service._aprovar_agencia()`: mudar `CONCLUIDA` → `APROVADA_AGUARDANDO_VOUCHER`
-- [ ] `email_service.py`: +5 templates (viajante_aprovado, agencia_perdedora, reprovacao, vouchers, conclusao)
-- [ ] `voucher_service.py`: upload PDF + `_verificar_conclusao_vouchers()`
-- [ ] `app/api/v1/endpoints/voucher.py`: `POST /api/v1/vouchers/{id}/upload`
-- [ ] `agencia.html`: tela de upload de vouchers para a agência vencedora
 
 #### Fase 5B — Motor SLA
 - [ ] `sla_scheduler.py`: thread daemon para lembretes de aprovação/cotação em atraso
@@ -522,6 +674,11 @@ Todos os portais usam **Vue.js 3 (CDN) + TailwindCSS (CDN)** — sem node_module
 #### Fase 6 — Portal do Viajante: Histórico completo
 - [ ] Página de detalhe com linha do tempo do fluxo de aprovação
 - [ ] Cancelamento de solicitação pelo viajante (status `AGUARDANDO_N1`)
+
+#### Fase 7 — Acesso de agências via VPN/Internet
+- [ ] Quando VPN disponível: trocar `BASE_URL_AGENCIA` no `.env` (sem código)
+- [ ] Quando sistema for exposto à internet: trocar `BASE_URL_AGENCIA` para URL pública
+- [ ] Avaliar exposição seletiva via DMZ (apenas `/agencia.html` e `/api/v1/agencia/token/*`)
 
 #### Fase 8 — Relatórios e Exportação
 - [ ] Exportação da lista de solicitações para CSV/Excel
@@ -620,83 +777,98 @@ Banco de Dados:
   Migrações: automáticas no startup via _migracoes_seguras() em app/main.py
 
 Arquitetura: Clean Architecture
-  app/api/v1/endpoints/  → auth, viagens, aprovacao, agencia, setor, duffel
-  app/services/          → viagens, aprovacao, cotacao, casamento, setor
-  app/infrastructure/    → database, ldap_service, bigquery_service, email_service, duffel_service
+  app/api/v1/endpoints/  → auth, viagens, aprovacao, agencia, setor, duffel, voucher
+  app/services/          → viagens, aprovacao, cotacao, casamento, setor, voucher
+  app/infrastructure/    → database, ldap_service, bigquery_service, email_service, duffel_service, sla_scheduler
   app/domain/models/     → schemas.py (Pydantic)
   frontend/              → index.html, portal_aprovacao.html, agencia.html, painel.html
 
 Fluxo de status ATUAL (22/05/2026):
   AGUARDANDO_N1
-    └─ N1 férias (BQ SITUACAO) → AGUARDANDO_N2
-    └─ N1 aprova + emergencial → AGUARDANDO_N2
-    └─ N1 aprova + comum      → PENDENTE_PRE_APROVACAO_SETOR
-    └─ N1 reprova              → REPROVADA
+    ├─ N1 férias (BQ SITUACAO contém substring 'ferias') → AGUARDANDO_N2
+    ├─ N1 aprova + exige N2 → AGUARDANDO_N2
+    ├─ N1 aprova + comum   → PENDENTE_PRE_APROVACAO_SETOR
+    └─ N1 reprova           → REPROVADA
   AGUARDANDO_N2
-    └─ N2 aprova → PENDENTE_PRE_APROVACAO_SETOR
+    ├─ N2 aprova → PENDENTE_PRE_APROVACAO_SETOR
     └─ N2 reprova → REPROVADA
   PENDENTE_PRE_APROVACAO_SETOR
-    └─ Setor pré-aprova → AGUARDANDO_COTACAO (+ e-mail Tastur+Kontrip)
+    ├─ Setor pré-aprova → AGUARDANDO_COTACAO
+    |   + cria TokenAgenciaModel(finalidade=COTACAO, TTL=7d) para Tastur e Kontrip
+    |   + e-mail com link agencia.html?token=UUID (um por agência)
     └─ Setor pré-reprova → REPROVADA
   AGUARDANDO_COTACAO
-    └─ 1 agência cota → COTACAO_ENVIADA
+    ├─ 1 agência cota → COTACAO_ENVIADA
     └─ 2 agências cotam → PENDENTE_APROVACAO_SETOR_COTACAO
   PENDENTE_APROVACAO_SETOR_COTACAO
-    └─ Setor aprova Tastur/Kontrip → CONCLUIDA  ← pendente: deve ser APROVADA_AGUARDANDO_VOUCHER
+    ├─ Setor aprova Tastur/Kontrip → APROVADA_AGUARDANDO_VOUCHER
+    |   + cria TokenAgenciaModel(finalidade=VOUCHER, TTL=14d) para vencedora
+    |   + e-mail vencedora (link voucher), perdedora, viajante
     └─ Setor reprova → REPROVADA
-  [FALTANDO] APROVADA_AGUARDANDO_VOUCHER
-    └─ Todos vouchers entregues → CONCLUIDA
+  APROVADA_AGUARDANDO_VOUCHER
+    └─ Todos vouchers entregues → CONCLUIDA + e-mail viajante
 
-O PRÓXIMO PASSO É IMPLEMENTAR (Fase 5A — vouchers):
-  1. setor_service._aprovar_agencia(): mudar CONCLUIDA → APROVADA_AGUARDANDO_VOUCHER
-  2. email_service.py: +5 templates (viajante_aprovado, agencia_perdedora, reprovacao, vouchers, conclusao)
-  3. Novo voucher_service.py: upload PDF + _verificar_conclusao_vouchers()
-  4. Novo app/api/v1/endpoints/voucher.py: POST /api/v1/vouchers/{id}/upload
-  5. agencia.html: tela de upload de vouchers para a agência vencedora
+ACESSO DAS AGÊNCIAS (externas — sem intranet/VPN):
+  Agências recebem e-mail com link agencia.html?token=UUID
+  Frontend detecta ?token= → GET /api/v1/agencia/token/{uuid} (sem auth)
+  Token COTACAO: mostra formulário de cotação
+  Token VOUCHER: mostra tela de upload de vouchers
+  URL dos links: BASE_URL_AGENCIA (configurável no .env — intranet/VPN/internet)
 
-Fases seguintes:
-  Fase 5B: Motor SLA (thread daemon sla_scheduler.py)
-  Fase 5C: Casamento completo (vincular/ignorar no painel do setor)
+Para mudar a URL dos links das agências (sem alterar código):
+  .env: BASE_URL_AGENCIA=https://viagenslabs.magazineluiza.com.br
 
-QA Override:
-  .env: QA_APROVADOR_EMAIL=leandro.araujo@luizalabs.com
-  Remove: 1 linha em config.py + 3 linhas em aprovacao_service._criar_token()
+Variáveis de ambiente importantes (.env):
+  AGENCIA_TASTUR_EMAIL  = e-mail definitivo da Tastur (testes: leandro.araujo@luizalabs.com)
+  AGENCIA_KONTRIP_EMAIL = e-mail definitivo da Kontrip (testes: leandro.araujo@luizalabs.com)
+  BASE_URL_AGENCIA      = URL base dos links enviados às agências por e-mail
+  QA_APROVADOR_EMAIL    = redireciona tokens de aprovação N1/N2 para testador
 
-N1 em Férias:
-  bigquery_service.buscar_situacao_por_email(email) → checa SITUACAO
-  aprovacao_service._aprovador_esta_de_ferias() → compara com {"férias","ferias"}
+Tabelas ORM (app/infrastructure/orm/models.py):
+  SolicitacaoModel       → solicitacoes
+  TokenAprovacaoModel    → tokens_aprovacao
+  TokenAgenciaModel      → tokens_agencia (finalidade: COTACAO/VOUCHER)
+  CotacaoModel           → cotacoes
+  VoucherModel           → vouchers
+  CasamentoModel         → casamentos
+  UsuarioAgenciaModel    → usuarios_agencia
+  UserProfileModel       → user_profiles
 
-AD Groups:
-  G_ACCESS_VIAGENSLABS_ADMINS   → perfil "setor"    → /painel.html
-  G_ACCESS_VIAGENSLABS_USERS    → perfil "viajante" → /index.html
-  G_ACCESS_VIAGENSLABS_AGENCIAS → perfil "agencia_ad" (reservado)
-
-AD Servers:
-  ldap://ML-ASC-AD-01.magazineluiza.intranet
-  ldap://ML-ASC-AD2.magazineluiza.intranet
-  ldap://ML-HB-AD01.magazineluiza.intranet
-
-SMTP: smtpml.magazineluiza.intranet:25 | De: viagenslabs@luizalabs.com
-BQ: maga-bigdata.kirk.assignee + maga-bigdata.mlpap.mag_v_funcionarios_ativos
-
-Novos campos ORM (Fase 7 — commit 15d1bb5):
+Novos campos ORM (Fase 7):
   solicitacoes.carro_data_retirada   VARCHAR(20)
   solicitacoes.carro_data_devolucao  VARCHAR(20)
   solicitacoes.preferencia_voo_volta TEXT
-  (+ viajante_*, aprovador_n1/n2_* adicionados em fase anterior)
+  (+ viajante_*, aprovador_n1/n2_* adicionados em fases anteriores)
 
 setor.py — padrão atual:
   _build_setor_response() usa model_validate via sol.__table__.columns
-  Não há mais mapeamento manual — novos campos são incluídos automaticamente
+  Novos campos são incluídos automaticamente — sem mapeamento manual
 
 painel.html — modal de detalhe exibe 6 seções:
   1. Dados do Colaborador (viajante_*)
   2. Cadeia de Aprovação (aprovador_n1/n2_*)
   3. Preferências Aéreas (trecho, período, bagagem, assento, voo ida/volta Duffel)
-  4. Preferências Rodoviárias (período, tipo ônibus, trecho)
-  5. Preferências de Hospedagem (hotel, quarto saúde)
-  6. Preferências de Veículo (datas/horas/cidades retirada e devolução)
-  Cada seção exibida condicionalmente via v-if tipo_servico.includes(...)
+  4. Preferências Rodoviárias
+  5. Preferências de Hospedagem
+  6. Preferências de Veículo
+
+N1 em Férias:
+  bigquery_service.buscar_situacao_por_email(email) → SITUACAO no BQ
+  aprovacao_service._aprovador_esta_de_ferias() → substring 'ferias' (sem acento)
+
+AD Groups:
+  G_ACCESS_VIAGENSLABS_ADMINS   → perfil "setor"    → /painel.html
+  G_ACCESS_VIAGENSLABS_USERS    → perfil "viajante" → /index.html
+  G_ACCESS_VIAGENSLABS_AGENCIAS → perfil "agencia_ad" (reservado para VPN futura)
+
+SMTP: smtpml.magazineluiza.intranet:25 | De: viagenslabs@luizalabs.com
+BQ: maga-bigdata.kirk.assignee + maga-bigdata.mlpap.mag_v_funcionarios_ativos
+
+PRÓXIMOS PASSOS:
+  Fase 5B: Motor SLA (sla_scheduler.py — lembretes N1/cotacao)
+  Fase 5C: Casamento completo (vincular/ignorar no painel do setor)
+  Fase 6: Histórico com linha do tempo no portal do viajante
+  Fase 7 (acesso agências): trocar BASE_URL_AGENCIA no .env quando VPN/internet
 
 Regra crítica ao gerar código: NUNCA use '...', '# ...' ou '#existing code'.
 Sempre fornecer o código completo do método/função alterado.
@@ -704,4 +876,4 @@ Sempre fornecer o código completo do método/função alterado.
 
 ---
 
-*Última atualização: 22/05/2026 — Fase 7 concluída: Duffel bidirecional, datas independentes de carro, dados completos no portal do setor. Próximo: Fase 5A (vouchers).*
+*Última atualização: 22/05/2026 — Fase 5A concluída: acesso por token para agências externas (sem login/intranet/VPN), vouchers, APROVADA_AGUARDANDO_VOUCHER, e-mails vencedora/perdedora/viajante. Próximo: Fase 5B (SLA scheduler).*
