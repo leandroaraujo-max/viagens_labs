@@ -44,3 +44,28 @@ def criar_solicitacao_de_viagem(
         return service.create_nova_solicitacao(solicitacao, username)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/solicitacoes/{solicitacao_id}/cancelar", status_code=200)
+def cancelar_solicitacao(
+    solicitacao_id: int,
+    db: Session = Depends(get_db_session),
+    username: str = Depends(get_current_username),
+):
+    """Viajante cancela uma solicitação no status AGUARDANDO_N1 (antes da aprovação)."""
+    from app.infrastructure.orm.models import SolicitacaoModel
+    sol = db.query(SolicitacaoModel).filter_by(id=solicitacao_id).first()
+    if not sol:
+        raise HTTPException(status_code=404, detail="Solicitação não encontrada.")
+    if sol.solicitante_username != username:
+        raise HTTPException(status_code=403, detail="Você não é o solicitante desta viagem.")
+    if sol.status != "AGUARDANDO_N1":
+        raise HTTPException(
+            status_code=409,
+            detail=f"Cancelamento não permitido (status atual: {sol.status}). "
+                   "Apenas solicitações AGUARDANDO_N1 podem ser canceladas.",
+        )
+    sol.status = "REPROVADA"
+    db.commit()
+    return {"protocolo": sol.protocolo, "status": sol.status, "mensagem": "Solicitação cancelada com sucesso."}
+

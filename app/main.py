@@ -10,17 +10,23 @@ from app.api.v1.routers import api_router
 def _migracoes_seguras():
     """Adiciona colunas novas sem destruir dados existentes (ALTER TABLE IF NOT EXISTS)."""
     from sqlalchemy import text
+    sqls = [
+        # Fase 1 — colunas originais
+        "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS preferencia_voo TEXT;",
+        "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS agencia_vencedora VARCHAR(100);",
+        "ALTER TABLE cotacoes DROP CONSTRAINT IF EXISTS cotacoes_solicitacao_id_key;",
+        # Fase 5A/5B — contadores SLA
+        "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS lembrete_n1_count  INTEGER DEFAULT 0;",
+        "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS lembrete_cot_count INTEGER DEFAULT 0;",
+        # Fase 5C — casamentos
+        "ALTER TABLE casamentos ADD COLUMN IF NOT EXISTS status        VARCHAR(20) DEFAULT 'PENDENTE';",
+        "ALTER TABLE casamentos ADD COLUMN IF NOT EXISTS operador_acao VARCHAR(100) DEFAULT '';",
+        "ALTER TABLE casamentos ADD COLUMN IF NOT EXISTS data_acao     TIMESTAMP;",
+        "ALTER TABLE casamentos ADD COLUMN IF NOT EXISTS grupo_viagem  VARCHAR(20);",
+    ]
     with engine.connect() as conn:
-        conn.execute(text(
-            "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS preferencia_voo TEXT;"
-        ))
-        conn.execute(text(
-            "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS agencia_vencedora VARCHAR(100);"
-        ))
-        # Remove unique simples em cotacoes.solicitacao_id para suportar Tastur + Kontrip na mesma solicitação
-        conn.execute(text(
-            "ALTER TABLE cotacoes DROP CONSTRAINT IF EXISTS cotacoes_solicitacao_id_key;"
-        ))
+        for sql in sqls:
+            conn.execute(text(sql))
         conn.commit()
 
 
@@ -30,6 +36,14 @@ async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
     _migracoes_seguras()
     print("Estrutura do banco de dados pronta.")
+    # Inicia SLA scheduler em thread daemon
+    try:
+        from app.infrastructure.sla_scheduler import iniciar_scheduler
+        from app.infrastructure.database import SessionLocal
+        iniciar_scheduler(SessionLocal)
+        print("SLA Scheduler iniciado.")
+    except Exception as exc:
+        print(f"[WARN] SLA Scheduler não iniciado: {exc}")
     yield
 
 def create_app() -> FastAPI:
@@ -63,10 +77,29 @@ def create_app() -> FastAPI:
             "status": "servidor_operacional"
         }
 
-    # Endpoint de sa?de
+    # Endpoint de saúde aprimorado
     @app.get("/health", tags=["System"])
     def health_check():
-        return {"status": "operacional"}
+        import smtplib
+        from app.core.config import settings
+        db_ok   = False
+        smtp_ok = False
+        # Testa DB
+        try:
+            with engine.connect() as conn:
+                from sqlalchemy import text
+                conn.execute(text("SELECT 1"))
+            db_ok = True
+        except Exception:
+            pass
+        # Testa SMTP
+        try:
+            with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=5):
+                smtp_ok = True
+        except Exception:
+            pass
+        status = "operacional" if (db_ok and smtp_ok) else "degradado"
+        return {"status": status, "db": db_ok, "smtp": smtp_ok}
 
     return app
 

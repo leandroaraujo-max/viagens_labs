@@ -93,7 +93,7 @@ class CotacaoService:
 
     def listar_solicitacoes_agencia(self, db: Session, status_filtro: Optional[str] = None):
         """Lista solicitações visíveis para a agência (aprovadas ou com cotação)."""
-        statuses_visiveis = ["AGUARDANDO_COTACAO", "COTACAO_ENVIADA", "CONCLUIDA"]
+        statuses_visiveis = ["AGUARDANDO_COTACAO", "COTACAO_ENVIADA", "PENDENTE_APROVACAO_SETOR_COTACAO", "APROVADA_AGUARDANDO_VOUCHER", "CONCLUIDA"]
         query = db.query(SolicitacaoModel).filter(
             SolicitacaoModel.status.in_(statuses_visiveis)
         )

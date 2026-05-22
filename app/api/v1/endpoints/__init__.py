@@ -4,3 +4,4 @@ from .aprovacao import router as aprovacao_router
 from .agencia import router as agencia_router
 from .duffel import router as duffel_router
 from .setor import router as setor_router
+from .voucher import router as voucher_router

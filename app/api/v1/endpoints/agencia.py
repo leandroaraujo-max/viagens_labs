@@ -72,7 +72,7 @@ def detalhar_solicitacao(
     if not sol:
         raise HTTPException(status_code=404, detail="Solicitação não encontrada.")
 
-    statuses_visiveis = {"AGUARDANDO_COTACAO", "COTACAO_ENVIADA", "CONCLUIDA"}
+    statuses_visiveis = {"AGUARDANDO_COTACAO", "COTACAO_ENVIADA", "PENDENTE_APROVACAO_SETOR_COTACAO", "APROVADA_AGUARDANDO_VOUCHER", "CONCLUIDA"}
     if sol.status not in statuses_visiveis:
         raise HTTPException(
             status_code=403,

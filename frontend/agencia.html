@@ -86,6 +86,7 @@
               <option value="">Todos os status</option>
               <option value="AGUARDANDO_COTACAO">Aguardando Cotação</option>
               <option value="COTACAO_ENVIADA">Cotação Enviada</option>
+              <option value="APROVADA_AGUARDANDO_VOUCHER">Aguardando Vouchers</option>
               <option value="CONCLUIDA">Concluída</option>
             </select>
             <button @click="carregarSolicitacoes"
@@ -397,8 +398,52 @@
               </div>
             </form>
           </div>
-        </template>
-      </template>
+
+          <!-- ─── UPLOAD DE VOUCHERS (apenas agência vencedora) ─── -->
+          <div v-if="solDetalhe.status === 'APROVADA_AGUARDANDO_VOUCHER' && solDetalhe.agencia_vencedora === agenciaNome"
+            class="bg-white rounded-xl shadow-sm border border-purple-200 p-6 mt-6">
+            <h2 class="text-lg font-bold text-purple-800 mb-1">🎫 Emitir Vouchers</h2>
+            <p class="text-xs text-gray-500 mb-5">
+              Envie um voucher (PDF, JPG ou PNG, máx. 20 MB) para cada serviço contratado.
+            </p>
+
+            <div v-if="voucherSucesso" class="mb-4 bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 text-sm">
+              ✔ {{ voucherSucesso }}
+            </div>
+            <div v-if="voucherErro" class="mb-4 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
+              {{ voucherErro }}
+            </div>
+
+            <div class="space-y-4">
+              <div v-for="tipo in tiposVoucherNecessarios(solDetalhe)" :key="tipo.valor"
+                class="flex items-center gap-4 border border-gray-200 rounded-lg p-4">
+                <span class="text-2xl">{{ tipo.icone }}</span>
+                <div class="flex-1">
+                  <p class="text-sm font-semibold text-gray-700">{{ tipo.label }}</p>
+                  <p class="text-xs text-gray-400 mt-0.5">
+                    {{ arquivosVoucher[tipo.valor] ? arquivosVoucher[tipo.valor].name : 'Nenhum arquivo selecionado' }}
+                  </p>
+                </div>
+                <label class="cursor-pointer">
+                  <span class="px-4 py-2 text-sm bg-purple-50 text-purple-700 border border-purple-300 rounded-lg hover:bg-purple-100 transition">
+                    Selecionar
+                  </span>
+                  <input type="file" class="hidden" accept=".pdf,.jpg,.jpeg,.png"
+                    @change="selecionarArquivoVoucher($event, tipo.valor)" />
+                </label>
+                <button @click="uploadVoucher(tipo.valor)"
+                  :disabled="!arquivosVoucher[tipo.valor] || enviandoVoucher[tipo.valor]"
+                  class="px-4 py-2 text-sm bg-purple-600 hover:bg-purple-700 disabled:opacity-40 text-white rounded-lg transition">
+                  {{ enviandoVoucher[tipo.valor] ? 'Enviando…' : 'Enviar' }}
+                </button>
+              </div>
+            </div>
+
+            <p class="mt-4 text-xs text-gray-400">
+              Após o envio de todos os vouchers, a solicitação será automaticamente concluída.
+            </p>
+          </div>
+
 
     </main>
   </template>
@@ -463,22 +508,24 @@ createApp({
 
     function badgeStatus(s) {
       const m = {
-        AGUARDANDO_COTACAO: 'bg-yellow-100 text-yellow-800',
-        COTACAO_ENVIADA:    'bg-blue-100 text-blue-800',
-        CONCLUIDA:          'bg-green-100 text-green-800',
-        REPROVADA:          'bg-red-100 text-red-700',
+        AGUARDANDO_COTACAO:          'bg-yellow-100 text-yellow-800',
+        COTACAO_ENVIADA:             'bg-blue-100 text-blue-800',
+        APROVADA_AGUARDANDO_VOUCHER: 'bg-purple-100 text-purple-800',
+        CONCLUIDA:                   'bg-green-100 text-green-800',
+        REPROVADA:                   'bg-red-100 text-red-700',
       };
       return m[s] || 'bg-gray-100 text-gray-600';
     }
 
     function labelStatus(s) {
       const m = {
-        AGUARDANDO_COTACAO: 'Aguardando Cotação',
-        COTACAO_ENVIADA:    'Cotação Enviada',
-        CONCLUIDA:          'Concluída',
-        AGUARDANDO_N1:      'Aguardando N1',
-        AGUARDANDO_N2:      'Aguardando N2',
-        REPROVADA:          'Reprovada',
+        AGUARDANDO_COTACAO:          'Aguardando Cotação',
+        COTACAO_ENVIADA:             'Cotação Enviada',
+        APROVADA_AGUARDANDO_VOUCHER: '🎫 Aguardando Vouchers',
+        CONCLUIDA:                   'Concluída',
+        AGUARDANDO_N1:               'Aguardando N1',
+        AGUARDANDO_N2:               'Aguardando N2',
+        REPROVADA:                   'Reprovada',
       };
       return m[s] || s;
     }
@@ -622,6 +669,65 @@ createApp({
       }
     }
 
+    // ── Vouchers ───────────────────────────────────────────────────
+    const arquivosVoucher  = reactive({});
+    const enviandoVoucher  = reactive({});
+    const voucherSucesso   = ref('');
+    const voucherErro      = ref('');
+
+    const _tiposInfo = {
+      aereo:       { label: 'Passagem Aérea',    icone: '✈' },
+      hospedagem:  { label: 'Hospedagem',        icone: '🏨' },
+      carro:       { label: 'Locação de Carro',  icone: '🚗' },
+      rodoviario:  { label: 'Transporte Rodoviário', icone: '🚌' },
+    };
+    const _mapServico = { Aereo: 'aereo', Hospedagem: 'hospedagem', Carro: 'carro', Rodoviario: 'rodoviario' };
+
+    function tiposVoucherNecessarios(sol) {
+      return (sol?.tipo_servico || '').split(',')
+        .map(s => s.trim())
+        .filter(s => _mapServico[s])
+        .map(s => ({ valor: _mapServico[s], ..._tiposInfo[_mapServico[s]] }));
+    }
+
+    function selecionarArquivoVoucher(event, tipo) {
+      arquivosVoucher[tipo] = event.target.files[0] || null;
+    }
+
+    async function uploadVoucher(tipo) {
+      const arquivo = arquivosVoucher[tipo];
+      if (!arquivo || !solDetalhe.value) return;
+      enviandoVoucher[tipo] = true;
+      voucherSucesso.value  = '';
+      voucherErro.value     = '';
+      try {
+        const fd = new FormData();
+        fd.append('tipo_voucher', tipo);
+        fd.append('arquivo', arquivo);
+        const res = await fetch(`${API}/vouchers/${solDetalhe.value.id}/upload`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token.value}` },
+          body: fd,
+        });
+        const dados = await res.json();
+        if (!res.ok) {
+          voucherErro.value = dados.detail || 'Erro ao enviar voucher.';
+          return;
+        }
+        voucherSucesso.value = `Voucher "${_tiposInfo[tipo]?.label}" enviado com sucesso!`;
+        arquivosVoucher[tipo] = null;
+        // Atualiza status se solicitação foi concluída
+        if (dados.status_solicitacao === 'CONCLUIDA') {
+          solDetalhe.value.status = 'CONCLUIDA';
+          voucherSucesso.value = '🎉 Todos os vouchers enviados! Solicitação CONCLUÍDA.';
+        }
+      } catch (e) {
+        voucherErro.value = 'Erro de conexão com o servidor.';
+      } finally {
+        enviandoVoucher[tipo] = false;
+      }
+    }
+
     onMounted(restaurarSessao);
 
     return {
@@ -630,6 +736,8 @@ createApp({
       solicitacoes, carregandoLista, filtroStatus, carregarSolicitacoes,
       solDetalhe, abrirDetalhe, voltarLista,
       formCotacao, enviandoCotacao, cotacaoSucesso, cotacaoErro, enviarCotacao,
+      arquivosVoucher, enviandoVoucher, voucherSucesso, voucherErro,
+      tiposVoucherNecessarios, selecionarArquivoVoucher, uploadVoucher,
       temServico, formatarData, formatarMoeda, badgeStatus, labelStatus, badgeCasamento,
     };
   }
@@ -637,3 +745,4 @@ createApp({
 </script>
 </body>
 </html>
+

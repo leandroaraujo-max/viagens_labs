@@ -137,3 +137,50 @@ def executar_acao(
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
 
     return resultado
+
+
+# ── Casamentos ────────────────────────────────────────────────────────────────
+
+from app.services.casamento_service import CasamentoService
+
+_casamento_svc = CasamentoService()
+
+
+@router.get("/casamentos")
+def listar_casamentos(
+    db: Session = Depends(get_db_session),
+    _: str = Depends(require_setor),
+):
+    """Lista todos os pares de casamento PENDENTES para o painel do setor."""
+    return _casamento_svc.listar_casamentos_pendentes(db)
+
+
+@router.post("/casamentos/{casamento_id}/vincular")
+def vincular_casamento(
+    casamento_id: int,
+    db: Session = Depends(get_db_session),
+    username: str = Depends(require_setor),
+):
+    """Confirma o match — gera código de grupo e marca como VINCULADO."""
+    try:
+        casamento = _casamento_svc.vincular(db, casamento_id, username)
+        db.commit()
+        return {"id": casamento.id, "status": casamento.status, "grupo_viagem": casamento.grupo_viagem}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.post("/casamentos/{casamento_id}/ignorar")
+def ignorar_casamento(
+    casamento_id: int,
+    db: Session = Depends(get_db_session),
+    username: str = Depends(require_setor),
+):
+    """Descarta o match — marca como IGNORADO."""
+    try:
+        casamento = _casamento_svc.ignorar(db, casamento_id, username)
+        db.commit()
+        return {"id": casamento.id, "status": casamento.status}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+

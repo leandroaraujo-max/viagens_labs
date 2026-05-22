@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from datetime import timedelta
+from datetime import timedelta, datetime, timezone
 from typing import List, Tuple
 import logging
 
@@ -92,7 +92,21 @@ class CasamentoService:
             )
 
         if casamentos_criados:
-            db.commit()
+            db.flush()
+            # Notifica o setor por e-mail de cada match detectado
+            for casamento in casamentos_criados:
+                try:
+                    from app.infrastructure.email_service import EmailService
+                    candidata_match = db.query(SolicitacaoModel).get(casamento.solicitacao_b_id)
+                    if candidata_match:
+                        EmailService().enviar_email_casamento_setor(
+                            nova_solicitacao,
+                            candidata_match,
+                            casamento.tipo_match,
+                            casamento.servicos_comuns,
+                        )
+                except Exception as e:
+                    logging.error(f"[Casamento] Falha ao enviar e-mail de match: {e}")
 
         return casamentos_criados
 
@@ -111,5 +125,56 @@ class CasamentoService:
                 "tipo_match": r.tipo_match,
                 "destino": r.destino,
                 "servicos_comuns": r.servicos_comuns,
+                "status": getattr(r, 'status', 'PENDENTE'),
+                "data_casamento": r.data_casamento.isoformat() if r.data_casamento else None,
             })
         return resultado
+
+    # ── Ações do setor ──────────────────────────────────────────────────────────
+
+    def listar_casamentos_pendentes(self, db: Session) -> List[dict]:
+        """Lista todos os pares de casamento com status PENDENTE (painel do setor)."""
+        registros = db.query(CasamentoModel).filter_by(status='PENDENTE').order_by(CasamentoModel.data_casamento.desc()).all()
+        resultado = []
+        for r in registros:
+            sol_a = db.query(SolicitacaoModel).get(r.solicitacao_a_id)
+            sol_b = db.query(SolicitacaoModel).get(r.solicitacao_b_id)
+            resultado.append({
+                "id":              r.id,
+                "tipo_match":      r.tipo_match,
+                "destino":         r.destino,
+                "servicos_comuns": r.servicos_comuns,
+                "data_casamento":  r.data_casamento.isoformat() if r.data_casamento else None,
+                "status":          getattr(r, 'status', 'PENDENTE'),
+                "protocolo_a":     sol_a.protocolo if sol_a else '?',
+                "protocolo_b":     sol_b.protocolo if sol_b else '?',
+                "solicitacao_a_id": r.solicitacao_a_id,
+                "solicitacao_b_id": r.solicitacao_b_id,
+            })
+        return resultado
+
+    def vincular(self, db: Session, casamento_id: int, operador: str) -> CasamentoModel:
+        """Operador confirma o match — gera código de grupo e marca como VINCULADO."""
+        casamento = db.query(CasamentoModel).get(casamento_id)
+        if not casamento:
+            raise ValueError(f"Casamento {casamento_id} não encontrado")
+        # Gera código de grupo GRP-XXXXXXXX
+        import secrets
+        grupo = f"GRP-{secrets.token_hex(4).upper()}"
+        casamento.status        = 'VINCULADO'
+        casamento.operador_acao = operador
+        casamento.data_acao     = datetime.now(timezone.utc)
+        casamento.grupo_viagem  = grupo
+        db.flush()
+        return casamento
+
+    def ignorar(self, db: Session, casamento_id: int, operador: str) -> CasamentoModel:
+        """Operador descarta o match — marca como IGNORADO."""
+        casamento = db.query(CasamentoModel).get(casamento_id)
+        if not casamento:
+            raise ValueError(f"Casamento {casamento_id} não encontrado")
+        casamento.status        = 'IGNORADO'
+        casamento.operador_acao = operador
+        casamento.data_acao     = datetime.now(timezone.utc)
+        db.flush()
+        return casamento

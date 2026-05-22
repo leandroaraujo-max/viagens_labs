@@ -157,10 +157,35 @@ class AprovacaoService:
         token.data_resposta = datetime.now()
         token.observacao_resposta = observacao
 
+        status_anterior = solicitacao.status
+
         if acao == "aprovar":
             self._processar_aprovacao(solicitacao, token)
         else:
             solicitacao.status = "REPROVADA"
+            try:
+                from app.infrastructure.email_service import EmailService
+                EmailService().enviar_email_reprovacao_viajante(
+                    solicitacao,
+                    etapa=f"Gestor {token.nivel}",
+                    motivo=observacao,
+                )
+            except Exception as e:
+                logger.error(f"Falha ao enviar e-mail de reprovação ao viajante: {e}")
+
+        # Auditoria
+        try:
+            from app.infrastructure.auditoria import log_evento
+            log_evento(
+                self.db, solicitacao.id,
+                evento="APROVACAO" if acao == "aprovar" else "REPROVACAO",
+                de_status=status_anterior,
+                para_status=solicitacao.status,
+                ator=token.email_aprovador,
+                observacao=f"Nivel {token.nivel} — {observacao}",
+            )
+        except Exception:
+            pass
 
         self.db.commit()
 

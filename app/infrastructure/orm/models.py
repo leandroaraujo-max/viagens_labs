@@ -67,6 +67,10 @@ class SolicitacaoModel(Base):
     # Agência vencedora escolhida pelo Setor (Fase 4)
     agencia_vencedora = Column(String(100), nullable=True)
 
+    # Contadores de lembretes SLA (usados pelo sla_scheduler)
+    lembrete_n1_count  = Column(Integer, default=0)
+    lembrete_cot_count = Column(Integer, default=0)
+
     data_criacao = Column(DateTime(timezone=True), server_default=func.now())
     data_atualizacao = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -152,6 +156,12 @@ class CasamentoModel(Base):
     servicos_comuns = Column(String(200), default='')   # serviços em comum
     data_casamento  = Column(DateTime(timezone=True), server_default=func.now())
 
+    # Ação do operador
+    status         = Column(String(20), default='PENDENTE')   # PENDENTE / VINCULADO / IGNORADO
+    operador_acao  = Column(String(100), default='')
+    data_acao      = Column(DateTime, nullable=True)
+    grupo_viagem   = Column(String(20), nullable=True)        # código do grupo quando VINCULADO
+
 class UsuarioAgenciaModel(Base):
     """Usuários externos das agências (Tastur/Kontrip) — autenticados por senha hash, não por AD."""
     __tablename__ = "usuarios_agencia"
@@ -163,3 +173,17 @@ class UsuarioAgenciaModel(Base):
     senha_hash   = Column(String(200), nullable=False)
     ativo        = Column(Boolean, default=True)
     data_criacao = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class LogEventoModel(Base):
+    """Trilha de auditoria — registra todas as transições de status e ações relevantes."""
+    __tablename__ = "log_eventos"
+
+    id             = Column(Integer, primary_key=True, index=True)
+    solicitacao_id = Column(Integer, ForeignKey("solicitacoes.id"), nullable=False, index=True)
+    evento         = Column(String(100), nullable=False)   # STATUS_CHANGE | APROVACAO | REPROVACAO | VOUCHER
+    de_status      = Column(String(50),  default='')
+    para_status    = Column(String(50),  default='')
+    ator           = Column(String(200), default='')       # username ou 'sistema'
+    observacao     = Column(Text, default='')
+    data_criacao   = Column(DateTime(timezone=True), server_default=func.now())

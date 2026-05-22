@@ -551,3 +551,317 @@ class EmailService:
           {_alerta("Em caso de dúvidas, entre em contato com o setor de viagens pelo Reply-To deste e-mail.", _VERDE_BG, _VERDE)}"""
         return _base_html(faixa, corpo)
 
+    # ── Notificar agência PERDEDORA ───────────────────────────────────────────
+
+    def enviar_email_agencia_perdedora(self, solicitacao, agencia_nome: str) -> bool:
+        """Notifica a agência que não foi selecionada pelo setor."""
+        email_map = {
+            "Tastur":  settings.AGENCIA_TASTUR_EMAIL,
+            "Kontrip": settings.AGENCIA_KONTRIP_EMAIL,
+        }
+        email_destino = email_map.get(agencia_nome, "")
+        if not email_destino:
+            return False
+        assunto = f"[ViagensLabs] {solicitacao.protocolo} — Cotação não selecionada"
+        html    = self._tpl_agencia_perdedora(solicitacao, agencia_nome)
+        return self._enviar(email_destino, assunto, html)
+
+    def _tpl_agencia_perdedora(self, solicitacao, agencia_nome: str) -> str:
+        faixa = _faixa(_CINZA_BG, _CINZA_TEXTO, "📋", f"Cotação Não Selecionada — {agencia_nome}",
+                       f"Protocolo {solicitacao.protocolo}")
+        corpo = f"""
+          <p style="margin:0 0 16px">Prezada <strong>{agencia_nome}</strong>,</p>
+          <p style="margin:0 0 16px;color:#64748b">
+            Agradecemos sua cotação para o protocolo <strong>{solicitacao.protocolo}</strong>
+            ({solicitacao.destino_cidade} / {solicitacao.destino_estado}).
+            Neste caso, o setor de viagens optou por outra proposta.
+          </p>
+          {_alerta("Agradecemos a participação e contamos com vocês nas próximas oportunidades.", _CINZA_BG, _CINZA_TEXTO)}"""
+        return _base_html(faixa, corpo)
+
+    # ── Notificar viajante: viagem aprovada pelo setor ────────────────────────
+
+    def enviar_email_viajante_aprovado(self, solicitacao, agencia_nome: str) -> bool:
+        """Avisa ao viajante que a viagem foi aprovada e a agência foi escolhida."""
+        assunto    = f"[ViagensLabs] {solicitacao.protocolo} — Viagem Aprovada ✈"
+        email_dest = f"{solicitacao.solicitante_username}@magazineluiza.com.br"
+        html       = self._tpl_viajante_aprovado(solicitacao, agencia_nome)
+        return self._enviar(email_dest, assunto, html)
+
+    def _tpl_viajante_aprovado(self, solicitacao, agencia_nome: str) -> str:
+        data_volta = solicitacao.data_volta.strftime("%d/%m/%Y") if solicitacao.data_volta else "—"
+        faixa = _faixa(_VERDE_BG, _VERDE, "✅", "Viagem Aprovada!",
+                       f"Protocolo {solicitacao.protocolo} — aguardando emissão dos vouchers")
+        dados = _tabela_dados([
+            ("Protocolo",    f'<strong style="color:{_AZUL_MEDIO}">{solicitacao.protocolo}</strong>'),
+            ("Destino",      f"{solicitacao.destino_cidade} / {solicitacao.destino_estado}"),
+            ("Ida",          solicitacao.data_ida.strftime("%d/%m/%Y")),
+            ("Retorno",      data_volta),
+            ("Serviços",     solicitacao.tipo_servico.replace(",", " · ")),
+            ("Agência",      f"<strong>{agencia_nome}</strong>"),
+        ])
+        corpo = f"""
+          <p style="margin:0 0 16px">Olá, <strong>{solicitacao.solicitante_username}</strong>,</p>
+          <p style="margin:0 0 16px;color:#64748b">
+            Boa notícia! Sua solicitação foi aprovada pelo setor de viagens.
+            A agência <strong>{agencia_nome}</strong> irá emitir os vouchers em breve.
+          </p>
+          {dados}
+          {_alerta("Você receberá um novo e-mail com os vouchers assim que forem emitidos.", _VERDE_BG, _VERDE)}"""
+        return _base_html(faixa, corpo)
+
+    # ── Notificar viajante: reprova em qualquer etapa ─────────────────────────
+
+    def enviar_email_reprovacao_viajante(self, solicitacao, etapa: str, motivo: str = "") -> bool:
+        """Informa ao viajante que a solicitação foi reprovada, com etapa e motivo."""
+        assunto    = f"[ViagensLabs] {solicitacao.protocolo} — Solicitação Reprovada"
+        email_dest = f"{solicitacao.solicitante_username}@magazineluiza.com.br"
+        html       = self._tpl_reprovacao_viajante(solicitacao, etapa, motivo)
+        return self._enviar(email_dest, assunto, html)
+
+    def _tpl_reprovacao_viajante(self, solicitacao, etapa: str, motivo: str) -> str:
+        data_volta = solicitacao.data_volta.strftime("%d/%m/%Y") if solicitacao.data_volta else "—"
+        faixa = _faixa(_VERMELHO_BG, _VERMELHO, "✗", "Solicitação Reprovada",
+                       f"Protocolo {solicitacao.protocolo}")
+        dados = _tabela_dados([
+            ("Protocolo",    f'<strong style="color:{_AZUL_MEDIO}">{solicitacao.protocolo}</strong>'),
+            ("Destino",      f"{solicitacao.destino_cidade} / {solicitacao.destino_estado}"),
+            ("Ida",          solicitacao.data_ida.strftime("%d/%m/%Y")),
+            ("Retorno",      data_volta),
+            ("Reprovada por", etapa),
+        ])
+        motivo_html = ""
+        if motivo and motivo.strip():
+            motivo_html = f"""
+              <div style="margin:16px 0;padding:14px 18px;background:{_VERMELHO_BG};
+                          border-left:4px solid {_VERMELHO};border-radius:6px">
+                <p style="margin:0;font-size:13px;color:{_VERMELHO}">
+                  <strong>Motivo informado:</strong><br>{motivo}
+                </p>
+              </div>"""
+        corpo = f"""
+          <p style="margin:0 0 16px">Olá, <strong>{solicitacao.solicitante_username}</strong>,</p>
+          <p style="margin:0 0 16px;color:#64748b">
+            Infelizmente sua solicitação de viagem não foi aprovada.
+          </p>
+          {dados}
+          {motivo_html}
+          {_alerta("Em caso de dúvidas entre em contato com o setor de viagens respondendo este e-mail.", _VERMELHO_BG, _VERMELHO)}"""
+        return _base_html(faixa, corpo)
+
+    # ── Notificar viajante: vouchers emitidos (CONCLUIDA) ─────────────────────
+
+    def enviar_email_vouchers_viajante(self, solicitacao, vouchers: list) -> bool:
+        """Envia os links dos vouchers ao viajante ao concluir a solicitação."""
+        assunto    = f"[ViagensLabs] {solicitacao.protocolo} — Seus Vouchers ✈"
+        email_dest = f"{solicitacao.solicitante_username}@magazineluiza.com.br"
+        html       = self._tpl_vouchers_viajante(solicitacao, vouchers)
+        return self._enviar(email_dest, assunto, html)
+
+    def _tpl_vouchers_viajante(self, solicitacao, vouchers: list) -> str:
+        data_volta = solicitacao.data_volta.strftime("%d/%m/%Y") if solicitacao.data_volta else "—"
+        faixa = _faixa(_VERDE_BG, _VERDE, "🎫", "Sua Viagem está Confirmada!",
+                       f"Protocolo {solicitacao.protocolo} — vouchers disponíveis")
+        dados = _tabela_dados([
+            ("Protocolo", f'<strong style="color:{_AZUL_MEDIO}">{solicitacao.protocolo}</strong>'),
+            ("Destino",   f"{solicitacao.destino_cidade} / {solicitacao.destino_estado}"),
+            ("Ida",       solicitacao.data_ida.strftime("%d/%m/%Y")),
+            ("Retorno",   data_volta),
+            ("Agência",   solicitacao.agencia_vencedora or "—"),
+        ])
+        _nomes_voucher = {"aereo": "✈ Passagem Aérea", "hospedagem": "🏨 Hospedagem", "carro": "🚗 Carro", "rodoviario": "🚌 Rodoviário"}
+        links_html = ""
+        for v in vouchers:
+            label = _nomes_voucher.get(v.tipo_voucher, v.tipo_voucher.capitalize())
+            url   = f"{self.base_url}/vouchers/{v.caminho_arquivo}"
+            links_html += f'<div style="margin:8px 0"><a href="{url}" style="display:inline-block;padding:8px 20px;background:{_AZUL_MEDIO};color:#fff;border-radius:6px;text-decoration:none;font-size:13px">{label} — Download</a></div>'
+        corpo = f"""
+          <p style="margin:0 0 16px">Olá, <strong>{solicitacao.solicitante_username}</strong>,</p>
+          <p style="margin:0 0 16px;color:#64748b">Seus vouchers de viagem já estão disponíveis. Boa viagem! ✈</p>
+          {dados}
+          <div style="margin:20px 0">{links_html}</div>
+          {_alerta("Guarde este e-mail. Os links ficam disponíveis por 90 dias.", _VERDE_BG, _VERDE)}"""
+        return _base_html(faixa, corpo)
+
+    # ── Notificar setor: solicitação concluída ────────────────────────────────
+
+    def enviar_email_conclusao_setor(self, solicitacao) -> bool:
+        """Cópia interna ao setor quando uma solicitação é concluída."""
+        assunto = f"[ViagensLabs] CONCLUÍDA — {solicitacao.protocolo}"
+        html    = self._tpl_conclusao_setor(solicitacao)
+        return self._enviar(settings.SETOR_EMAIL, assunto, html)
+
+    def _tpl_conclusao_setor(self, solicitacao) -> str:
+        faixa = _faixa(_VERDE_BG, _VERDE, "✓", "Solicitação Concluída",
+                       f"Protocolo {solicitacao.protocolo} — todos os vouchers emitidos")
+        dados = _tabela_dados([
+            ("Protocolo",   solicitacao.protocolo),
+            ("Solicitante", solicitacao.solicitante_username),
+            ("Destino",     f"{solicitacao.destino_cidade} / {solicitacao.destino_estado}"),
+            ("Ida",         solicitacao.data_ida.strftime("%d/%m/%Y")),
+            ("Agência",     solicitacao.agencia_vencedora or "—"),
+        ])
+        corpo = f"""
+          <p style="margin:0 0 16px;color:#64748b">
+            Os vouchers foram emitidos e enviados ao viajante. Solicitação encerrada com sucesso.
+          </p>
+          {dados}"""
+        return _base_html(faixa, corpo)
+
+    # ── Lembrete SLA: aprovador N1/N2 ────────────────────────────────────────
+
+    def enviar_email_lembrete_n1(self, solicitacao, token, numero_lembrete: int) -> bool:
+        """Lembrete ao aprovador antes do SLA vencer."""
+        assunto    = f"[Lembrete {numero_lembrete}/2] Aprovação pendente — {solicitacao.protocolo}"
+        email_dest = token.email_aprovador
+        html       = self._tpl_lembrete_n1(solicitacao, token, numero_lembrete)
+        return self._enviar(email_dest, assunto, html)
+
+    def _tpl_lembrete_n1(self, solicitacao, token, numero_lembrete: int) -> str:
+        link         = f"{self.base_url}/portal_aprovacao.html?token={token.uuid}"
+        urgencia_cor = _VERMELHO if numero_lembrete >= 2 else _AMARELO
+        urgencia_bg  = _VERMELHO_BG if numero_lembrete >= 2 else _AMARELO_BG
+        faixa = _faixa(urgencia_bg, urgencia_cor, "⏰",
+                       f"Lembrete {numero_lembrete}/2 — Aprovação Pendente",
+                       f"Protocolo {solicitacao.protocolo} aguarda sua decisão")
+        dados = _tabela_dados([
+            ("Protocolo",   solicitacao.protocolo),
+            ("Solicitante", solicitacao.solicitante_username),
+            ("Destino",     f"{solicitacao.destino_cidade} / {solicitacao.destino_estado}"),
+            ("Ida",         solicitacao.data_ida.strftime("%d/%m/%Y")),
+            ("Expira em",   token.data_expiracao.strftime("%d/%m/%Y %H:%M")),
+        ])
+        corpo = f"""
+          <p style="margin:0 0 16px">Olá, <strong>{token.nome_aprovador}</strong>,</p>
+          <p style="margin:0 0 16px;color:#64748b">
+            Este é o lembrete <strong>{numero_lembrete}</strong> de 2.
+            A solicitação abaixo ainda aguarda sua aprovação.
+          </p>
+          {dados}
+          {_botao(link, "Aprovar ou Reprovar Agora", urgencia_cor)}"""
+        return _base_html(faixa, corpo)
+
+    # ── Alerta SLA: escala N2 (N1 emergencial não respondeu) ─────────────────
+
+    def enviar_email_escala_n2(self, solicitacao, token_n2) -> bool:
+        """Notifica N2 e setor quando N1 emergencial não respondeu no prazo."""
+        link    = f"{self.base_url}/portal_aprovacao.html?token={token_n2.uuid}"
+        assunto = f"[ESCALADO N2] {solicitacao.protocolo} — N1 não respondeu a tempo"
+        html    = self._tpl_escala_n2(solicitacao, token_n2, link)
+        return self._enviar([token_n2.email_aprovador, settings.SETOR_EMAIL], assunto, html)
+
+    def _tpl_escala_n2(self, solicitacao, token_n2, link: str) -> str:
+        faixa = _faixa(_VERMELHO_BG, _VERMELHO, "🔺", "Escalado para N2",
+                       f"{solicitacao.protocolo} — N1 não respondeu no prazo emergencial")
+        dados = _tabela_dados([
+            ("Protocolo",   solicitacao.protocolo),
+            ("Solicitante", solicitacao.solicitante_username),
+            ("Destino",     f"{solicitacao.destino_cidade} / {solicitacao.destino_estado}"),
+            ("Ida",         solicitacao.data_ida.strftime("%d/%m/%Y")),
+            ("SLA N2",      "8 horas a partir deste e-mail"),
+        ])
+        corpo = f"""
+          <p style="margin:0 0 16px">Olá, <strong>{token_n2.nome_aprovador}</strong>,</p>
+          <p style="margin:0 0 16px;color:#64748b">
+            O aprovador N1 não respondeu dentro do prazo de 4h (viagem emergencial).
+            A aprovação foi escalada automaticamente para você.
+          </p>
+          {dados}
+          {_botao(link, "Aprovar ou Reprovar (N2)", _VERMELHO)}"""
+        return _base_html(faixa, corpo)
+
+    # ── Alerta SLA: aprovação manual necessária ───────────────────────────────
+
+    def enviar_email_aprovacao_manual(self, solicitacao) -> bool:
+        """Alerta o setor quando N1 comum não respondeu após 2 lembretes."""
+        assunto = f"[AÇÃO MANUAL] {solicitacao.protocolo} — N1 não respondeu"
+        html    = self._tpl_aprovacao_manual(solicitacao)
+        return self._enviar(settings.SETOR_EMAIL, assunto, html)
+
+    def _tpl_aprovacao_manual(self, solicitacao) -> str:
+        faixa = _faixa(_AMARELO_BG, _AMARELO, "⚠️", "Aprovação Manual Necessária",
+                       f"N1 não respondeu após 2 lembretes — {solicitacao.protocolo}")
+        dados = _tabela_dados([
+            ("Protocolo",    solicitacao.protocolo),
+            ("Solicitante",  solicitacao.solicitante_username),
+            ("Destino",      f"{solicitacao.destino_cidade} / {solicitacao.destino_estado}"),
+            ("Ida",          solicitacao.data_ida.strftime("%d/%m/%Y")),
+            ("Aprovador N1", solicitacao.aprovador_n1_nome),
+        ])
+        corpo = f"""
+          <p style="margin:0 0 16px;color:#64748b">
+            O aprovador N1 (<strong>{solicitacao.aprovador_n1_nome}</strong>) não respondeu
+            dentro do prazo após 2 lembretes automáticos.
+            Esta solicitação precisa de intervenção manual pelo setor de viagens.
+          </p>
+          {dados}
+          {_alerta("Acesse o painel do setor para tomar uma decisão sobre esta solicitação.", _AMARELO_BG, _AMARELO)}"""
+        return _base_html(faixa, corpo)
+
+    # ── Lembrete SLA: cotação às agências ─────────────────────────────────────
+
+    def enviar_email_lembrete_cotacao(self, solicitacao, numero_lembrete: int) -> bool:
+        """Lembrete às agências quando o prazo de cotação está vencendo."""
+        assunto = f"[Lembrete {numero_lembrete}/2] Cotação pendente — {solicitacao.protocolo}"
+        html    = self._tpl_lembrete_cotacao(solicitacao, numero_lembrete)
+        emails  = [e for e in [settings.AGENCIA_TASTUR_EMAIL, settings.AGENCIA_KONTRIP_EMAIL] if e]
+        if not emails:
+            return False
+        return self._enviar(emails, assunto, html)
+
+    def _tpl_lembrete_cotacao(self, solicitacao, numero_lembrete: int) -> str:
+        link  = f"{self.base_url}/agencia.html"
+        prazo = "4 horas" if solicitacao.classificacao == "Emergencial" else "24 horas"
+        faixa = _faixa(_AMARELO_BG, _AMARELO, "⏰",
+                       f"Lembrete {numero_lembrete}/2 — Cotação Pendente",
+                       f"Protocolo {solicitacao.protocolo} aguarda cotação")
+        corpo = f"""
+          <p style="margin:0 0 16px;color:#64748b">
+            O protocolo abaixo ainda aguarda cotação. Prazo: <strong>{prazo}</strong>.
+          </p>
+          {_tabela_dados([
+              ("Protocolo", solicitacao.protocolo),
+              ("Destino",   f"{solicitacao.destino_cidade} / {solicitacao.destino_estado}"),
+              ("Ida",       solicitacao.data_ida.strftime("%d/%m/%Y")),
+              ("Serviços",  solicitacao.tipo_servico.replace(",", " · ")),
+          ])}
+          {_botao(link, "Acessar Portal e Enviar Cotação", _AMARELO)}"""
+        return _base_html(faixa, corpo)
+
+    # ── Notificar setor: match de casamento detectado ─────────────────────────
+
+    def enviar_email_casamento_setor(self, sol_a, sol_b, tipo_match: str, servicos_comuns: str) -> bool:
+        """Avisa o setor que duas solicitações podem ser otimizadas em conjunto."""
+        assunto = f"[ViagensLabs] Match {tipo_match} — {sol_a.protocolo} / {sol_b.protocolo}"
+        html    = self._tpl_casamento_setor(sol_a, sol_b, tipo_match, servicos_comuns)
+        return self._enviar(settings.SETOR_EMAIL, assunto, html)
+
+    def _tpl_casamento_setor(self, sol_a, sol_b, tipo_match: str, servicos_comuns: str) -> str:
+        badge_cor = {"TOTAL": _VERDE, "PARCIAL_A": _AZUL_MEDIO, "PARCIAL_B": _AMARELO}.get(tipo_match, _AZUL_MEDIO)
+        badge_bg  = {"TOTAL": _VERDE_BG, "PARCIAL_A": _AZUL_CLARO, "PARCIAL_B": _AMARELO_BG}.get(tipo_match, _AZUL_CLARO)
+        faixa = _faixa(badge_bg, badge_cor, "🔗", f"Match Detectado — {tipo_match}",
+                       f"{sol_a.protocolo} e {sol_b.protocolo} podem ser otimizados")
+        bloco_a = _tabela_dados([
+            ("Protocolo",  sol_a.protocolo), ("Viajante", sol_a.solicitante_username),
+            ("Destino",    f"{sol_a.destino_cidade} / {sol_a.destino_estado}"),
+            ("Ida",        sol_a.data_ida.strftime("%d/%m/%Y")),
+            ("Serviços",   sol_a.tipo_servico.replace(",", " · ")),
+        ])
+        bloco_b = _tabela_dados([
+            ("Protocolo",  sol_b.protocolo), ("Viajante", sol_b.solicitante_username),
+            ("Destino",    f"{sol_b.destino_cidade} / {sol_b.destino_estado}"),
+            ("Ida",        sol_b.data_ida.strftime("%d/%m/%Y")),
+            ("Serviços",   sol_b.tipo_servico.replace(",", " · ")),
+        ])
+        link = f"{self.base_url}/painel.html"
+        corpo = f"""
+          <p style="margin:0 0 16px;color:#64748b">
+            O motor de matching detectou que as duas solicitações abaixo compartilham
+            <strong>{servicos_comuns}</strong> para o mesmo destino/datas.
+            Acesse o painel para <strong>Vincular</strong> ou <strong>Ignorar</strong> o match.
+          </p>
+          <p style="font-weight:600;margin:16px 0 4px">Solicitação A</p>{bloco_a}
+          <p style="font-weight:600;margin:16px 0 4px">Solicitação B</p>{bloco_b}
+          {_botao(link, "Gerenciar Casamentos no Painel", badge_cor)}"""
+        return _base_html(faixa, corpo)
+

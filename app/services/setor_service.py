@@ -9,15 +9,17 @@ _casamento_svc = CasamentoService()
 
 # Statuses visíveis no painel do setor
 STATUSES_SETOR = {
+    "AGUARDANDO_N1",
+    "AGUARDANDO_N2",
     "PENDENTE_PRE_APROVACAO_SETOR",
     "AGUARDANDO_COTACAO",
     "COTACAO_ENVIADA",
     "PENDENTE_APROVACAO_SETOR_COTACAO",
+    "APROVADA_AGUARDANDO_VOUCHER",
+    "PENDENTE_APROVACAO_MANUAL",
     "CONCLUIDA",
     "REPROVADA",
     "CADEIA_INCOMPLETA",
-    "AGUARDANDO_N1",
-    "AGUARDANDO_N2",
 }
 
 ACOES_VALIDAS = {
@@ -122,6 +124,11 @@ class SetorService:
         elif acao == "PRE_REPROVAR":
             sol.status = "REPROVADA"
             logger.info(f"[Setor] {sol.protocolo} pré-reprovado. Obs: {observacao}")
+            try:
+                from app.infrastructure.email_service import EmailService
+                EmailService().enviar_email_reprovacao_viajante(sol, etapa="Setor (Pré-Aprovação)", motivo=observacao)
+            except Exception as e:
+                logger.error(f"[Setor] Falha ao notificar viajante sobre pré-reprovação em {sol.protocolo}: {e}")
 
         elif acao in ("APROVAR_TASTUR", "APROVAR_KONTRIP"):
             agencia = "Tastur" if acao == "APROVAR_TASTUR" else "Kontrip"
@@ -130,6 +137,11 @@ class SetorService:
         elif acao == "REPROVAR":
             sol.status = "REPROVADA"
             logger.info(f"[Setor] {sol.protocolo} reprovado após cotações. Obs: {observacao}")
+            try:
+                from app.infrastructure.email_service import EmailService
+                EmailService().enviar_email_reprovacao_viajante(sol, etapa="Setor", motivo=observacao)
+            except Exception as e:
+                logger.error(f"[Setor] Falha ao notificar viajante sobre reprovação em {sol.protocolo}: {e}")
 
         elif acao == "REENVIAR_AGENCIAS":
             self._reenviar_agencias(sol)
@@ -151,16 +163,20 @@ class SetorService:
             logger.error(f"[Setor] Falha ao enviar e-mail às agências para {sol.protocolo}: {e}")
 
     def _aprovar_agencia(self, db: Session, sol: SolicitacaoModel, agencia_nome: str) -> None:
-        """Escolhe a agência vencedora e encerra a solicitação."""
-        sol.status = "CONCLUIDA"
+        """Escolhe a agência vencedora → status APROVADA_AGUARDANDO_VOUCHER. CONCLUIDA só após vouchers."""
+        sol.status = "APROVADA_AGUARDANDO_VOUCHER"
         sol.agencia_vencedora = agencia_nome
         db.flush()
-        logger.info(f"[Setor] {sol.protocolo} concluído → agência vencedora: {agencia_nome}")
+        logger.info(f"[Setor] {sol.protocolo} → APROVADA_AGUARDANDO_VOUCHER (agência: {agencia_nome})")
+        agencia_perdedora = "Kontrip" if agencia_nome == "Tastur" else "Tastur"
         try:
             from app.infrastructure.email_service import EmailService
-            EmailService().enviar_email_agencia_vencedora(sol, agencia_nome)
+            svc = EmailService()
+            svc.enviar_email_agencia_vencedora(sol, agencia_nome)
+            svc.enviar_email_agencia_perdedora(sol, agencia_perdedora)
+            svc.enviar_email_viajante_aprovado(sol, agencia_nome)
         except Exception as e:
-            logger.error(f"[Setor] Falha ao notificar agência vencedora {agencia_nome}: {e}")
+            logger.error(f"[Setor] Falha ao notificar partes em {sol.protocolo}: {e}")
 
     def _reenviar_agencias(self, sol: SolicitacaoModel) -> None:
         """Reenvia pedido de cotação às duas agências sem alterar o status."""
