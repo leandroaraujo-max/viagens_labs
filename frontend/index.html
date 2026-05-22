@@ -912,6 +912,10 @@
                         if (perfil.celular)         celularViajante.value        = perfil.celular;
                         if (perfil.data_nascimento) dataNascimentoViajante.value = perfil.data_nascimento;
                         if (perfil.celular || perfil.data_nascimento) perfilSalvo.value = true;
+                        // Se ainda não há celular salvo, pré-preenche com o telefone do RH (foneres)
+                        if (!celularViajante.value && viajanteDados.value?.foneres) {
+                            celularViajante.value = viajanteDados.value.foneres;
+                        }
                     } catch (e) {
                         console.warn('[perfil] erro ao carregar:', e.message);
                     }

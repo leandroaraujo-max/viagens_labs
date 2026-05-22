@@ -4,6 +4,8 @@ from typing import Optional, Dict
 import re
 
 class BigQueryService:
+    TABLE_CAD_FUNCIONARIO = "maga-bigdata.balboa.cad_funcionario"
+
     def __init__(self, project_id: str, table_assignee: str, table_funcionarios: str):
         self.project_id = project_id
         self.table_assignee = table_assignee
@@ -57,10 +59,18 @@ class BigQueryService:
               CONCAT(g1.first_name, ' ', g1.last_name)       AS aprovador_n1_nome,
               g1.email                                       AS aprovador_n1_email,
               CONCAT(g2.first_name, ' ', g2.last_name)       AS aprovador_n2_nome,
-              g2.email                                       AS aprovador_n2_email
+              g2.email                                       AS aprovador_n2_email,
+              -- cad_funcionario: telefone e dados complementares
+              cf.FONERES                                     AS foneres,
+              cf.CODCHAPA                                    AS codchapa,
+              cf.CODFUNCAO                                   AS codfuncao,
+              cf.CODFIL                                      AS codfil
             FROM `{self.table_assignee}` AS t1
             INNER JOIN `{self.table_funcionarios}` AS t2
               ON t1.CUSTOM1 = CAST(t2.ID AS STRING)
+            LEFT JOIN `{self.TABLE_CAD_FUNCIONARIO}` AS cf
+              ON LPAD(CAST(cf.CGCCPF AS STRING), 11, '0') = LPAD(t1.custom2, 11, '0')
+              AND cf.FLATIVO = 'S'
             LEFT JOIN `{self.table_assignee}` AS g1
               ON t1.superior = g1.id AND g1.active = TRUE
             LEFT JOIN `{self.table_assignee}` AS g2
@@ -102,6 +112,11 @@ class BigQueryService:
                     "aprovador_n1_email": getattr(linha, "aprovador_n1_email", ""),
                     "aprovador_n2_nome":  getattr(linha, "aprovador_n2_nome",  ""),
                     "aprovador_n2_email": getattr(linha, "aprovador_n2_email", ""),
+                    # cad_funcionario
+                    "foneres":            str(getattr(linha, "foneres",   "") or ""),
+                    "codchapa":           str(getattr(linha, "codchapa",  "") or ""),
+                    "codfuncao":          str(getattr(linha, "codfuncao", "") or ""),
+                    "codfil":             str(getattr(linha, "codfil",    "") or ""),
                 }
 
             return None
