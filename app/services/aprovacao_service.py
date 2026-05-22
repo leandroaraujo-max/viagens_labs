@@ -294,11 +294,18 @@ class AprovacaoService:
             logger.error(f"Falha ao enviar e-mail de pré-aprovação ao setor: {e}")
 
     def _enviar_email_aprovacao(self, solicitacao: SolicitacaoModel, token: TokenAprovacaoModel) -> None:
+        # Registrar no GAS relay (aprovação pelo celular fora da intranet)
+        try:
+            from app.infrastructure.google_relay_service import get_relay
+            get_relay().registrar_aprovacao(token, solicitacao)
+        except Exception as e:
+            logger.warning(f'[GAS] Não foi possível registrar token no relay: {e}')
+        # Enviar e-mail com link GAS (se configurado) ou intranet
         try:
             from app.infrastructure.email_service import EmailService
             EmailService().enviar_email_aprovacao(solicitacao, token)
         except Exception as e:
-            logger.error(f"Falha ao enviar e-mail de aprovação N{token.nivel}: {e}")
+            logger.error(f'Falha ao enviar e-mail de aprovação N{token.nivel}: {e}')
 
     def _enviar_email_resultado(
         self, solicitacao: SolicitacaoModel, nivel: str, acao: str, aprovador_nome: str

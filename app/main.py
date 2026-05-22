@@ -72,6 +72,13 @@ async def lifespan(app: FastAPI):
         print("SLA Scheduler iniciado.")
     except Exception as exc:
         print(f"[WARN] SLA Scheduler não iniciado: {exc}")
+    # Inicia GAS relay scheduler (polling de decisões externas)
+    try:
+        from app.infrastructure.aprovacao_relay_scheduler import iniciar_relay_scheduler
+        from app.infrastructure.database import SessionLocal
+        iniciar_relay_scheduler(SessionLocal)
+    except Exception as exc:
+        print(f"[WARN] GAS Relay Scheduler não iniciado: {exc}")
     yield
 
 def create_app() -> FastAPI:

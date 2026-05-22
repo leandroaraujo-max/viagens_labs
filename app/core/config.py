@@ -24,6 +24,17 @@ class Settings(BaseSettings):
     # a URL pública/VPN sem alterar código. Padrão: mesmo valor de BASE_URL.
     BASE_URL_APROVACAO: str = "http://viagenslabs.magazineluiza.intranet"
 
+    # ── Google Apps Script Relay ───────────────────────────────────────────────
+    # Quando configurado, o GAS atua como portal público de aprovação (celular).
+    # O FastAPI publica aprovações pendentes no GAS e faz polling das decisões.
+    #
+    # GAS_RELAY_URL      → URL pública do Web App ("Qualquer pessoa" no deploy)
+    # GAS_SECRET         → String secreta compartilhada (FastAPI ↔ GAS Script Properties)
+    # GAS_POLL_INTERVALO → segundos entre cada poll (padrão: 60)
+    GAS_RELAY_URL:      str = ""
+    GAS_SECRET:         str = ""
+    GAS_POLL_INTERVALO: int = 60
+
     # Duffel API — busca consultiva de voos (token via .env, nunca hardcoded)
     DUFFEL_TOKEN: str = ""
     DUFFEL_BASE_URL: str = "https://api.duffel.com"
