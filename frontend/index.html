@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portal de Viagens | Luizalabs</title>
+    <!-- Fundo escuro aplicado antes de qualquer script para evitar flash branco -->
+    <style>html,body{background:#0f172a!important}</style>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -1038,6 +1040,8 @@
                     buscarVoosDuffel, selecionarVoo, formatarHora, formatarDuracao,
                     // Autocomplete IBGE
                     acCidades, buscarCidadesIBGE, selecionarCidade, fecharAc,
+                    // Navegacao com transicao
+                    vlNavigate: (url) => (window.vlNavigate || (u => { window.location.href = u; }))(url),
                 };
             }
         }).mount('#app');

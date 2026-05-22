@@ -138,6 +138,8 @@
         'position:absolute;',
         'width:clamp(190px,22vw,300px);',
         'filter:drop-shadow(0 0 20px rgba(120,170,255,0.55));',
+        'will-change:transform;',
+        'backface-visibility:hidden;',
         'animation:vl-plane-fly 1.5s ease-in-out forwards;',
       '">' + PLANE_SVG + '</div>',
       /* Logo central */
@@ -166,20 +168,25 @@
     sessionStorage.removeItem(KEY);
     var overlay = createOverlay();
     overlay.style.opacity = '1';
-    if (document.body) {
+
+    function appendAndScheduleFadeOut() {
+      document.body.style.overflow = 'hidden';
       document.body.appendChild(overlay);
-    } else {
-      document.addEventListener('DOMContentLoaded', function () {
-        document.body.appendChild(overlay);
-      });
-    }
-    // Fade out após Vue ter tempo de montar e carregar o conteúdo
-    setTimeout(function () {
-      overlay.style.opacity = '0';
+      // Timer começa DEPOIS de appendar para garantir visibilidade real de 900ms
       setTimeout(function () {
-        if (overlay.parentNode) overlay.remove();
-      }, 600);
-    }, 900);
+        overlay.style.opacity = '0';
+        setTimeout(function () {
+          if (overlay.parentNode) overlay.remove();
+          document.body.style.overflow = '';
+        }, 600);
+      }, 900);
+    }
+
+    if (document.body) {
+      appendAndScheduleFadeOut();
+    } else {
+      document.addEventListener('DOMContentLoaded', appendAndScheduleFadeOut);
+    }
   }
 
   /* ── Verificar ao carregar ── */
@@ -194,6 +201,7 @@
 
     var overlay = createOverlay();
     overlay.style.opacity = '0';
+    document.body.style.overflow = 'hidden';
     document.body.appendChild(overlay);
 
     // Força reflow antes de animar
