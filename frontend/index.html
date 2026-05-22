@@ -336,6 +336,24 @@
                                             </div>
                                         </div>
 
+                                        <!-- Indicador de distância entre as cidades -->
+                                        <transition name="fade">
+                                            <div v-if="distanciaViagem !== null || distanciaCalculando"
+                                                class="flex items-center gap-3 px-4 py-3 rounded-xl border text-sm font-medium transition-all"
+                                                :class="distanciaCalculando ? 'bg-gray-50 border-gray-200 text-gray-500' : distanciaViagem >= 400 ? 'bg-green-50 border-green-200 text-green-700' : 'bg-amber-50 border-amber-200 text-amber-700'">
+                                                <span v-if="distanciaCalculando" class="animate-spin inline-block">⏳</span>
+                                                <span v-else>{{ distanciaViagem >= 400 ? '✈️' : '⚠️' }}</span>
+                                                <span v-if="distanciaCalculando">Calculando distância...</span>
+                                                <template v-else>
+                                                    <span><strong>{{ distanciaViagem }} km</strong> em linha reta</span>
+                                                    <span class="ml-auto text-xs px-2 py-0.5 rounded-full font-bold uppercase"
+                                                        :class="distanciaViagem >= 400 ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'">
+                                                        {{ distanciaViagem >= 400 ? 'Apto para voo' : 'Priorize terrestre' }}
+                                                    </span>
+                                                </template>
+                                            </div>
+                                        </transition>
+
                                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div>
                                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Data de Ida <span class="text-red-500">*</span></label>
@@ -549,7 +567,7 @@
                                             </div>
                                             <label class="flex items-center gap-3 cursor-pointer">
                                                 <input type="checkbox" v-model="formPreferencias.quarto_excecao_saude" class="w-4 h-4 text-labs-blue rounded focus:ring-labs-blue">
-                                                <span class="text-sm text-gray-700">Solicitar quarto individual por condição de saúde <span class="text-gray-400 text-xs">(requer aprovação do RH)</span></span>
+                                                <span class="text-sm text-gray-700">Solicitar quarto individual por condição de saúde</span>
                                             </label>
                                         </div>
 
@@ -666,9 +684,11 @@
                                 </div>
                                 <ul class="text-sm text-gray-600 space-y-3 font-medium">
                                     <li class="flex items-start gap-2"><span class="text-labs-blue mt-0.5">•</span> Aéreo &lt; 15 dias exige aprovação de Diretoria.</li>
-                                    <li class="flex items-start gap-2"><span class="text-labs-blue mt-0.5">•</span> Trechos &lt; 400km são prioritariamente terrestres.</li>
-                                    <li class="flex items-start gap-2"><span class="text-labs-blue mt-0.5">•</span> Hospedagem compartilhada conforme política de cargo.</li>
-                                    <li class="flex items-start gap-2"><span class="text-labs-blue mt-0.5">•</span> Exceção de quarto por saúde exige laudo aprovado pelo RH.</li>
+                                                    <li class="flex items-start gap-2">
+                                        <span class="mt-0.5" :class="distanciaViagem !== null && distanciaViagem < 400 ? 'text-amber-500' : 'text-labs-blue'">•</span>
+                                        <span>Trechos &lt; 400km são prioritariamente terrestres<template v-if="distanciaViagem !== null"> · <strong :class="distanciaViagem < 400 ? 'text-amber-600' : 'text-green-600'">{{ distanciaViagem }} km</strong></template>.</span>
+                                    </li>
+                                    <li class="flex items-start gap-2"><span class="text-labs-blue mt-0.5">•</span> Hospedagem individual ou compartilhada seguem políticas de viagens.</li>
                                 </ul>
                             </div>
                             <div class="bg-white rounded-2xl shadow-sm border border-gray-200">
@@ -900,8 +920,56 @@
                     erroBusca.value = '';
                     erroBuscaProprioUsuario.value = '';
                     mostrarBuscaFallback.value = false;
+                    distanciaViagem.value = null;
                     if (novoTipo === 'proprio') buscarProprioUsuario();
                 });
+
+                // --- Cálculo de distância (Nominatim + Haversine · sem chave de API) ---
+                const distanciaViagem = ref(null);
+                const distanciaCalculando = ref(false);
+
+                const _haversineKm = (lat1, lon1, lat2, lon2) => {
+                    const R = 6371;
+                    const dLat = (lat2 - lat1) * Math.PI / 180;
+                    const dLon = (lon2 - lon1) * Math.PI / 180;
+                    const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+                    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                };
+
+                const calcularDistanciaViagem = async () => {
+                    const orig = formViagem.value.origem_cidade.trim();
+                    const dest = formViagem.value.destino_cidade.trim();
+                    if (!orig || !dest || orig === dest) { distanciaViagem.value = null; return; }
+                    distanciaCalculando.value = true;
+                    distanciaViagem.value = null;
+                    try {
+                        const hdrs = { 'Accept-Language': 'pt-BR', 'User-Agent': 'viagens-labs/1.0' };
+                        const r1 = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(orig + ', Brasil')}&format=json&limit=1`, { headers: hdrs });
+                        const d1 = await r1.json();
+                        await new Promise(r => setTimeout(r, 500)); // Nominatim: 1 req/s
+                        const r2 = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(dest + ', Brasil')}&format=json&limit=1`, { headers: hdrs });
+                        const d2 = await r2.json();
+                        if (!d1[0] || !d2[0]) { distanciaViagem.value = null; return; }
+                        distanciaViagem.value = Math.round(_haversineKm(+d1[0].lat, +d1[0].lon, +d2[0].lat, +d2[0].lon));
+                    } catch (e) {
+                        console.warn('[distancia]', e.message);
+                        distanciaViagem.value = null;
+                    } finally {
+                        distanciaCalculando.value = false;
+                    }
+                };
+
+                let _distanciaTimer = null;
+                watch(
+                    () => [formViagem.value.origem_cidade, formViagem.value.destino_cidade],
+                    ([orig, dest]) => {
+                        clearTimeout(_distanciaTimer);
+                        distanciaViagem.value = null;
+                        if (orig.trim().length >= 3 && dest.trim().length >= 3) {
+                            _distanciaTimer = setTimeout(calcularDistanciaViagem, 900);
+                        }
+                    }
+                );
 
                 // --- Funções ---
                 const buscarProprioUsuario = async () => {
@@ -1197,6 +1265,7 @@
                     duffelVoos.value = [];
                     duffelVooSelecionado.value = null;
                     duffelErro.value = '';
+                    distanciaViagem.value = null;
                     formViagem.value = { origem_cidade: '', origem_estado: '', destino_cidade: '', destino_estado: '', data_ida: '', data_volta: '', motivo_viagem: '', tipo_servico: [], preferencia_voo: null };
                     formPreferencias.value = { aereo_periodo_preferido: '', aereo_tipo_trecho: 'ambos', bagagem_extra: false, assento_especial: '', rodov_periodo_preferido: '', rodov_tipo_onibus: '', rodov_tipo_trecho: 'ambos', preferencia_hotel_nome: '', quarto_excecao_saude: false, carro_cidade_retirada: '', carro_hora_retirada: '', carro_cidade_devolucao: '', carro_hora_devolucao: '', observacoes_viajante: '' };
                     protocoloGerado.value = null;
@@ -1218,8 +1287,7 @@
                     tipo_solicitacao, cpfBusca, buscandoColaborador, viajanteDados, erroBusca, erroBuscaProprioUsuario, mostrarBuscaFallback, buscarColaboradorGCP,
                     celularViajante, dataNascimentoViajante, perfilSalvo,
                     formatarCPF, mascaraData, mascaraDataIda, mascaraDataVolta, mascaraCelular, salvarPerfilViajante,
-                    celularViajante, dataNascimentoViajante, perfilSalvo,
-                    formatarCPF, carregarPerfilViajante, salvarPerfilViajante,
+                    distanciaViagem, distanciaCalculando,
                     formViagem, formPreferencias, servicosDisponiveis,
                     classificacaoAereo, passo2Valido,
                     enviandoSolicitacao, erroEnvio, protocoloGerado, classificacaoGerada,
