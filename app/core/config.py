@@ -32,6 +32,10 @@ class Settings(BaseSettings):
     AGENCIA_TASTUR_EMAIL: str = ""
     AGENCIA_KONTRIP_EMAIL: str = ""
 
+    # QA — quando definido, todos os e-mails de aprovação são redirecionados para este endereço.
+    # Deixe vazio (ou remova) para desativar. Para remoção total: apagar esta linha + 3 linhas em _criar_token.
+    QA_APROVADOR_EMAIL: str = ""
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

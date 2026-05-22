@@ -5,9 +5,21 @@ from sqlalchemy.orm import Session
 
 from app.infrastructure.orm.models import TokenAprovacaoModel, SolicitacaoModel
 from app.services.casamento_service import CasamentoService
+from app.infrastructure.bigquery_service import BigQueryService
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 _casamento_svc = CasamentoService()
+
+# Instância BQ para verificação de situação dos aprovadores
+_bq_service = BigQueryService(
+    project_id="maga-bigdata",
+    table_assignee="maga-bigdata.kirk.assignee",
+    table_funcionarios="maga-bigdata.mlpap.mag_v_funcionarios_ativos",
+)
+
+# Valores de SITUACAO que indicam ausência por férias
+_SITUACOES_FERIAS = {"férias", "ferias"}
 
 
 class AprovacaoService:
@@ -19,7 +31,11 @@ class AprovacaoService:
     # -------------------------------------------------------------------------
 
     def iniciar_fluxo_aprovacao(self, solicitacao: SolicitacaoModel) -> None:
-        """Gera token N1 e envia e-mail ao aprovador imediato."""
+        """
+        Gera token de aprovação e envia e-mail.
+        Se o N1 estiver de Férias (verificado via BigQuery), o fluxo é redirecionado
+        diretamente ao N2 sem passar pelo N1.
+        """
         if not solicitacao.aprovador_n1_email:
             logger.warning(
                 f"Solicitação {solicitacao.protocolo}: aprovador N1 não informado. "
@@ -28,6 +44,30 @@ class AprovacaoService:
             solicitacao.status = "CADEIA_INCOMPLETA"
             self.db.commit()
             return
+
+        # ── Verificar se N1 está de Férias via BigQuery ──────────────────────
+        if self._aprovador_esta_de_ferias(solicitacao.aprovador_n1_email):
+            logger.info(
+                f"Solicitação {solicitacao.protocolo}: N1 '{solicitacao.aprovador_n1_nome}' "
+                f"está de Férias. Redirecionando aprovação diretamente ao N2."
+            )
+            if not solicitacao.aprovador_n2_email:
+                logger.warning(
+                    f"Solicitação {solicitacao.protocolo}: N1 de Férias e N2 não informado. "
+                    "Marcando CADEIA_INCOMPLETA."
+                )
+                solicitacao.status = "CADEIA_INCOMPLETA"
+                self.db.commit()
+                return
+
+            # Vai direto para N2 — quando ele aprovar, segue o fluxo normal de N2
+            solicitacao.status = "AGUARDANDO_N2"
+            self.db.flush()
+            token = self._criar_token(solicitacao, "N2")
+            self.db.commit()
+            self._enviar_email_aprovacao(solicitacao, token)
+            return
+        # ─────────────────────────────────────────────────────────────────────
 
         token = self._criar_token(solicitacao, "N1")
         self.db.commit()
@@ -178,6 +218,12 @@ class AprovacaoService:
             email = solicitacao.aprovador_n2_email
             nome = solicitacao.aprovador_n2_nome
 
+        # ── QA override: redireciona TODOS os tokens para o testador ─────────
+        if settings.QA_APROVADOR_EMAIL:
+            logger.warning("[QA] Token %s-%s redirecionado: %s → %s", solicitacao.protocolo, nivel, email, settings.QA_APROVADOR_EMAIL)
+            email = settings.QA_APROVADOR_EMAIL
+        # ─────────────────────────────────────────────────────────────────────
+
         token = TokenAprovacaoModel(
             uuid=str(uuid.uuid4()),
             solicitacao_id=solicitacao.id,
@@ -190,6 +236,21 @@ class AprovacaoService:
         self.db.add(token)
         self.db.flush()  # preenche o id sem commit definitivo
         return token
+
+    def _aprovador_esta_de_ferias(self, email: str) -> bool:
+        """
+        Consulta o BigQuery para verificar se o colaborador está com SITUACAO = 'Férias'.
+        Em caso de falha na consulta, retorna False (fail-safe: não bloqueia o fluxo).
+        """
+        try:
+            situacao = _bq_service.buscar_situacao_por_email(email)
+            return situacao is not None and situacao.strip().lower() in _SITUACOES_FERIAS
+        except Exception as e:
+            logger.error(
+                f"Erro ao verificar férias para '{email}' no BQ: {e}. "
+                "Prosseguindo com aprovação N1 por segurança."
+            )
+            return False
 
     def _enviar_email_setor(self, solicitacao: SolicitacaoModel) -> None:
         try:

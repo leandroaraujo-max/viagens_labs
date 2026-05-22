@@ -105,3 +105,35 @@ class BigQueryService:
         except Exception as e:
             logging.error(f"Falha na consulta BQ: {e}")
             raise e
+
+    def buscar_situacao_por_email(self, email: str) -> Optional[str]:
+        """
+        Retorna a coluna SITUACAO de mag_v_funcionarios_ativos para o e-mail informado.
+        Usado para verificar se o aprovador N1 está de Férias antes de iniciar o fluxo.
+        Retorna None se o colaborador não for encontrado ou se o BQ estiver indisponível.
+        """
+        if not self.client or not email:
+            return None
+
+        # Sanitização básica: e-mail veio do próprio BQ (trustworthy), mas removemos
+        # caracteres que poderiam ser interpretados como SQL.
+        email_safe = email.strip().lower().replace("'", "").replace("\\", "")
+
+        query = f"""
+            SELECT t2.SITUACAO AS situacao
+            FROM `{self.table_assignee}` AS t1
+            INNER JOIN `{self.table_funcionarios}` AS t2
+              ON t1.CUSTOM1 = CAST(t2.ID AS STRING)
+            WHERE LOWER(t1.email) = '{email_safe}'
+              AND t1.active = TRUE
+            LIMIT 1
+        """
+
+        try:
+            resultado = list(self.client.query(query).result())
+            if resultado:
+                return getattr(resultado[0], "situacao", None)
+            return None
+        except Exception as e:
+            logging.error(f"Falha ao buscar situação para {email}: {e}")
+            return None

@@ -566,17 +566,26 @@ Todos os direitos reservados.
 
 ---
 
-## �🤖 Prompt de Handoff para IA
+## 🤖 Prompt de Handoff para IA
 
 Se estiver continuando o desenvolvimento em uma nova sessão de IA, use o contexto abaixo:
 
 ```
 Projeto: ViagensLabs — Portal corporativo de viagens Luizalabs/Magalu
 Repo: https://github.com/leandroaraujo-max/viagens_labs
-Branch: main
+Branch: main | Workspace local: C:\Projetos\viagens_labs\
 
-Stack: Python 3.14, FastAPI, SQLAlchemy, PostgreSQL :5433, ldap3 (AD), JWT HS256,
+Stack: Python 3.14, FastAPI, SQLAlchemy ORM, PostgreSQL :5433, ldap3 (AD), JWT HS256,
        Vue.js 3 CDN, TailwindCSS CDN, Nginx (Windows)
+
+Como rodar o backend:
+  cd C:\Projetos\viagens_labs
+  $env:PYTHONPATH="."; .\venv\Scripts\uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+Banco de Dados:
+  PostgreSQL porta 5433, DB: solicitacao_viagens
+  URL: postgresql://postgres:Magazine%40123@127.0.0.1:5433/solicitacao_viagens?client_encoding=utf8
+  Migrações: automáticas no startup via _migracoes_seguras() em app/main.py
 
 Arquitetura: Clean Architecture
   app/api/v1/endpoints/  → auth, viagens, aprovacao, agencia, setor, duffel
@@ -585,20 +594,63 @@ Arquitetura: Clean Architecture
   app/domain/models/     → schemas.py (Pydantic)
   frontend/              → index.html, portal_aprovacao.html, agencia.html, painel.html
 
-Fluxo de status:
-  AGUARDANDO_N1 → AGUARDANDO_N2 → PENDENTE_PRE_APROVACAO_SETOR
-  → AGUARDANDO_COTACAO → COTACAO_ENVIADA → PENDENTE_APROVACAO_SETOR_COTACAO
-  → CONCLUIDA | REPROVADA
+Fluxo de status ATUAL (22/05/2026):
+  AGUARDANDO_N1
+    └─ N1 férias (BQ SITUACAO) → AGUARDANDO_N2
+    └─ N1 aprova + emergencial → AGUARDANDO_N2
+    └─ N1 aprova + comum      → PENDENTE_PRE_APROVACAO_SETOR
+    └─ N1 reprova              → REPROVADA
+  AGUARDANDO_N2
+    └─ N2 aprova → PENDENTE_PRE_APROVACAO_SETOR
+    └─ N2 reprova → REPROVADA
+  PENDENTE_PRE_APROVACAO_SETOR
+    └─ Setor pré-aprova → AGUARDANDO_COTACAO (+ e-mail Tastur+Kontrip)
+    └─ Setor pré-reprova → REPROVADA
+  AGUARDANDO_COTACAO
+    └─ 1 agência cota → COTACAO_ENVIADA
+    └─ 2 agências cotam → PENDENTE_APROVACAO_SETOR_COTACAO
+  PENDENTE_APROVACAO_SETOR_COTACAO
+    └─ Setor aprova Tastur/Kontrip → CONCLUIDA  ← ERRADO, deve ser APROVADA_AGUARDANDO_VOUCHER
+    └─ Setor reprova → REPROVADA
+  [FALTANDO] APROVADA_AGUARDANDO_VOUCHER
+    └─ Todos vouchers entregues → CONCLUIDA
+
+O PRÓXIMO PASSO É IMPLEMENTAR (Fase 5A):
+  1. setor_service._aprovar_agencia(): mudar CONCLUIDA → APROVADA_AGUARDANDO_VOUCHER
+  2. email_service.py: +5 templates (viajante_aprovado, agencia_perdedora, reprovacao, vouchers, conclusao)
+  3. Novo voucher_service.py: upload PDF + _verificar_conclusao_vouchers()
+  4. Novo app/api/v1/endpoints/voucher.py: POST /api/v1/vouchers/{id}/upload
+  5. agencia.html: tela de upload de vouchers para a agência vencedora
+
+APOS FASE 5A (ver README seção 'Plano de Implementação' para 5B e 5C):
+  Fase 5B: Motor SLA (thread daemon sla_scheduler.py)
+  Fase 5C: Casamento completo (vincular/ignorar no painel do setor)
+
+QA Override:
+  .env: QA_APROVADOR_EMAIL=leandro.araujo@luizalabs.com
+  Remove: 1 linha em config.py + 3 linhas em aprovacao_service._criar_token()
+
+N1 em Férias:
+  bigquery_service.buscar_situacao_por_email(email) → checa SITUACAO
+  aprovacao_service._aprovador_esta_de_ferias() → compara com {"férias","ferias"}
 
 AD Groups:
-  G_ACCESS_VIAGENSLABS_ADMINS   → perfil "setor"  → /painel.html
+  G_ACCESS_VIAGENSLABS_ADMINS   → perfil "setor"    → /painel.html
   G_ACCESS_VIAGENSLABS_USERS    → perfil "viajante" → /index.html
   G_ACCESS_VIAGENSLABS_AGENCIAS → perfil "agencia_ad" (reservado)
 
+AD Servers:
+  ldap://ML-ASC-AD-01.magazineluiza.intranet
+  ldap://ML-ASC-AD2.magazineluiza.intranet
+  ldap://ML-HB-AD01.magazineluiza.intranet
+
 SMTP: smtpml.magazineluiza.intranet:25 | De: vagenslabs@luizalabs.com
 BQ: maga-bigdata.kirk.assignee + maga-bigdata.mlpap.mag_v_funcionarios_ativos
+
+Regra crítica ao gerar código: NUNCA use '...', '# ...' ou '#existing code'.
+Sempre fornecer o código completo do método/função alterado.
 ```
 
 ---
 
-*Última atualização: 22/05/2026 — Todas as 4 fases de desenvolvimento concluídas.*
+*Última atualização: 22/05/2026 — Análise GAS vs FastAPI concluída. Próximo: Fase 5A (vouchers).*
