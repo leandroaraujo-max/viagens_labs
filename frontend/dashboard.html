@@ -1,0 +1,145 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - ViagensLabs</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body class="bg-gray-100">
+    <div id="app" class="min-h-screen">
+        <header class="bg-white shadow-sm">
+            <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+                <h1 class="text-2xl font-bold text-blue-600">Viagens<span class="text-yellow-500">Labs</span></h1>
+                <div class="flex items-center">
+                    <span class="text-gray-600 mr-4">Olá, {{ nomeUsuario || 'Colaborador' }}</span>
+                    <button @click="logout" class="bg-red-500 hover:bg-red-600 text-white text-sm font-bold py-2 px-3 rounded">Sair</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+            <div class="bg-white p-6 rounded-lg shadow mb-8">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Nova Solicitação de Viagem</h2>
+                
+                <div v-if="mensagemFormulario" :class="[mensagemErro ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700', 'p-3 mb-4 text-sm rounded']">
+                    {{ mensagemFormulario }}
+                </div>
+                
+                <form @submit.prevent="criarSolicitacao">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Destino</label>
+                            <input v-model="form.destino" type="text" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Motivo</label>
+                            <input v-model="form.motivo" type="text" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Data de Ida</label>
+                            <input v-model="form.data_ida" type="datetime-local" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Data de Volta</label>
+                            <input v-model="form.data_volta" type="datetime-local" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                    <div class="mt-6 text-right">
+                        <button type="submit" :disabled="carregando" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline disabled:opacity-50">
+                            <span v-if="carregando">Enviando...</span>
+                            <span v-else>Enviar Solicitação</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Minhas Solicitações</h2>
+                <p class="text-gray-500">Em breve: aqui você verá o histórico de suas viagens.</p>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const nomeUsuario = ref('');
+                const token = ref('');
+                const carregando = ref(false);
+                const mensagemFormulario = ref('');
+                const mensagemErro = ref(false);
+
+                const form = ref({ destino: '', motivo: '', data_ida: '', data_volta: '' });
+
+                onMounted(() => {
+                    const tokenSalvo = localStorage.getItem('token');
+                    
+                    if (!tokenSalvo) {
+                        window.location.href = '/index.html';
+                        return;
+                    }
+
+                    token.value = tokenSalvo;
+                    nomeUsuario.value = localStorage.getItem('nome_usuario') || 'Colaborador';
+                });
+
+                const logout = () => {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('nome_usuario');
+                    localStorage.removeItem('perfil');
+                    window.location.href = '/index.html';
+                };
+
+                const criarSolicitacao = async () => {
+                    carregando.value = true;
+                    mensagemFormulario.value = '';
+                    mensagemErro.value = false;
+
+                    try {
+                        const payload = {
+                            ...form.value,
+                            data_ida: new Date(form.value.data_ida).toISOString(),
+                            data_volta: form.value.data_volta ? new Date(form.value.data_volta).toISOString() : null
+                        };
+
+                        const response = await fetch('/api/v1/viagens/solicitacoes', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token.value}`
+                            },
+                            body: JSON.stringify(payload)
+                        });
+
+                        const dados = await response.json();
+
+                        if (response.status === 401) {
+                            logout();
+                            return;
+                        }
+
+                        if (!response.ok) {
+                            throw new Error(dados.detail || 'Falha ao criar solicitação.');
+                        }
+
+                        mensagemFormulario.value = `Solicitação #${dados.id} para ${dados.destino} criada com sucesso!`;
+                        form.value = { destino: '', motivo: '', data_ida: '', data_volta: '' }; 
+
+                    } catch (err) {
+                        mensagemErro.value = true;
+                        mensagemFormulario.value = err.message;
+                    } finally {
+                        carregando.value = false;
+                    }
+                };
+
+                return { nomeUsuario, form, carregando, mensagemFormulario, mensagemErro, logout, criarSolicitacao };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

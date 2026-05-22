@@ -1,9 +1,8 @@
 ﻿from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
-    # String de conexão com o banco de dados PostgreSQL
-    # O Pydantic irá ler essa variável de um arquivo .env ou do ambiente do sistema
-    DATABASE_URL: str = "postgresql://postgres:sua_senha_aqui@localhost:5432/solicitacao_viagens"
+    # Forçando o driver a usar codificação cliente UTF8, apontando para a porta 5433 e com a senha encodada
+    DATABASE_URL: str = "postgresql://postgres:Magazine%40123@127.0.0.1:5433/solicitacao_viagens?client_encoding=utf8"
 
     class Config:
         env_file = ".env"
