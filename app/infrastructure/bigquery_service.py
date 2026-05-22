@@ -39,10 +39,16 @@ class BigQueryService:
                 # ? matr?cula num?rica
                 filtro = f"t1.CUSTOM1 = '{chave_numerica}'"
         else:
-            # ? username de rede (ex: lnd_araujo)
-            filtro = f"t1.user_name = '{chave_limpa}'"
+            # É username de rede (ex: lnd_araujo)
+            # Tenta múltiplos formatos: exato, case-insensitive, email completo, parte antes do @
+            chave_lower = chave_limpa.lower()
+            filtro = (
+                f"(LOWER(t1.user_name) = '{chave_lower}' "
+                f"OR LOWER(t1.user_name) = '{chave_lower}@magazineluiza.com.br' "
+                f"OR LOWER(SPLIT(t1.user_name, '@')[SAFE_OFFSET(0)]) = '{chave_lower}')"
+            )
 
-        # A sua Query Real de Produ??o, mantendo a busca da cadeia de aprova??o (N1/N2)
+        # A sua Query Real de Produção, com cadeia N1 e N2
         query = f"""
             SELECT DISTINCT
               CAST(t2.ID AS STRING)                          AS matricula,
@@ -55,12 +61,16 @@ class BigQueryService:
               t1.email                                       AS email,
               t1.user_name                                   AS user_name,
               CONCAT(g1.first_name, ' ', g1.last_name)       AS aprovador_n1_nome,
-              g1.email                                       AS aprovador_n1_email
+              g1.email                                       AS aprovador_n1_email,
+              CONCAT(g2.first_name, ' ', g2.last_name)       AS aprovador_n2_nome,
+              g2.email                                       AS aprovador_n2_email
             FROM `{self.table_assignee}` AS t1
             INNER JOIN `{self.table_funcionarios}` AS t2
               ON t1.CUSTOM1 = CAST(t2.ID AS STRING)
             LEFT JOIN `{self.table_assignee}` AS g1
               ON t1.superior = g1.id AND g1.active = TRUE
+            LEFT JOIN `{self.table_assignee}` AS g2
+              ON g1.superior = g2.id AND g2.active = TRUE
             WHERE {filtro}
               AND t2.SITUACAO NOT IN ('Desligado', 'Demitido', 'Afastado', 'Aposentado', 'Inativo')
               AND t1.active = TRUE
@@ -84,8 +94,10 @@ class BigQueryService:
                     "situacao": getattr(linha, "situacao", ""),
                     "email": getattr(linha, "email", ""),
                     "user_name": getattr(linha, "user_name", ""),
-                    "aprovador_n1_nome": getattr(linha, "aprovador_n1_nome", "N?o Definido"),
-                    "aprovador_n1_email": getattr(linha, "aprovador_n1_email", "")
+                    "aprovador_n1_nome": getattr(linha, "aprovador_n1_nome", "Não Definido"),
+                    "aprovador_n1_email": getattr(linha, "aprovador_n1_email", ""),
+                    "aprovador_n2_nome": getattr(linha, "aprovador_n2_nome", ""),
+                    "aprovador_n2_email": getattr(linha, "aprovador_n2_email", ""),
                 }
                 
             return None 

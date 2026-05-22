@@ -2,17 +2,33 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-# Importa as configura??es do banco e do ORM
 from app.infrastructure.database import Base, engine
 from app.infrastructure.orm import models
-# Importa o roteador central que cont?m TODAS as nossas rotas (viagens e auth)
 from app.api.v1.routers import api_router
+
+
+def _migracoes_seguras():
+    """Adiciona colunas novas sem destruir dados existentes (ALTER TABLE IF NOT EXISTS)."""
+    from sqlalchemy import text
+    with engine.connect() as conn:
+        conn.execute(text(
+            "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS preferencia_voo TEXT;"
+        ))
+        conn.execute(text(
+            "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS agencia_vencedora VARCHAR(100);"
+        ))
+        # Remove unique simples em cotacoes.solicitacao_id para suportar Tastur + Kontrip na mesma solicitação
+        conn.execute(text(
+            "ALTER TABLE cotacoes DROP CONSTRAINT IF EXISTS cotacoes_solicitacao_id_key;"
+        ))
+        conn.commit()
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Executado ao iniciar a API: conecta e cria as tabelas"""
     print("Conectando ao banco e validando estrutura de tabelas...")
     Base.metadata.create_all(bind=engine)
+    _migracoes_seguras()
     print("Estrutura do banco de dados pronta.")
     yield
 

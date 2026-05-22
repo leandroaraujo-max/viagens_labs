@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full bg-gray-50">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portal da Agência — ViagensLabs</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    [v-cloak] { display: none; }
+    .badge-total    { @apply bg-green-100 text-green-800; }
+    .badge-parcial-a{ @apply bg-blue-100  text-blue-800;  }
+    .badge-parcial-b{ @apply bg-yellow-100 text-yellow-800; }
+  </style>
+</head>
+<body class="h-full font-sans">
+<div id="app" v-cloak class="min-h-full">
+
+  <!-- ═══════════════════════════ LOGIN ═══════════════════════════ -->
+  <div v-if="tela === 'login'" class="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-700 to-blue-900 p-4">
+    <div class="w-full max-w-sm bg-white rounded-2xl shadow-xl p-8">
+      <div class="text-center mb-6">
+        <div class="text-3xl font-bold text-blue-700 mb-1">✈ ViagensLabs</div>
+        <p class="text-sm text-gray-500">Portal da Agência de Viagens</p>
+      </div>
+
+      <div v-if="loginErro" class="mb-4 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
+        {{ loginErro }}
+      </div>
+
+      <form @submit.prevent="fazerLogin" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1">Usuário</label>
+          <input v-model="loginForm.username" type="text" required autocomplete="username"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="usuario.agencia" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1">Senha</label>
+          <input v-model="loginForm.password" type="password" required autocomplete="current-password"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1">Agência</label>
+          <select v-model="loginForm.agencia"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="tastur">Tastur</option>
+            <option value="kontrip">Kontrip</option>
+          </select>
+        </div>
+        <button type="submit" :disabled="loginCarregando"
+          class="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold rounded-lg py-2.5 text-sm transition">
+          {{ loginCarregando ? 'Entrando…' : 'Entrar' }}
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════ APP PRINCIPAL ════════════════════ -->
+  <template v-else>
+
+    <!-- Navbar -->
+    <nav class="bg-blue-700 text-white shadow-md">
+      <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span class="text-xl font-bold">✈ ViagensLabs</span>
+          <span class="text-blue-200 text-sm">Portal da Agência</span>
+        </div>
+        <div class="flex items-center gap-4">
+          <span class="text-sm text-blue-100">{{ nomeUsuario }} <span class="bg-blue-500 text-xs rounded px-2 py-0.5 ml-1">{{ agenciaNome }}</span></span>
+          <button @click="sair" class="text-xs bg-blue-800 hover:bg-blue-900 rounded px-3 py-1.5 transition">Sair</button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Conteúdo -->
+    <main class="max-w-7xl mx-auto px-4 py-8">
+
+      <!-- ─── LISTA ─── -->
+      <template v-if="tela === 'lista'">
+        <div class="flex items-center justify-between mb-6">
+          <h1 class="text-xl font-bold text-gray-800">Solicitações para Cotação</h1>
+          <div class="flex gap-2">
+            <select v-model="filtroStatus" @change="carregarSolicitacoes"
+              class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="">Todos os status</option>
+              <option value="AGUARDANDO_COTACAO">Aguardando Cotação</option>
+              <option value="COTACAO_ENVIADA">Cotação Enviada</option>
+              <option value="CONCLUIDA">Concluída</option>
+            </select>
+            <button @click="carregarSolicitacoes"
+              class="bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg px-4 py-2 transition">
+              ↻ Atualizar
+            </button>
+          </div>
+        </div>
+
+        <div v-if="carregandoLista" class="text-center py-16 text-gray-400 text-sm">Carregando…</div>
+
+        <div v-else-if="solicitacoes.length === 0" class="text-center py-16 text-gray-400 text-sm">
+          Nenhuma solicitação encontrada.
+        </div>
+
+        <div v-else class="space-y-4">
+          <div v-for="sol in solicitacoes" :key="sol.id"
+            class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition cursor-pointer"
+            @click="abrirDetalhe(sol.id)">
+
+            <div class="flex items-start justify-between flex-wrap gap-2">
+              <div>
+                <span class="text-xs font-mono font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">{{ sol.protocolo }}</span>
+                <span :class="badgeStatus(sol.status)" class="ml-2 text-xs font-semibold rounded px-2 py-0.5">{{ labelStatus(sol.status) }}</span>
+                <span v-if="sol.classificacao === 'Emergencial'" class="ml-2 text-xs font-semibold bg-red-100 text-red-700 rounded px-2 py-0.5">🚨 Emergencial</span>
+              </div>
+              <div class="text-xs text-gray-400">{{ formatarData(sol.data_ida) }}
+                <template v-if="sol.data_volta"> → {{ formatarData(sol.data_volta) }}</template>
+              </div>
+            </div>
+
+            <div class="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-sm text-gray-700">
+              <span><strong>Destino:</strong> {{ sol.destino_cidade }}<template v-if="sol.destino_estado">/{{ sol.destino_estado }}</template></span>
+              <span><strong>Origem:</strong> {{ sol.origem_cidade || '—' }}</span>
+              <span><strong>Serviços:</strong> {{ sol.tipo_servico }}</span>
+            </div>
+
+            <!-- Casamentos -->
+            <div v-if="sol.casamentos && sol.casamentos.length" class="mt-2 flex flex-wrap gap-2">
+              <span v-for="c in sol.casamentos" :key="c.par_id"
+                :class="badgeCasamento(c.tipo_match)"
+                class="text-xs rounded-full px-2 py-0.5 font-semibold">
+                🔗 {{ c.tipo_match }} com #{{ c.par_id }}
+              </span>
+            </div>
+
+            <!-- Cotação -->
+            <div v-if="sol.cotacao" class="mt-2 text-xs text-green-600 font-semibold">
+              ✔ Cotação enviada — Total: {{ formatarMoeda(sol.cotacao.valor_total) }}
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <!-- ─── DETALHE / COTAÇÃO ─── -->
+      <template v-if="tela === 'detalhe'">
+        <button @click="voltarLista" class="text-sm text-blue-600 hover:underline mb-6">← Voltar à lista</button>
+
+        <div v-if="!solDetalhe" class="text-center py-16 text-gray-400 text-sm">Carregando…</div>
+
+        <template v-else>
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+
+            <!-- Cabeçalho -->
+            <div class="flex items-center justify-between flex-wrap gap-2 mb-4">
+              <div class="flex items-center gap-3">
+                <span class="text-lg font-bold font-mono text-blue-700">{{ solDetalhe.protocolo }}</span>
+                <span :class="badgeStatus(solDetalhe.status)" class="text-xs font-semibold rounded px-2 py-0.5">{{ labelStatus(solDetalhe.status) }}</span>
+                <span v-if="solDetalhe.classificacao === 'Emergencial'" class="text-xs font-semibold bg-red-100 text-red-700 rounded px-2 py-0.5">🚨 Emergencial</span>
+              </div>
+            </div>
+
+            <!-- Dados principais -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+              <div><span class="text-gray-500 text-xs">Solicitante</span><p class="font-medium">{{ solDetalhe.solicitante_username }}</p></div>
+              <div><span class="text-gray-500 text-xs">Origem</span><p class="font-medium">{{ solDetalhe.origem_cidade || '—' }}</p></div>
+              <div><span class="text-gray-500 text-xs">Destino</span><p class="font-medium">{{ solDetalhe.destino_cidade }}{{ solDetalhe.destino_estado ? '/' + solDetalhe.destino_estado : '' }}</p></div>
+              <div><span class="text-gray-500 text-xs">Data de Ida</span><p class="font-medium">{{ formatarData(solDetalhe.data_ida) }}</p></div>
+              <div><span class="text-gray-500 text-xs">Data de Volta</span><p class="font-medium">{{ solDetalhe.data_volta ? formatarData(solDetalhe.data_volta) : '—' }}</p></div>
+              <div><span class="text-gray-500 text-xs">Serviços</span><p class="font-medium">{{ solDetalhe.tipo_servico }}</p></div>
+              <div class="md:col-span-2"><span class="text-gray-500 text-xs">Motivo</span><p class="font-medium">{{ solDetalhe.motivo_viagem }}</p></div>
+            </div>
+
+            <!-- Preferências por serviço -->
+            <div class="mt-5 space-y-3">
+              <template v-if="temServico(solDetalhe, 'Aereo')">
+                <div class="bg-sky-50 rounded-lg p-3 text-sm">
+                  <p class="font-semibold text-sky-700 mb-1">✈ Preferências Aéreo</p>
+                  <div class="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs text-gray-600">
+                    <span><strong>Período:</strong> {{ solDetalhe.aereo_periodo_preferido || '—' }}</span>
+                    <span><strong>Trecho:</strong> {{ solDetalhe.aereo_tipo_trecho || '—' }}</span>
+                    <span><strong>Bagagem extra:</strong> {{ solDetalhe.bagagem_extra ? 'Sim' : 'Não' }}</span>
+                    <span v-if="solDetalhe.assento_especial"><strong>Assento:</strong> {{ solDetalhe.assento_especial }}</span>
+                  </div>
+                </div>
+              </template>
+              <template v-if="temServico(solDetalhe, 'Hospedagem')">
+                <div class="bg-purple-50 rounded-lg p-3 text-sm">
+                  <p class="font-semibold text-purple-700 mb-1">🏨 Preferências Hospedagem</p>
+                  <div class="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                    <span><strong>Hotel preferido:</strong> {{ solDetalhe.preferencia_hotel_nome || '—' }}</span>
+                    <span><strong>Quarto especial:</strong> {{ solDetalhe.quarto_excecao_saude ? 'Sim' : 'Não' }}</span>
+                  </div>
+                </div>
+              </template>
+              <template v-if="temServico(solDetalhe, 'Rodoviario')">
+                <div class="bg-amber-50 rounded-lg p-3 text-sm">
+                  <p class="font-semibold text-amber-700 mb-1">🚌 Preferências Rodoviário</p>
+                  <div class="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                    <span><strong>Período:</strong> {{ solDetalhe.rodov_periodo_preferido || '—' }}</span>
+                    <span><strong>Tipo ônibus:</strong> {{ solDetalhe.rodov_tipo_onibus || '—' }}</span>
+                  </div>
+                </div>
+              </template>
+              <template v-if="temServico(solDetalhe, 'Carro')">
+                <div class="bg-green-50 rounded-lg p-3 text-sm">
+                  <p class="font-semibold text-green-700 mb-1">🚗 Preferências Carro</p>
+                  <div class="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs text-gray-600">
+                    <span><strong>Retirada:</strong> {{ solDetalhe.carro_cidade_retirada || '—' }} {{ solDetalhe.carro_hora_retirada }}</span>
+                    <span><strong>Devolução:</strong> {{ solDetalhe.carro_cidade_devolucao || '—' }} {{ solDetalhe.carro_hora_devolucao }}</span>
+                  </div>
+                </div>
+              </template>
+            </div>
+
+            <!-- Observações -->
+            <div v-if="solDetalhe.observacoes_viajante" class="mt-3 text-xs text-gray-500 italic">
+              <strong>Obs.:</strong> {{ solDetalhe.observacoes_viajante }}
+            </div>
+
+            <!-- Casamentos -->
+            <div v-if="solDetalhe.casamentos && solDetalhe.casamentos.length" class="mt-5">
+              <p class="text-sm font-semibold text-gray-700 mb-2">🔗 Casamentos detectados pelo motor</p>
+              <div class="overflow-x-auto">
+                <table class="text-xs w-full border-collapse">
+                  <thead>
+                    <tr class="bg-gray-100 text-gray-600">
+                      <th class="px-3 py-2 text-left rounded-tl">Protocolo par</th>
+                      <th class="px-3 py-2 text-left">Tipo</th>
+                      <th class="px-3 py-2 text-left">Destino</th>
+                      <th class="px-3 py-2 text-left rounded-tr">Serviços em comum</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="c in solDetalhe.casamentos" :key="c.par_id"
+                      class="border-t border-gray-100 hover:bg-gray-50 cursor-pointer"
+                      @click="abrirDetalhe(c.par_id)">
+                      <td class="px-3 py-2 text-blue-600 font-mono">#{{ c.par_id }}</td>
+                      <td class="px-3 py-2">
+                        <span :class="badgeCasamento(c.tipo_match)" class="rounded-full px-2 py-0.5 font-semibold">{{ c.tipo_match }}</span>
+                      </td>
+                      <td class="px-3 py-2">{{ c.destino }}</td>
+                      <td class="px-3 py-2">{{ c.servicos_comuns || '—' }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- ─── FORMULÁRIO DE COTAÇÃO ─── -->
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h2 class="text-lg font-bold text-gray-800 mb-1">
+              {{ solDetalhe.cotacao ? '✏ Atualizar Cotação' : '💰 Registrar Cotação' }}
+            </h2>
+            <p class="text-xs text-gray-500 mb-5">Preencha apenas os campos referentes aos serviços solicitados.</p>
+
+            <div v-if="cotacaoSucesso" class="mb-4 bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 text-sm">
+              ✔ Cotação registrada com sucesso!
+            </div>
+            <div v-if="cotacaoErro" class="mb-4 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
+              {{ cotacaoErro }}
+            </div>
+
+            <form @submit.prevent="enviarCotacao" class="space-y-6">
+
+              <!-- Aéreo -->
+              <div v-if="temServico(solDetalhe, 'Aereo')" class="border border-sky-200 rounded-xl p-4 bg-sky-50">
+                <p class="font-semibold text-sky-700 text-sm mb-3">✈ Passagem Aérea</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div>
+                    <label class="text-xs text-gray-600 font-medium">Companhia Aérea</label>
+                    <input v-model="formCotacao.aereo_companhia" type="text" placeholder="Ex: LATAM"
+                      class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" />
+                  </div>
+                  <div>
+                    <label class="text-xs text-gray-600 font-medium">Número do Voo</label>
+                    <input v-model="formCotacao.aereo_numero_voo" type="text" placeholder="Ex: LA3001"
+                      class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" />
+                  </div>
+                  <div>
+                    <label class="text-xs text-gray-600 font-medium">Horário de Ida</label>
+                    <input v-model="formCotacao.aereo_horario_ida" type="text" placeholder="06:00 → 08:30"
+                      class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" />
+                  </div>
+                  <div>
+                    <label class="text-xs text-gray-600 font-medium">Horário de Volta</label>
+                    <input v-model="formCotacao.aereo_horario_volta" type="text" placeholder="19:00 → 21:30"
+                      class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" />
+                  </div>
+                  <div>
+                    <label class="text-xs text-gray-600 font-medium">Valor Total (R$)</label>
+                    <input v-model.number="formCotacao.aereo_valor" type="number" min="0" step="0.01" placeholder="0,00"
+                      class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Hospedagem -->
+              <div v-if="temServico(solDetalhe, 'Hospedagem')" class="border border-purple-200 rounded-xl p-4 bg-purple-50">
+                <p class="font-semibold text-purple-700 text-sm mb-3">🏨 Hospedagem</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div>
+                    <label class="text-xs text-gray-600 font-medium">Nome do Hotel</label>
+                    <input v-model="formCotacao.hotel_nome" type="text" placeholder="Hotel Grand Hyatt"
+                      class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400" />
+                  </div>
+                  <div>
+                    <label class="text-xs text-gray-600 font-medium">Categoria</label>
+                    <select v-model="formCotacao.hotel_categoria"
+                      class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400">
+                      <option value="">Selecione…</option>
+                      <option>2 estrelas</option>
+                      <option>3 estrelas</option>
+                      <option>4 estrelas</option>
+                      <option>5 estrelas</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="text-xs text-gray-600 font-medium">Valor da Diária (R$)</label>
+                    <input v-model.number="formCotacao.hotel_valor_diaria" type="number" min="0" step="0.01" placeholder="0,00"
+                      class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Rodoviário -->
+              <div v-if="temServico(solDetalhe, 'Rodoviario')" class="border border-amber-200 rounded-xl p-4 bg-amber-50">
+                <p class="font-semibold text-amber-700 text-sm mb-3">🚌 Transporte Rodoviário</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div>
+                    <label class="text-xs text-gray-600 font-medium">Empresa</label>
+                    <input v-model="formCotacao.rodov_empresa" type="text" placeholder="Ex: Cometa"
+                      class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+                  </div>
+                  <div>
+                    <label class="text-xs text-gray-600 font-medium">Horário de Ida</label>
+                    <input v-model="formCotacao.rodov_horario_ida" type="text" placeholder="07:30"
+                      class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+                  </div>
+                  <div>
+                    <label class="text-xs text-gray-600 font-medium">Horário de Volta</label>
+                    <input v-model="formCotacao.rodov_horario_volta" type="text" placeholder="18:00"
+                      class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+                  </div>
+                  <div>
+                    <label class="text-xs text-gray-600 font-medium">Valor (R$)</label>
+                    <input v-model.number="formCotacao.rodov_valor" type="number" min="0" step="0.01" placeholder="0,00"
+                      class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Carro -->
+              <div v-if="temServico(solDetalhe, 'Carro')" class="border border-green-200 rounded-xl p-4 bg-green-50">
+                <p class="font-semibold text-green-700 text-sm mb-3">🚗 Locação de Carro</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div>
+                    <label class="text-xs text-gray-600 font-medium">Locadora</label>
+                    <input v-model="formCotacao.carro_locadora" type="text" placeholder="Localiza / Hertz"
+                      class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400" />
+                  </div>
+                  <div>
+                    <label class="text-xs text-gray-600 font-medium">Modelo</label>
+                    <input v-model="formCotacao.carro_modelo" type="text" placeholder="HB20 ou similar"
+                      class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400" />
+                  </div>
+                  <div>
+                    <label class="text-xs text-gray-600 font-medium">Valor da Diária (R$)</label>
+                    <input v-model.number="formCotacao.carro_valor_diaria" type="number" min="0" step="0.01" placeholder="0,00"
+                      class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Total e Observações -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="text-xs text-gray-600 font-medium">Valor Total da Cotação (R$)</label>
+                  <input v-model.number="formCotacao.valor_total" type="number" min="0" step="0.01" placeholder="0,00"
+                    class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+                </div>
+                <div>
+                  <label class="text-xs text-gray-600 font-medium">Observações</label>
+                  <textarea v-model="formCotacao.observacoes" rows="2" placeholder="Informações adicionais…"
+                    class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"></textarea>
+                </div>
+              </div>
+
+              <div class="flex justify-end gap-3 pt-2">
+                <button type="button" @click="voltarLista"
+                  class="px-5 py-2.5 text-sm border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 transition">
+                  Cancelar
+                </button>
+                <button type="submit" :disabled="enviandoCotacao"
+                  class="px-6 py-2.5 text-sm bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold rounded-lg transition">
+                  {{ enviandoCotacao ? 'Enviando…' : (solDetalhe.cotacao ? 'Atualizar Cotação' : 'Enviar Cotação') }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </template>
+      </template>
+
+    </main>
+  </template>
+</div>
+
+<script>
+const { createApp, ref, reactive, computed, onMounted } = Vue;
+
+createApp({
+  setup() {
+    const API = '/api/v1';
+
+    // ── Estado global ──────────────────────────────────────────────
+    const tela          = ref('login');
+    const nomeUsuario   = ref('');
+    const agenciaNome   = ref('');
+    const token         = ref('');
+
+    // Login
+    const loginForm       = reactive({ username: '', password: '', agencia: 'tastur' });
+    const loginCarregando = ref(false);
+    const loginErro       = ref('');
+
+    // Lista
+    const solicitacoes    = ref([]);
+    const carregandoLista = ref(false);
+    const filtroStatus    = ref('');
+
+    // Detalhe
+    const solDetalhe      = ref(null);
+
+    // Cotação
+    const formCotacao = reactive({
+      aereo_companhia: '', aereo_numero_voo: '', aereo_horario_ida: '', aereo_horario_volta: '', aereo_valor: null,
+      hotel_nome: '', hotel_categoria: '', hotel_valor_diaria: null,
+      rodov_empresa: '', rodov_horario_ida: '', rodov_horario_volta: '', rodov_valor: null,
+      carro_locadora: '', carro_modelo: '', carro_valor_diaria: null,
+      valor_total: null, observacoes: '',
+    });
+    const enviandoCotacao = ref(false);
+    const cotacaoSucesso  = ref(false);
+    const cotacaoErro     = ref('');
+
+    // ── Helpers ────────────────────────────────────────────────────
+    function authHeaders() {
+      return { Authorization: `Bearer ${token.value}`, 'Content-Type': 'application/json' };
+    }
+
+    function temServico(sol, servico) {
+      return (sol?.tipo_servico || '').split(',').map(s => s.trim()).includes(servico);
+    }
+
+    function formatarData(dt) {
+      if (!dt) return '—';
+      return new Date(dt).toLocaleDateString('pt-BR');
+    }
+
+    function formatarMoeda(val) {
+      if (val == null) return '—';
+      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+    }
+
+    function badgeStatus(s) {
+      const m = {
+        AGUARDANDO_COTACAO: 'bg-yellow-100 text-yellow-800',
+        COTACAO_ENVIADA:    'bg-blue-100 text-blue-800',
+        CONCLUIDA:          'bg-green-100 text-green-800',
+        REPROVADA:          'bg-red-100 text-red-700',
+      };
+      return m[s] || 'bg-gray-100 text-gray-600';
+    }
+
+    function labelStatus(s) {
+      const m = {
+        AGUARDANDO_COTACAO: 'Aguardando Cotação',
+        COTACAO_ENVIADA:    'Cotação Enviada',
+        CONCLUIDA:          'Concluída',
+        AGUARDANDO_N1:      'Aguardando N1',
+        AGUARDANDO_N2:      'Aguardando N2',
+        REPROVADA:          'Reprovada',
+      };
+      return m[s] || s;
+    }
+
+    function badgeCasamento(tipo) {
+      const m = {
+        TOTAL:     'bg-green-100 text-green-800',
+        PARCIAL_A: 'bg-blue-100 text-blue-800',
+        PARCIAL_B: 'bg-yellow-100 text-yellow-800',
+      };
+      return m[tipo] || 'bg-gray-100 text-gray-600';
+    }
+
+    function popularFormCotacao(cotacao) {
+      if (!cotacao) return;
+      Object.keys(formCotacao).forEach(k => {
+        if (cotacao[k] !== undefined) formCotacao[k] = cotacao[k];
+      });
+    }
+
+    // ── Autenticação ───────────────────────────────────────────────
+    function restaurarSessao() {
+      const t = localStorage.getItem('agencia_token');
+      const n = localStorage.getItem('agencia_nome_usuario');
+      const a = localStorage.getItem('agencia_nome');
+      if (t) {
+        token.value       = t;
+        nomeUsuario.value = n || '';
+        agenciaNome.value = a || '';
+        tela.value        = 'lista';
+        carregarSolicitacoes();
+      }
+    }
+
+    async function fazerLogin() {
+      loginErro.value       = '';
+      loginCarregando.value = true;
+      try {
+        const res = await fetch(`${API}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(loginForm),
+        });
+        const dados = await res.json();
+        if (!res.ok) {
+          loginErro.value = dados.detail || 'Erro ao fazer login.';
+          return;
+        }
+        token.value       = dados.access_token;
+        nomeUsuario.value = dados.nome_usuario;
+        agenciaNome.value = loginForm.agencia.charAt(0).toUpperCase() + loginForm.agencia.slice(1);
+        localStorage.setItem('agencia_token', token.value);
+        localStorage.setItem('agencia_nome_usuario', nomeUsuario.value);
+        localStorage.setItem('agencia_nome', agenciaNome.value);
+        tela.value = 'lista';
+        carregarSolicitacoes();
+      } catch (e) {
+        loginErro.value = 'Erro de conexão com o servidor.';
+      } finally {
+        loginCarregando.value = false;
+      }
+    }
+
+    function sair() {
+      localStorage.removeItem('agencia_token');
+      localStorage.removeItem('agencia_nome_usuario');
+      localStorage.removeItem('agencia_nome');
+      token.value = '';
+      tela.value  = 'login';
+    }
+
+    // ── Solicitações ───────────────────────────────────────────────
+    async function carregarSolicitacoes() {
+      carregandoLista.value = true;
+      try {
+        const qs  = filtroStatus.value ? `?status_filtro=${filtroStatus.value}` : '';
+        const res = await fetch(`${API}/agencia/solicitacoes${qs}`, { headers: authHeaders() });
+        if (res.status === 401) { sair(); return; }
+        solicitacoes.value = await res.json();
+      } catch (e) {
+        console.error('Erro ao carregar solicitações', e);
+      } finally {
+        carregandoLista.value = false;
+      }
+    }
+
+    async function abrirDetalhe(id) {
+      solDetalhe.value  = null;
+      cotacaoSucesso.value = false;
+      cotacaoErro.value    = '';
+      tela.value = 'detalhe';
+      try {
+        const res = await fetch(`${API}/agencia/solicitacoes/${id}`, { headers: authHeaders() });
+        if (res.status === 401) { sair(); return; }
+        const dados = await res.json();
+        if (!res.ok) {
+          alert(dados.detail || 'Erro ao carregar detalhe.');
+          voltarLista();
+          return;
+        }
+        solDetalhe.value = dados;
+        // Pré-popular formulário se já existe cotação
+        Object.keys(formCotacao).forEach(k => { formCotacao[k] = null; });
+        formCotacao.observacoes = '';
+        if (dados.cotacao) popularFormCotacao(dados.cotacao);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function voltarLista() {
+      tela.value = 'lista';
+      solDetalhe.value = null;
+      carregarSolicitacoes();
+    }
+
+    // ── Cotação ────────────────────────────────────────────────────
+    async function enviarCotacao() {
+      if (!solDetalhe.value) return;
+      enviandoCotacao.value = true;
+      cotacaoSucesso.value  = false;
+      cotacaoErro.value     = '';
+      try {
+        const res = await fetch(`${API}/agencia/solicitacoes/${solDetalhe.value.id}/cotacao`, {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify(formCotacao),
+        });
+        const dados = await res.json();
+        if (!res.ok) {
+          cotacaoErro.value = dados.detail || 'Erro ao registrar cotação.';
+          return;
+        }
+        cotacaoSucesso.value = true;
+        solDetalhe.value.cotacao = dados;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch (e) {
+        cotacaoErro.value = 'Erro de conexão com o servidor.';
+      } finally {
+        enviandoCotacao.value = false;
+      }
+    }
+
+    onMounted(restaurarSessao);
+
+    return {
+      tela, nomeUsuario, agenciaNome,
+      loginForm, loginCarregando, loginErro, fazerLogin, sair,
+      solicitacoes, carregandoLista, filtroStatus, carregarSolicitacoes,
+      solDetalhe, abrirDetalhe, voltarLista,
+      formCotacao, enviandoCotacao, cotacaoSucesso, cotacaoErro, enviarCotacao,
+      temServico, formatarData, formatarMoeda, badgeStatus, labelStatus, badgeCasamento,
+    };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>

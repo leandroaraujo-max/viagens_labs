@@ -12,18 +12,24 @@ ACCESS_TOKEN_EXPIRE_HOURS = 8
 # Configura o Passlib para usar Bcrypt (o padr?o ouro de mercado, muito mais seguro que SHA-256 + Salt manual)
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-def create_access_token(subject: Union[str, Any], expires_delta: Optional[timedelta] = None, perfil: str = "viajante") -> str:
+def create_access_token(
+    subject: Union[str, Any],
+    expires_delta: Optional[timedelta] = None,
+    perfil: str = "viajante",
+    extra_claims: Optional[dict] = None
+) -> str:
     """
-    Substitui a l?gica do CacheService do GAS.
     Cria um JSON Web Token (JWT) assinado digitalmente.
+    extra_claims: campos adicionais opcionais (ex: {'agencia_nome': 'Tastur'}).
     """
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
         expire = datetime.now(timezone.utc) + timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
-    
-    # O "payload" ? a "carga ?til" do token. Substitui o que voc? salvava no JSON.stringify do GAS.
-    to_encode = {"exp": expire, "sub": str(subject), "perfil": perfil}
+
+    to_encode: dict = {"exp": expire, "sub": str(subject), "perfil": perfil}
+    if extra_claims:
+        to_encode.update(extra_claims)
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 

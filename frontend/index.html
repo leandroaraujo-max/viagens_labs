@@ -27,7 +27,7 @@
     </script>
     <style>
         .bg-viagens {
-            background-image: linear-gradient(rgba(15, 23, 42, 0.75), rgba(15, 23, 42, 0.90)), url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=2074&auto=format&fit=crop');
+            background-image: linear-gradient(rgba(15, 23, 42, 0.75), rgba(15, 23, 42, 0.90)), url('/img/bg-aviao.jpg');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
@@ -102,12 +102,20 @@
                         <div class="flex items-center gap-4">
                             <div class="hidden sm:flex flex-col items-end">
                                 <span class="text-sm font-semibold text-gray-700">{{ nomeUsuario }}</span>
-                                <span class="text-xs text-gray-500 font-medium bg-gray-100 px-2 py-0.5 rounded-md">Colaborador</span>
+                                <span class="text-xs text-gray-500 font-medium bg-gray-100 px-2 py-0.5 rounded-md">{{ badgePerfil }}</span>
                             </div>
                             <div class="h-9 w-9 rounded-lg bg-labs-dark text-white flex items-center justify-center font-bold text-sm shadow-sm">
                                 {{ nomeUsuario.charAt(0).toUpperCase() }}
                             </div>
                             <div class="h-6 w-px bg-gray-300 mx-2"></div>
+                            <!-- Link para o Painel do Setor (só aparece para usuários do setor) -->
+                            <a v-if="perfilUsuario === 'setor'" href="/painel.html"
+                               class="flex items-center gap-1.5 text-sm font-semibold text-white bg-blue-700 hover:bg-blue-800 px-3 py-1.5 rounded-lg transition-colors duration-200 shadow-sm"
+                               title="Acessar o Painel do Setor">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                                Painel do Setor
+                            </a>
+                            <div v-if="perfilUsuario === 'setor'" class="h-6 w-px bg-gray-300 mx-1"></div>
                             <button @click="logout" class="text-gray-500 hover:text-red-600 transition-colors duration-200" title="Sair do Sistema">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                             </button>
@@ -117,36 +125,44 @@
 
                 <main class="flex-grow max-w-7xl w-full mx-auto py-8 px-4 sm:px-6 lg:px-8">
                     
-                    <!-- Banner de Boas Vindas -->
-                    <div class="mb-8 bg-gradient-to-r from-labs-dark to-slate-800 rounded-2xl shadow-xl p-8 text-white relative overflow-hidden flex items-center justify-between">
-                        <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0); background-size: 32px 32px;"></div>
-                        
-                        <div class="relative z-10">
-                            <h2 class="text-3xl font-extrabold mb-2 tracking-tight">Sua próxima viagem começa aqui.</h2>
-                            <p class="text-gray-300 max-w-2xl text-sm font-medium">Faça sua solicitação de acordo com as políticas do Luizalabs. Aéreo, Hospedagem e Terrestre em um só lugar.</p>
-                        </div>
-                        <div class="hidden md:block relative z-10 opacity-30">
-                            <svg class="w-32 h-32 text-labs-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        </div>
-                    </div>
-
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        
-                        <!-- Coluna Principal (Formulário) -->
+
+                        <!-- Coluna Principal (Formulário Multi-Passo) -->
                         <div class="lg:col-span-2">
                             <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-                                <div class="px-6 py-5 border-b border-gray-100 flex items-center gap-3">
-                                    <div class="bg-labs-blue/10 p-2 rounded-lg">
-                                        <svg class="w-5 h-5 text-labs-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+
+                                <!-- Cabeçalho com Step Indicator -->
+                                <div class="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <div class="bg-labs-blue/10 p-2 rounded-lg">
+                                            <svg class="w-5 h-5 text-labs-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                        </div>
+                                        <h3 class="text-lg font-bold text-labs-dark">Nova Solicitação</h3>
                                     </div>
-                                    <h3 class="text-lg font-bold text-labs-dark">Dados da Solicitação</h3>
+                                    <div v-if="passoAtual < 4" class="hidden sm:flex items-center gap-2">
+                                        <div class="flex items-center gap-1.5">
+                                            <div :class="passoAtual >= 1 ? 'bg-labs-blue text-white' : 'bg-gray-200 text-gray-400'" class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors">1</div>
+                                            <span class="text-xs font-semibold" :class="passoAtual === 1 ? 'text-labs-dark' : 'text-gray-400'">Viajante</span>
+                                        </div>
+                                        <div class="w-8 h-px" :class="passoAtual >= 2 ? 'bg-labs-blue' : 'bg-gray-200'"></div>
+                                        <div class="flex items-center gap-1.5">
+                                            <div :class="passoAtual >= 2 ? 'bg-labs-blue text-white' : 'bg-gray-200 text-gray-400'" class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors">2</div>
+                                            <span class="text-xs font-semibold" :class="passoAtual === 2 ? 'text-labs-dark' : 'text-gray-400'">Dados</span>
+                                        </div>
+                                        <div class="w-8 h-px" :class="passoAtual >= 3 ? 'bg-labs-blue' : 'bg-gray-200'"></div>
+                                        <div class="flex items-center gap-1.5">
+                                            <div :class="passoAtual >= 3 ? 'bg-labs-blue text-white' : 'bg-gray-200 text-gray-400'" class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors">3</div>
+                                            <span class="text-xs font-semibold" :class="passoAtual === 3 ? 'text-labs-dark' : 'text-gray-400'">Preferências</span>
+                                        </div>
+                                    </div>
                                 </div>
+
                                 <div class="p-6">
-                                    
+
                                     <!-- ======================================================= -->
-                                    <!-- PASSO 1: IDENTIFICAÇÃO DO SOLICITANTE                   -->
+                                    <!-- PASSO 1: IDENTIFICAÇÃO DO VIAJANTE                      -->
                                     <!-- ======================================================= -->
-                                    <div class="space-y-6">
+                                    <div v-show="passoAtual === 1" class="space-y-6">
                                         <div>
                                             <label class="block text-sm font-semibold text-gray-700 mb-3">Tipo de Solicitação</label>
                                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -165,23 +181,22 @@
                                             </div>
                                         </div>
 
-                                        <!-- Campo de Busca de CPF (Aparece se for Delegação ou Conjunto) -->
-                                        <div v-if="tipo_solicitacao !== 'proprio'" class="bg-gray-50 p-5 rounded-xl border border-gray-200 space-y-4">
-                                            <h4 class="text-sm font-bold text-labs-dark">Identificar Co-viajante ou Delegado</h4>
-                                            
+                                                        <!-- Busca por CPF/Matrícula (co-viajante/delegado OU fallback do proprio) -->
+                                        <div v-if="tipo_solicitacao !== 'proprio' || mostrarBuscaFallback" class="bg-gray-50 p-5 rounded-xl border border-gray-200 space-y-4">
+                                            <h4 class="text-sm font-bold text-labs-dark">
+                                                <span v-if="tipo_solicitacao !== 'proprio'">Identificar Co-viajante ou Delegado</span>
+                                                <span v-else>Confirmar sua identidade</span>
+                                            </h4>
+                                            <div v-if="erroBuscaProprioUsuario" class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3 font-medium">⚠ {{ erroBuscaProprioUsuario }}</div>
                                             <div class="flex gap-2">
-                                                <input v-model="cpfBusca" type="text" placeholder="Digite CPF ou Matrícula" class="flex-grow px-4 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue focus:ring-1 focus:ring-labs-blue text-sm">
+                                                <input v-model="cpfBusca" type="text" :placeholder="tipo_solicitacao === 'proprio' ? 'Digite seu CPF ou Matrícula' : 'Digite CPF ou Matrícula'" class="flex-grow px-4 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue focus:ring-1 focus:ring-labs-blue text-sm">
                                                 <button @click="buscarColaboradorGCP" :disabled="buscandoColaborador" class="bg-labs-blue hover:bg-blue-700 text-white font-semibold px-5 py-2.5 rounded-lg text-sm transition disabled:opacity-50">
                                                     {{ buscandoColaborador ? 'Buscando...' : 'Buscar' }}
                                                 </button>
                                             </div>
-
-                                            <div v-if="erroBusca" class="text-xs text-red-600 font-medium">
-                                                ⚠ {{ erroBusca }}
-                                            </div>
+                                            <div v-if="erroBusca" class="text-xs text-red-600 font-medium">⚠ {{ erroBusca }}</div>
                                         </div>
 
-                                        <!-- Card Informativo do Viajante Encontrado (Legado BigQuery + UI) -->
                                         <div v-if="viajanteDados" class="bg-blue-50/60 rounded-xl p-5 border border-blue-100 flex flex-col sm:flex-row justify-between gap-4">
                                             <div>
                                                 <span class="text-[10px] font-bold text-labs-blue uppercase tracking-widest">Viajante Identificado</span>
@@ -195,12 +210,383 @@
                                             </div>
                                         </div>
 
-                                        <!-- Botão Avançar -->
                                         <div class="text-right pt-4 border-t border-gray-100">
-                                            <button :disabled="!viajanteDados" class="bg-labs-blue hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-lg text-sm shadow transition disabled:opacity-50 disabled:cursor-not-allowed">
+                                            <button @click="passoAtual = 2" :disabled="!viajanteDados" class="bg-labs-blue hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-lg text-sm shadow transition disabled:opacity-50 disabled:cursor-not-allowed">
                                                 Avançar para dados da viagem →
                                             </button>
                                         </div>
+                                    </div>
+
+                                    <!-- ======================================================= -->
+                                    <!-- PASSO 2: DADOS DA VIAGEM                                -->
+                                    <!-- ======================================================= -->
+                                    <div v-show="passoAtual === 2" class="space-y-6">
+
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div>
+                                                <label class="block text-sm font-semibold text-gray-700 mb-2">Cidade de Origem</label>
+                                                <div class="relative">
+                                                    <input v-model="formViagem.origem_cidade"
+                                                           @input="buscarCidadesIBGE(formViagem.origem_cidade, 'origem')"
+                                                           @blur="fecharAc('origem')"
+                                                           type="text" autocomplete="off" placeholder="Ex: Franca"
+                                                           class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue focus:ring-1 focus:ring-labs-blue text-sm" :class="acCidades.origem.carregando ? 'pr-9' : ''">
+                                                    <span v-if="acCidades.origem.carregando" class="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-gray-400">&#9696;</span>
+                                                    <ul v-if="acCidades.origem.visivel && acCidades.origem.sugestoes.length"
+                                                        class="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-52 overflow-y-auto">
+                                                        <li v-for="c in acCidades.origem.sugestoes" :key="c.id"
+                                                            @mousedown.prevent="selecionarCidade('origem', c)"
+                                                            class="flex justify-between items-center px-4 py-2.5 cursor-pointer hover:bg-blue-50 text-sm">
+                                                            <span>{{ c.nome }}</span>
+                                                            <span class="text-xs font-semibold text-gray-400 ml-2">{{ c.uf }}</span>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-semibold text-gray-700 mb-2">Estado</label>
+                                                <input v-model="formViagem.origem_estado" type="text" maxlength="2" placeholder="SP" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue focus:ring-1 focus:ring-labs-blue text-sm uppercase">
+                                            </div>
+                                        </div>
+
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div>
+                                                <label class="block text-sm font-semibold text-gray-700 mb-2">Cidade de Destino <span class="text-red-500">*</span></label>
+                                                <div class="relative">
+                                                    <input v-model="formViagem.destino_cidade"
+                                                           @input="buscarCidadesIBGE(formViagem.destino_cidade, 'destino')"
+                                                           @blur="fecharAc('destino')"
+                                                           type="text" autocomplete="off" placeholder="Ex: São Paulo"
+                                                           class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue focus:ring-1 focus:ring-labs-blue text-sm" :class="acCidades.destino.carregando ? 'pr-9' : ''">
+                                                    <span v-if="acCidades.destino.carregando" class="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-gray-400">&#9696;</span>
+                                                    <ul v-if="acCidades.destino.visivel && acCidades.destino.sugestoes.length"
+                                                        class="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-52 overflow-y-auto">
+                                                        <li v-for="c in acCidades.destino.sugestoes" :key="c.id"
+                                                            @mousedown.prevent="selecionarCidade('destino', c)"
+                                                            class="flex justify-between items-center px-4 py-2.5 cursor-pointer hover:bg-blue-50 text-sm">
+                                                            <span>{{ c.nome }}</span>
+                                                            <span class="text-xs font-semibold text-gray-400 ml-2">{{ c.uf }}</span>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-semibold text-gray-700 mb-2">Estado</label>
+                                                <input v-model="formViagem.destino_estado" type="text" maxlength="2" placeholder="SP" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue focus:ring-1 focus:ring-labs-blue text-sm uppercase">
+                                            </div>
+                                        </div>
+
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div>
+                                                <label class="block text-sm font-semibold text-gray-700 mb-2">Data de Ida <span class="text-red-500">*</span></label>
+                                                <input v-model="formViagem.data_ida" type="date" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue focus:ring-1 focus:ring-labs-blue text-sm">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-semibold text-gray-700 mb-2">Data de Volta</label>
+                                                <input v-model="formViagem.data_volta" type="date" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue focus:ring-1 focus:ring-labs-blue text-sm">
+                                            </div>
+                                        </div>
+
+                                        <!-- Alerta SLA Emergencial -->
+                                        <div v-if="classificacaoAereo === 'Emergencial'" class="p-4 bg-amber-50 border-l-4 border-amber-500 rounded-lg flex items-start gap-3">
+                                            <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                                            <div>
+                                                <p class="text-sm font-bold text-amber-800">Viagem Emergencial — menos de 15 dias de antecedência</p>
+                                                <p class="text-xs text-amber-700 mt-1">Esta solicitação exigirá aprovação do Gestor N1 <strong>e</strong> N2 (Diretoria). Certifique-se de ter justificativa clara.</p>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-sm font-semibold text-gray-700 mb-2">Motivo da Viagem <span class="text-red-500">*</span></label>
+                                            <textarea v-model="formViagem.motivo_viagem" rows="3" placeholder="Descreva o objetivo da viagem..." class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue focus:ring-1 focus:ring-labs-blue text-sm resize-none"></textarea>
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-sm font-semibold text-gray-700 mb-3">Serviços Necessários <span class="text-red-500">*</span></label>
+                                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                                <label v-for="srv in servicosDisponiveis" :key="srv.valor"
+                                                    :class="formViagem.tipo_servico.includes(srv.valor) ? 'border-labs-blue bg-blue-50 ring-2 ring-labs-blue/20' : 'border-gray-200 hover:bg-gray-50'"
+                                                    class="flex flex-col items-center gap-2 p-4 rounded-xl border-2 cursor-pointer transition-all select-none">
+                                                    <input type="checkbox" :value="srv.valor" v-model="formViagem.tipo_servico" class="sr-only">
+                                                    <span class="text-2xl">{{ srv.icone }}</span>
+                                                    <span class="text-xs font-semibold text-center" :class="formViagem.tipo_servico.includes(srv.valor) ? 'text-labs-blue' : 'text-gray-600'">{{ srv.label }}</span>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <!-- ══ BUSCA CONSULTIVA DE VOOS (Duffel) ══════════════════════ -->
+                                        <div v-if="formViagem.tipo_servico.includes('Aereo')" class="border border-blue-200 rounded-xl bg-blue-50 p-4">
+                                            <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
+                                                <div class="flex items-center gap-2">
+                                                    <span class="text-blue-700 text-lg">✈</span>
+                                                    <span class="font-semibold text-blue-800 text-sm">Pesquisa de Voos (opcional)</span>
+                                                    <span class="text-xs text-blue-500">— Consultivo · sem reserva</span>
+                                                </div>
+                                                <button type="button" @click="buscarVoosDuffel"
+                                                    :disabled="!podeBuscarVoos || duffelBuscando"
+                                                    class="text-xs bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-lg px-3 py-1.5 transition">
+                                                    {{ duffelBuscando ? '⏳ Buscando…' : '🔍 Buscar Voos' }}
+                                                </button>
+                                            </div>
+
+                                            <!-- Voo selecionado -->
+                                            <div v-if="duffelVooSelecionado" class="mb-3 bg-green-50 border border-green-300 rounded-lg px-3 py-2 text-sm flex items-center justify-between gap-2">
+                                                <span class="text-green-700">
+                                                    ✔ <strong>{{ duffelVooSelecionado.cia_nome }} {{ duffelVooSelecionado.numero_voo }}</strong>
+                                                    · {{ formatarHora(duffelVooSelecionado.saida) }} → {{ formatarHora(duffelVooSelecionado.chegada) }}
+                                                    · {{ duffelVooSelecionado.paradas === 0 ? 'Direto' : duffelVooSelecionado.paradas + ' parada(s)' }}
+                                                    <span v-if="duffelVooSelecionado.bagagem" class="ml-1 text-xs bg-green-100 text-green-700 rounded px-1">🧳 bagagem</span>
+                                                </span>
+                                                <button type="button" @click="duffelVooSelecionado = null; formViagem.preferencia_voo = null"
+                                                    class="text-gray-400 hover:text-red-500 text-xs">✕ Remover</button>
+                                            </div>
+
+                                            <!-- Erro -->
+                                            <div v-if="duffelErro" class="mb-3 text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                                                {{ duffelErro }}
+                                            </div>
+
+                                            <!-- Lista de resultados -->
+                                            <div v-if="duffelVoos.length" class="space-y-2 max-h-72 overflow-y-auto pr-1">
+                                                <div v-for="voo in duffelVoos" :key="voo.id"
+                                                    @click="selecionarVoo(voo)"
+                                                    :class="duffelVooSelecionado && duffelVooSelecionado.id === voo.id
+                                                        ? 'border-blue-500 bg-white ring-2 ring-blue-400'
+                                                        : 'border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50'"
+                                                    class="border rounded-lg p-3 cursor-pointer transition flex items-center justify-between gap-3 text-sm">
+                                                    <div class="flex items-center gap-3 min-w-0">
+                                                        <div class="text-center w-14 flex-shrink-0">
+                                                            <div class="font-bold text-blue-700 text-xs">{{ voo.cia_nome }}</div>
+                                                            <div class="text-gray-500 text-xs">{{ voo.numero_voo }}</div>
+                                                        </div>
+                                                        <div>
+                                                            <div class="font-semibold text-gray-800">
+                                                                {{ formatarHora(voo.saida) }} → {{ formatarHora(voo.chegada) }}
+                                                            </div>
+                                                            <div class="text-xs text-gray-500">
+                                                                {{ voo.origem }} → {{ voo.destino }} ·
+                                                                {{ voo.paradas === 0 ? 'Direto' : voo.paradas + ' parada(s)' }}
+                                                                <template v-if="voo.escalas.length">
+                                                                    ({{ voo.escalas.map(e => e.aeroporto).join(', ') }})
+                                                                </template>
+                                                                · {{ formatarDuracao(voo.duracao) }}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex-shrink-0 flex flex-col items-end gap-1">
+                                                        <span v-if="voo.bagagem" class="text-xs bg-green-100 text-green-700 rounded px-1.5 py-0.5">🧳 bagagem</span>
+                                                        <span v-if="duffelVooSelecionado && duffelVooSelecionado.id === voo.id"
+                                                            class="text-xs bg-blue-100 text-blue-700 rounded px-1.5 py-0.5 font-semibold">✔ selecionado</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <p v-if="!duffelBuscando && duffelVoos.length === 0 && !duffelErro && !duffelVooSelecionado"
+                                               class="text-xs text-blue-500 mt-1">
+                                                Preencha origem, destino e data de ida, depois clique em "Buscar Voos" para ver opções disponíveis. A preferência será enviada à agência como contexto.
+                                            </p>
+                                        </div>
+                                        <!-- ══ / BUSCA DUFFEL ══════════════════════════════════════════ -->
+
+                                        <div class="flex justify-between pt-4 border-t border-gray-100">
+                                            <button @click="passoAtual = 1" class="text-gray-500 hover:text-gray-700 font-semibold py-2.5 px-4 rounded-lg text-sm transition">← Voltar</button>
+                                            <button @click="passoAtual = 3" :disabled="!passo2Valido" class="bg-labs-blue hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-lg text-sm shadow transition disabled:opacity-50 disabled:cursor-not-allowed">
+                                                Avançar para preferências →
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- ======================================================= -->
+                                    <!-- PASSO 3: PREFERÊNCIAS CONDICIONAIS                      -->
+                                    <!-- ======================================================= -->
+                                    <div v-show="passoAtual === 3" class="space-y-5">
+
+                                        <!-- Seção Aéreo -->
+                                        <div v-if="formViagem.tipo_servico.includes('Aereo')" class="bg-sky-50/60 rounded-xl border border-sky-100 p-5 space-y-4">
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-xl">✈️</span>
+                                                <h4 class="font-bold text-sky-800 text-sm">Preferências de Voo</h4>
+                                                <span v-if="classificacaoAereo" :class="classificacaoAereo === 'Emergencial' ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'" class="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">{{ classificacaoAereo }}</span>
+                                            </div>
+                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                <div>
+                                                    <label class="block text-xs font-semibold text-gray-600 mb-1.5">Período Preferido</label>
+                                                    <select v-model="formPreferencias.aereo_periodo_preferido" class="w-full px-3 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue text-sm bg-white">
+                                                        <option value="">Sem preferência</option>
+                                                        <option value="manha">Manhã (06h–12h)</option>
+                                                        <option value="tarde">Tarde (12h–18h)</option>
+                                                        <option value="noite">Noite (18h–23h)</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="block text-xs font-semibold text-gray-600 mb-1.5">Trecho</label>
+                                                    <select v-model="formPreferencias.aereo_tipo_trecho" class="w-full px-3 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue text-sm bg-white">
+                                                        <option value="ambos">Ida e Volta</option>
+                                                        <option value="ida">Somente Ida</option>
+                                                        <option value="volta">Somente Volta</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                                                <label class="flex items-center gap-3 cursor-pointer">
+                                                    <input type="checkbox" v-model="formPreferencias.bagagem_extra" class="w-4 h-4 text-labs-blue rounded focus:ring-labs-blue">
+                                                    <span class="text-sm text-gray-700">Necessito despachar bagagem</span>
+                                                </label>
+                                                <input v-model="formPreferencias.assento_especial" type="text" placeholder="Preferência de assento (ex: janela)" class="flex-grow px-3 py-2 rounded-lg border border-gray-300 focus:border-labs-blue text-sm">
+                                            </div>
+                                        </div>
+
+                                        <!-- Seção Rodoviário -->
+                                        <div v-if="formViagem.tipo_servico.includes('Rodoviario')" class="bg-emerald-50/60 rounded-xl border border-emerald-100 p-5 space-y-4">
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-xl">🚌</span>
+                                                <h4 class="font-bold text-emerald-800 text-sm">Preferências de Ônibus</h4>
+                                            </div>
+                                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                                <div>
+                                                    <label class="block text-xs font-semibold text-gray-600 mb-1.5">Período Preferido</label>
+                                                    <select v-model="formPreferencias.rodov_periodo_preferido" class="w-full px-3 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue text-sm bg-white">
+                                                        <option value="">Sem preferência</option>
+                                                        <option value="manha">Manhã</option>
+                                                        <option value="tarde">Tarde</option>
+                                                        <option value="noite">Noite</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="block text-xs font-semibold text-gray-600 mb-1.5">Tipo de Ônibus</label>
+                                                    <select v-model="formPreferencias.rodov_tipo_onibus" class="w-full px-3 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue text-sm bg-white">
+                                                        <option value="">Qualquer</option>
+                                                        <option value="convencional">Convencional</option>
+                                                        <option value="executivo">Executivo</option>
+                                                        <option value="leito">Leito</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="block text-xs font-semibold text-gray-600 mb-1.5">Trecho</label>
+                                                    <select v-model="formPreferencias.rodov_tipo_trecho" class="w-full px-3 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue text-sm bg-white">
+                                                        <option value="ambos">Ida e Volta</option>
+                                                        <option value="ida">Somente Ida</option>
+                                                        <option value="volta">Somente Volta</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Seção Hospedagem -->
+                                        <div v-if="formViagem.tipo_servico.includes('Hospedagem')" class="bg-violet-50/60 rounded-xl border border-violet-100 p-5 space-y-4">
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-xl">🏨</span>
+                                                <h4 class="font-bold text-violet-800 text-sm">Preferências de Hospedagem</h4>
+                                                <span v-if="viajanteDados && viajanteDados.categoria_hospedagem" class="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full uppercase bg-violet-100 text-violet-700">{{ viajanteDados.categoria_hospedagem }}</span>
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs font-semibold text-gray-600 mb-1.5">Sugestão de Hotel (opcional)</label>
+                                                <input v-model="formPreferencias.preferencia_hotel_nome" type="text" placeholder="Nome do hotel preferido" class="w-full px-3 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue text-sm">
+                                            </div>
+                                            <label class="flex items-center gap-3 cursor-pointer">
+                                                <input type="checkbox" v-model="formPreferencias.quarto_excecao_saude" class="w-4 h-4 text-labs-blue rounded focus:ring-labs-blue">
+                                                <span class="text-sm text-gray-700">Solicitar quarto individual por condição de saúde <span class="text-gray-400 text-xs">(requer aprovação do RH)</span></span>
+                                            </label>
+                                        </div>
+
+                                        <!-- Seção Carro -->
+                                        <div v-if="formViagem.tipo_servico.includes('Carro')" class="bg-orange-50/60 rounded-xl border border-orange-100 p-5 space-y-4">
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-xl">🚗</span>
+                                                <h4 class="font-bold text-orange-800 text-sm">Preferências de Veículo</h4>
+                                            </div>
+                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                <div>
+                                                    <label class="block text-xs font-semibold text-gray-600 mb-1.5">Cidade de Retirada</label>
+                                                    <div class="relative">
+                                                        <input v-model="formPreferencias.carro_cidade_retirada"
+                                                               @input="buscarCidadesIBGE(formPreferencias.carro_cidade_retirada, 'carroRet')"
+                                                               @blur="fecharAc('carroRet')"
+                                                               type="text" autocomplete="off" placeholder="Ex: São Paulo - Congonhas"
+                                                               class="w-full px-3 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue text-sm" :class="acCidades.carroRet.carregando ? 'pr-9' : ''">
+                                                        <span v-if="acCidades.carroRet.carregando" class="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-gray-400">&#9696;</span>
+                                                        <ul v-if="acCidades.carroRet.visivel && acCidades.carroRet.sugestoes.length"
+                                                            class="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-52 overflow-y-auto">
+                                                            <li v-for="c in acCidades.carroRet.sugestoes" :key="c.id"
+                                                                @mousedown.prevent="selecionarCidade('carroRet', c)"
+                                                                class="flex justify-between items-center px-4 py-2.5 cursor-pointer hover:bg-blue-50 text-sm">
+                                                                <span>{{ c.nome }}</span>
+                                                                <span class="text-xs font-semibold text-gray-400 ml-2">{{ c.uf }}</span>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label class="block text-xs font-semibold text-gray-600 mb-1.5">Horário de Retirada</label>
+                                                    <input v-model="formPreferencias.carro_hora_retirada" type="time" class="w-full px-3 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue text-sm">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-xs font-semibold text-gray-600 mb-1.5">Cidade de Devolução</label>
+                                                    <div class="relative">
+                                                        <input v-model="formPreferencias.carro_cidade_devolucao"
+                                                               @input="buscarCidadesIBGE(formPreferencias.carro_cidade_devolucao, 'carroDev')"
+                                                               @blur="fecharAc('carroDev')"
+                                                               type="text" autocomplete="off" placeholder="Ex: São Paulo - Congonhas"
+                                                               class="w-full px-3 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue text-sm" :class="acCidades.carroDev.carregando ? 'pr-9' : ''">
+                                                        <span v-if="acCidades.carroDev.carregando" class="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-gray-400">&#9696;</span>
+                                                        <ul v-if="acCidades.carroDev.visivel && acCidades.carroDev.sugestoes.length"
+                                                            class="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-52 overflow-y-auto">
+                                                            <li v-for="c in acCidades.carroDev.sugestoes" :key="c.id"
+                                                                @mousedown.prevent="selecionarCidade('carroDev', c)"
+                                                                class="flex justify-between items-center px-4 py-2.5 cursor-pointer hover:bg-blue-50 text-sm">
+                                                                <span>{{ c.nome }}</span>
+                                                                <span class="text-xs font-semibold text-gray-400 ml-2">{{ c.uf }}</span>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label class="block text-xs font-semibold text-gray-600 mb-1.5">Horário de Devolução</label>
+                                                    <input v-model="formPreferencias.carro_hora_devolucao" type="time" class="w-full px-3 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue text-sm">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Observações Gerais -->
+                                        <div>
+                                            <label class="block text-sm font-semibold text-gray-700 mb-2">Observações adicionais</label>
+                                            <textarea v-model="formPreferencias.observacoes_viajante" rows="2" placeholder="Alguma informação importante para a agência..." class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue focus:ring-1 focus:ring-labs-blue text-sm resize-none"></textarea>
+                                        </div>
+
+                                        <div v-if="erroEnvio" class="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded-md">
+                                            ⚠ {{ erroEnvio }}
+                                        </div>
+
+                                        <div class="flex justify-between pt-4 border-t border-gray-100">
+                                            <button @click="passoAtual = 2" class="text-gray-500 hover:text-gray-700 font-semibold py-2.5 px-4 rounded-lg text-sm transition">← Voltar</button>
+                                            <button @click="enviarSolicitacao" :disabled="enviandoSolicitacao" class="bg-labs-blue hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-lg text-sm shadow transition disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2">
+                                                <svg v-if="enviandoSolicitacao" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                                {{ enviandoSolicitacao ? 'Enviando...' : 'Enviar Solicitação ✓' }}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- ======================================================= -->
+                                    <!-- PASSO 4: PROTOCOLO GERADO (SUCESSO)                     -->
+                                    <!-- ======================================================= -->
+                                    <div v-if="passoAtual === 4" class="py-10 flex flex-col items-center text-center space-y-6">
+                                        <div class="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
+                                            <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                        </div>
+                                        <div>
+                                            <h3 class="text-xl font-extrabold text-labs-dark">Solicitação Enviada!</h3>
+                                            <p class="text-gray-500 text-sm mt-2">Seu protocolo foi gerado. O gestor N1 será notificado por e-mail em breve.</p>
+                                        </div>
+                                        <div class="bg-labs-dark text-white rounded-xl px-10 py-6 w-full max-w-xs space-y-1">
+                                            <p class="text-xs font-bold text-blue-300 uppercase tracking-widest">Número do Protocolo</p>
+                                            <p class="text-2xl font-extrabold tracking-wider">{{ protocoloGerado }}</p>
+                                            <p v-if="classificacaoGerada" class="text-xs pt-1" :class="classificacaoGerada === 'Emergencial' ? 'text-amber-300' : 'text-green-300'">
+                                                Classificação: {{ classificacaoGerada }}
+                                            </p>
+                                        </div>
+                                        <button @click="novasolicitacao" class="text-labs-blue hover:text-blue-800 text-sm font-semibold transition">
+                                            + Fazer nova solicitação
+                                        </button>
                                     </div>
 
                                 </div>
@@ -215,8 +601,10 @@
                                     <h4 class="font-bold">Política de Viagens</h4>
                                 </div>
                                 <ul class="text-sm text-gray-600 space-y-3 font-medium">
-                                    <li class="flex items-start gap-2"><span class="text-labs-blue mt-0.5">•</span> Aéreo < 15 dias exige aprovação de Diretoria.</li>
-                                    <li class="flex items-start gap-2"><span class="text-labs-blue mt-0.5">•</span> Trechos < 400km são prioritariamente terrestres.</li>
+                                    <li class="flex items-start gap-2"><span class="text-labs-blue mt-0.5">•</span> Aéreo &lt; 15 dias exige aprovação de Diretoria.</li>
+                                    <li class="flex items-start gap-2"><span class="text-labs-blue mt-0.5">•</span> Trechos &lt; 400km são prioritariamente terrestres.</li>
+                                    <li class="flex items-start gap-2"><span class="text-labs-blue mt-0.5">•</span> Hospedagem compartilhada conforme política de cargo.</li>
+                                    <li class="flex items-start gap-2"><span class="text-labs-blue mt-0.5">•</span> Exceção de quarto por saúde exige laudo aprovado pelo RH.</li>
                                 </ul>
                             </div>
                             <div class="bg-white rounded-2xl shadow-sm border border-gray-200">
@@ -237,57 +625,239 @@
 
     <!-- Lógica Vue.js -->
     <script>
-        const { createApp, ref, onMounted, watch } = Vue;
+        const { createApp, ref, computed, onMounted, watch, reactive } = Vue;
 
         createApp({
             setup() {
+                // --- Auth ---
                 const token = ref(null);
                 const nomeUsuario = ref('');
+                const perfilUsuario = ref(''); // 'viajante' | 'setor'
                 const carregando = ref(false);
                 const erroLogin = ref('');
                 const loginForm = ref({ username: '', password: '' });
 
-                // --- Estado do Fluxo de Viagem ---
+                const badgePerfil = computed(() => {
+                    if (perfilUsuario.value === 'setor') return 'Setor de Viagens';
+                    return 'Colaborador';
+                });
+
+                // --- Navegação por passos ---
+                const passoAtual = ref(1); // 1=viajante 2=dados 3=preferências 4=sucesso
+
+                // --- Passo 1: Identificação do Viajante ---
                 const tipo_solicitacao = ref('proprio');
                 const cpfBusca = ref('');
                 const buscandoColaborador = ref(false);
                 const viajanteDados = ref(null);
                 const erroBusca = ref('');
+                const erroBuscaProprioUsuario = ref(''); // erro quando busca automática falha
+                const mostrarBuscaFallback = ref(false);  // exibe caixa CPF para 'proprio'
 
+                // --- Passo 2: Dados da Viagem ---
+                const formViagem = ref({
+                    origem_cidade: '',
+                    origem_estado: '',
+                    destino_cidade: '',
+                    destino_estado: '',
+                    data_ida: '',
+                    data_volta: '',
+                    motivo_viagem: '',
+                    tipo_servico: [],
+                    preferencia_voo: null,   // string com resumo do voo selecionado no Duffel
+                });
+
+                // --- Duffel: busca consultiva de voos ---
+                const duffelVoos          = ref([]);
+                const duffelBuscando      = ref(false);
+                const duffelErro          = ref('');
+                const duffelVooSelecionado = ref(null);
+
+                const podeBuscarVoos = computed(() => {
+                    const f = formViagem.value;
+                    return f.origem_cidade.trim() !== '' &&
+                           f.destino_cidade.trim() !== '' &&
+                           f.data_ida !== '';
+                });
+
+                // --- Passo 3: Preferências ---
+                const formPreferencias = ref({
+                    aereo_periodo_preferido: '',
+                    aereo_tipo_trecho: 'ambos',
+                    bagagem_extra: false,
+                    assento_especial: '',
+                    rodov_periodo_preferido: '',
+                    rodov_tipo_onibus: '',
+                    rodov_tipo_trecho: 'ambos',
+                    preferencia_hotel_nome: '',
+                    quarto_excecao_saude: false,
+                    carro_cidade_retirada: '',
+                    carro_hora_retirada: '',
+                    carro_cidade_devolucao: '',
+                    carro_hora_devolucao: '',
+                    observacoes_viajante: '',
+                });
+
+                // --- Envio ---
+                const enviandoSolicitacao = ref(false);
+                const erroEnvio = ref('');
+                const protocoloGerado = ref(null);
+                const classificacaoGerada = ref('');
+
+                // --- Dados Estáticos ---
+                const servicosDisponiveis = [
+                    { valor: 'Aereo',      label: 'Aéreo',      icone: '✈️' },
+                    { valor: 'Rodoviario', label: 'Rodoviário',  icone: '🚌' },
+                    { valor: 'Hospedagem', label: 'Hospedagem',  icone: '🏨' },
+                    { valor: 'Carro',      label: 'Carro',       icone: '🚗' },
+                ];
+
+                // --- Computados ---
+                const classificacaoAereo = computed(() => {
+                    if (!formViagem.value.data_ida || !formViagem.value.tipo_servico.includes('Aereo')) return null;
+                    const dataIda = new Date(formViagem.value.data_ida + 'T12:00:00');
+                    const diffDias = Math.floor((dataIda - new Date()) / (1000 * 60 * 60 * 24));
+                    return diffDias < 15 ? 'Emergencial' : 'Comum';
+                });
+
+                const passo2Valido = computed(() => {
+                    const f = formViagem.value;
+                    return (
+                        f.destino_cidade.trim() !== '' &&
+                        f.data_ida !== '' &&
+                        f.motivo_viagem.trim() !== '' &&
+                        f.tipo_servico.length > 0
+                    );
+                });
+
+                // --- Lifecycle ---
                 onMounted(() => {
                     token.value = localStorage.getItem('token');
                     nomeUsuario.value = localStorage.getItem('nome_usuario') || 'Usuário';
-                    
-                    // Se o login for local "proprio", já identifica o próprio usuário logado
+                    perfilUsuario.value = localStorage.getItem('perfil') || 'viajante';
                     if (token.value && tipo_solicitacao.value === 'proprio') {
                         buscarProprioUsuario();
                     }
                 });
 
-                // Monitora a mudança do tipo de solicitação
+                // --- Autocomplete Cidades (API IBGE — gratuita, sem chave) ---
+                const acCidades = reactive({
+                    origem:   { sugestoes: [], visivel: false, carregando: false },
+                    destino:  { sugestoes: [], visivel: false, carregando: false },
+                    carroRet: { sugestoes: [], visivel: false, carregando: false },
+                    carroDev: { sugestoes: [], visivel: false, carregando: false },
+                });
+
+                // Cache local de municípios (carregado na 1ª busca, ~300KB, sem nova requisição após)
+                let _cidadesCache    = null;
+                let _cidadesPromise  = null; // evita requisições paralelas durante o primeiro carregamento
+                let _ibgeTimer       = null;
+
+                const _norm = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+                const _carregarCidades = () => {
+                    if (_cidadesCache)  return Promise.resolve(_cidadesCache);
+                    if (_cidadesPromise) return _cidadesPromise; // já está carregando
+                    _cidadesPromise = fetch('https://servicodados.ibge.gov.br/api/v1/localidades/municipios?orderBy=nome')
+                        .then(r => r.json())
+                        .then(data => {
+                            _cidadesCache = data
+                                .map(m => {
+                                    // optional chaining — alguns territórios especiais podem não ter microrregiao
+                                    const uf = m.microrregiao?.mesorregiao?.UF?.sigla
+                                            || m['regiao-imediata']?.['regiao-intermediaria']?.UF?.sigla
+                                            || null;
+                                    return uf ? { id: m.id, nome: m.nome, uf, nomeNorm: _norm(m.nome) } : null;
+                                })
+                                .filter(Boolean); // remove entradas sem UF
+                            return _cidadesCache;
+                        })
+                        .catch(err => {
+                            console.error('[IBGE] falha ao carregar municípios:', err);
+                            _cidadesPromise = null; // permite nova tentativa
+                            return [];
+                        });
+                    return _cidadesPromise;
+                };
+
+                const buscarCidadesIBGE = (termo, chave) => {
+                    const ac = acCidades[chave];
+                    if (!termo || termo.length < 2) { ac.sugestoes = []; ac.visivel = false; ac.carregando = false; return; }
+                    clearTimeout(_ibgeTimer);
+                    _ibgeTimer = setTimeout(async () => {
+                        ac.carregando = true;
+                        try {
+                            const t      = _norm(termo);
+                            const todas  = await _carregarCidades();
+                            const inicia = todas.filter(c => c.nomeNorm.startsWith(t));
+                            const contem = todas.filter(c => !c.nomeNorm.startsWith(t) && c.nomeNorm.includes(t));
+                            ac.sugestoes = [...inicia, ...contem].slice(0, 10);
+                            ac.visivel   = ac.sugestoes.length > 0;
+                        } catch (e) {
+                            console.error('[IBGE] erro na busca:', e);
+                            ac.sugestoes = [];
+                            ac.visivel   = false;
+                        } finally {
+                            ac.carregando = false;
+                        }
+                    }, 250);
+                };
+
+                const selecionarCidade = (chave, cidade) => {
+                    if (chave === 'origem') {
+                        formViagem.value.origem_cidade = cidade.nome;
+                        formViagem.value.origem_estado = cidade.uf;
+                    } else if (chave === 'destino') {
+                        formViagem.value.destino_cidade = cidade.nome;
+                        formViagem.value.destino_estado = cidade.uf;
+                    } else if (chave === 'carroRet') {
+                        formPreferencias.value.carro_cidade_retirada = `${cidade.nome} - ${cidade.uf}`;
+                    } else if (chave === 'carroDev') {
+                        formPreferencias.value.carro_cidade_devolucao = `${cidade.nome} - ${cidade.uf}`;
+                    }
+                    acCidades[chave].sugestoes = [];
+                    acCidades[chave].visivel   = false;
+                };
+
+                const fecharAc = (chave) => {
+                    setTimeout(() => { acCidades[chave].visivel = false; }, 150);
+                };
+
                 watch(tipo_solicitacao, (novoTipo) => {
                     viajanteDados.value = null;
                     cpfBusca.value = '';
                     erroBusca.value = '';
-                    
-                    if (novoTipo === 'proprio') {
-                        buscarProprioUsuario();
-                    }
+                    erroBuscaProprioUsuario.value = '';
+                    mostrarBuscaFallback.value = false;
+                    if (novoTipo === 'proprio') buscarProprioUsuario();
                 });
 
+                // --- Funções ---
                 const buscarProprioUsuario = async () => {
-                    // Tenta puxar do BQ usando o próprio login de rede
+                    erroBuscaProprioUsuario.value = '';
+                    mostrarBuscaFallback.value = false;
+                    viajanteDados.value = null;
                     try {
-                        const user_logado = localStorage.getItem('nome_usuario');
-                        if (!user_logado) return;
-                        
-                        const response = await fetch(`/api/v1/viagens/colaborador/${user_logado}`);
+                        // Usar o username AD (ex: lnd_araujo) para busca no BQ, não o nome de exibição
+                        const user_logado = localStorage.getItem('username_ad') || localStorage.getItem('nome_usuario');
+                        if (!user_logado) {
+                            mostrarBuscaFallback.value = true;
+                            return;
+                        }
+                        const response = await fetch(`/api/v1/viagens/colaborador/${user_logado}`, {
+                            headers: { 'Authorization': `Bearer ${token.value}` },
+                        });
                         const r = await response.json();
                         if (response.ok && r.sucesso) {
                             viajanteDados.value = r.dados;
+                        } else {
+                            // Auto-lookup falhou: mostra campo para informar CPF/Matrícula
+                            erroBuscaProprioUsuario.value = 'Não foi possível identificar seu cadastro automaticamente. Informe seu CPF ou Matrícula.';
+                            mostrarBuscaFallback.value = true;
                         }
                     } catch (e) {
-                        console.warning("Erro de inicialização do viajante próprio: " + e.message);
+                        console.warn('Erro ao buscar viajante próprio:', e.message);
+                        mostrarBuscaFallback.value = true;
                     }
                 };
 
@@ -295,17 +865,13 @@
                     erroBusca.value = '';
                     buscandoColaborador.value = true;
                     viajanteDados.value = null;
-
                     try {
-                        const response = await fetch(`/api/v1/viagens/colaborador/${cpfBusca.value}`);
+                        const response = await fetch(`/api/v1/viagens/colaborador/${cpfBusca.value}`, {
+                            headers: { 'Authorization': `Bearer ${token.value}` },
+                        });
                         const r = await response.json();
-
-                        if (!response.ok) {
-                            throw new Error(r.detail || 'Não foi possível encontrar o colaborador.');
-                        }
-
+                        if (!response.ok) throw new Error(r.detail || 'Colaborador não encontrado.');
                         viajanteDados.value = r.dados;
-
                     } catch (err) {
                         erroBusca.value = err.message;
                     } finally {
@@ -320,21 +886,23 @@
                         const response = await fetch('/api/v1/auth/login', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ ...loginForm.value, agencia: null })
+                            body: JSON.stringify({ ...loginForm.value, agencia: null }),
                         });
                         const dados = await response.json();
                         if (!response.ok) throw new Error(dados.detail || 'Erro de autenticação.');
-                        
                         localStorage.setItem('token', dados.access_token);
                         localStorage.setItem('nome_usuario', dados.nome_usuario);
-                        
+                        localStorage.setItem('username_ad', dados.username);   // username do AD para busca BQ
+                        localStorage.setItem('perfil', dados.perfil);
                         token.value = dados.access_token;
                         nomeUsuario.value = dados.nome_usuario;
-                        
-                        // Busca dados do usuário logado se for próprio
-                        if (tipo_solicitacao.value === 'proprio') {
-                            buscarProprioUsuario();
+                        perfilUsuario.value = dados.perfil;
+                        // Setor é redirecionado para o painel; viajantes ficam no portal de solicitação
+                        if (dados.perfil === 'setor') {
+                            window.location.href = '/painel.html';
+                            return;
                         }
+                        if (tipo_solicitacao.value === 'proprio') buscarProprioUsuario();
                     } catch (err) {
                         erroLogin.value = err.message;
                     } finally {
@@ -342,16 +910,130 @@
                     }
                 };
 
+                const enviarSolicitacao = async () => {
+                    erroEnvio.value = '';
+                    enviandoSolicitacao.value = true;
+                    const payload = {
+                        ...formViagem.value,
+                        ...formPreferencias.value,
+                        via_delegacao: tipo_solicitacao.value !== 'proprio',
+                        aprovador_n1_email: viajanteDados.value?.aprovador_n1_email || '',
+                        aprovador_n1_nome:  viajanteDados.value?.aprovador_n1_nome  || '',
+                        aprovador_n2_email: viajanteDados.value?.aprovador_n2_email || '',
+                        aprovador_n2_nome:  viajanteDados.value?.aprovador_n2_nome  || '',
+                    };
+                    try {
+                        const response = await fetch('/api/v1/viagens/solicitacoes', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token.value}`,
+                            },
+                            body: JSON.stringify(payload),
+                        });
+                        const dados = await response.json();
+                        if (!response.ok) throw new Error(dados.detail || 'Erro ao enviar solicitação.');
+                        protocoloGerado.value = dados.protocolo;
+                        classificacaoGerada.value = dados.classificacao;
+                        passoAtual.value = 4;
+                    } catch (err) {
+                        erroEnvio.value = err.message;
+                    } finally {
+                        enviandoSolicitacao.value = false;
+                    }
+                };
+
+                // --- Duffel: funções de busca de voos ---
+                const buscarVoosDuffel = async () => {
+                    duffelErro.value = '';
+                    duffelVoos.value = [];
+                    duffelBuscando.value = true;
+                    try {
+                        const f = formViagem.value;
+                        const body = {
+                            origem:  f.origem_cidade.trim(),
+                            destino: f.destino_cidade.trim(),
+                            data_ida: f.data_ida,
+                            data_volta: f.data_volta || null,
+                            adultos: 1,
+                            exigir_bagagem: false,
+                        };
+                        const resp = await fetch('/api/v1/duffel/voos', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token.value}` },
+                            body: JSON.stringify(body),
+                        });
+                        const dados = await resp.json();
+                        if (!resp.ok) { duffelErro.value = dados.detail || 'Erro na busca de voos.'; return; }
+                        if (!dados.opcoes || dados.opcoes.length === 0) {
+                            duffelErro.value = 'Nenhum voo encontrado para este trecho. Preencha a preferência manualmente no próximo passo.';
+                            return;
+                        }
+                        duffelVoos.value = dados.opcoes;
+                    } catch (e) {
+                        duffelErro.value = 'Erro de conexão ao buscar voos.';
+                    } finally {
+                        duffelBuscando.value = false;
+                    }
+                };
+
+                const selecionarVoo = (voo) => {
+                    duffelVooSelecionado.value = voo;
+                    const paradas = voo.paradas === 0 ? 'direto' : `${voo.paradas} parada(s)`;
+                    const bag = voo.bagagem ? ' | bagagem incluída' : '';
+                    formViagem.value.preferencia_voo =
+                        `${voo.cia_nome} ${voo.numero_voo} | ${voo.origem}→${voo.destino} | ` +
+                        `${formatarHora(voo.saida)}→${formatarHora(voo.chegada)} | ${paradas}${bag}`;
+                };
+
+                const formatarHora = (iso) => {
+                    if (!iso) return '—';
+                    return iso.slice(11, 16);
+                };
+
+                const formatarDuracao = (iso) => {
+                    if (!iso) return '';
+                    const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
+                    if (!m) return iso;
+                    const h = m[1] ? `${m[1]}h` : '';
+                    const min = m[2] ? `${m[2]}m` : '';
+                    return `${h}${min}`;
+                };
+
+                const novasolicitacao = () => {
+                    passoAtual.value = 1;
+                    viajanteDados.value = null;
+                    tipo_solicitacao.value = 'proprio';
+                    duffelVoos.value = [];
+                    duffelVooSelecionado.value = null;
+                    duffelErro.value = '';
+                    formViagem.value = { origem_cidade: '', origem_estado: '', destino_cidade: '', destino_estado: '', data_ida: '', data_volta: '', motivo_viagem: '', tipo_servico: [], preferencia_voo: null };
+                    formPreferencias.value = { aereo_periodo_preferido: '', aereo_tipo_trecho: 'ambos', bagagem_extra: false, assento_especial: '', rodov_periodo_preferido: '', rodov_tipo_onibus: '', rodov_tipo_trecho: 'ambos', preferencia_hotel_nome: '', quarto_excecao_saude: false, carro_cidade_retirada: '', carro_hora_retirada: '', carro_cidade_devolucao: '', carro_hora_devolucao: '', observacoes_viajante: '' };
+                    protocoloGerado.value = null;
+                    buscarProprioUsuario();
+                };
+
                 const logout = () => {
                     localStorage.clear();
                     token.value = null;
                     nomeUsuario.value = '';
+                    perfilUsuario.value = '';
                     viajanteDados.value = null;
                 };
 
-                return { 
-                    token, nomeUsuario, carregando, erroLogin, loginForm, realizarLogin, logout,
-                    tipo_solicitacao, cpfBusca, buscandoColaborador, viajanteDados, erroBusca, buscarColaboradorGCP
+                return {
+                    token, nomeUsuario, perfilUsuario, badgePerfil, carregando, erroLogin, loginForm, realizarLogin, logout,
+                    passoAtual,
+                    tipo_solicitacao, cpfBusca, buscandoColaborador, viajanteDados, erroBusca, erroBuscaProprioUsuario, mostrarBuscaFallback, buscarColaboradorGCP,
+                    formViagem, formPreferencias, servicosDisponiveis,
+                    classificacaoAereo, passo2Valido,
+                    enviandoSolicitacao, erroEnvio, protocoloGerado, classificacaoGerada,
+                    enviarSolicitacao, novasolicitacao,
+                    // Duffel
+                    duffelVoos, duffelBuscando, duffelErro, duffelVooSelecionado, podeBuscarVoos,
+                    buscarVoosDuffel, selecionarVoo, formatarHora, formatarDuracao,
+                    // Autocomplete IBGE
+                    acCidades, buscarCidadesIBGE, selecionarCidade, fecharAc,
                 };
             }
         }).mount('#app');

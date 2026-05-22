@@ -6,9 +6,18 @@ from app.domain.models import schemas
 from app.api.dependencies import get_db_session
 from app.infrastructure.ldap_service import ActiveDirectoryService
 from app.infrastructure.bigquery_service import BigQueryService
-from app.core.security import create_access_token
+from app.infrastructure.orm.models import UsuarioAgenciaModel
+from app.core.security import create_access_token, verify_password
 
 router = APIRouter()
+
+# Mesma instância do BigQueryService com as tabelas corretas de produção
+_bq_service = BigQueryService(
+    project_id="maga-bigdata",
+    table_assignee="maga-bigdata.kirk.assignee",
+    table_funcionarios="maga-bigdata.mlpap.mag_v_funcionarios_ativos",
+)
+
 
 @router.post("/login", response_model=schemas.TokenResponse)
 def login(
@@ -16,43 +25,36 @@ def login(
     db: Session = Depends(get_db_session)
 ):
     """
-    Endpoint central de autentica??o do ViagensLabs.
-    Valida as credenciais via Active Directory (LDAP) e busca o perfil no BigQuery.
-    Retorna um JWT (JSON Web Token) v?lido.
+    Valida as credenciais via Active Directory e busca o perfil no BigQuery.
+    Retorna JWT + nome de exibição + username AD.
     """
     if not credentials.agencia:
-        # Tenta conectar com o Active Directory
         ad_service = ActiveDirectoryService()
-        
-        autenticado_ad = False
-        try:
-            autenticado_ad = ad_service.autenticar_usuario(credentials.username, credentials.password)
-        except Exception as e:
-            logging.error(f"Falha de comunica??o com o AD: {e}")
-            raise HTTPException(status_code=500, detail="Erro de conex?o com servidor de autentica??o interna.")
 
-        if not autenticado_ad:
-             raise HTTPException(
+        resultado_ad = {"autenticado": False, "perfil": None}
+        try:
+            resultado_ad = ad_service.autenticar_e_obter_perfil(credentials.username, credentials.password)
+        except Exception as e:
+            logging.error(f"Falha de comunicação com o AD: {e}")
+            raise HTTPException(status_code=500, detail="Erro de conexão com servidor de autenticação interna.")
+
+        if not resultado_ad["autenticado"]:
+            raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Usu?rio ou senha inv?lidos no Active Directory.",
+                detail="Usuário ou senha inválidos no Active Directory.",
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-        # Usu?rio passou no AD. Vamos buscar o nome real dele no BigQuery!
-        bq_service = BigQueryService(
-            project_id="SEU_PROJECT_ID", 
-            table_assignee="SUA_TABELA_ASSIGNEE", 
-            table_funcionarios="SUA_TABELA_FUNCIONARIOS"
-        )
-        
+        # Buscar nome real no BigQuery usando o username AD
         colaborador_dados = None
         try:
-            colaborador_dados = bq_service.buscar_colaborador(credentials.username)
+            colaborador_dados = _bq_service.buscar_colaborador(credentials.username)
         except Exception as e:
-            logging.warning(f"Erro ao consultar o BQ para token. Usando fallback. {e}")
+            logging.warning(f"Erro ao consultar BQ no login (não crítico): {e}")
 
-        nome_final = colaborador_dados.get("nome_completo") if colaborador_dados else credentials.username
-        perfil_acesso = "viajante"
+        nome_final = colaborador_dados.get("nome") if colaborador_dados else credentials.username
+        # perfil vem do grupo AD: "setor" para ADMINS, "viajante" para demais
+        perfil_acesso = resultado_ad["perfil"] or "viajante"
 
         token_jwt = create_access_token(
             subject=credentials.username,
@@ -62,8 +64,31 @@ def login(
         return schemas.TokenResponse(
             access_token=token_jwt,
             nome_usuario=nome_final,
+            username=credentials.username,
             perfil=perfil_acesso
         )
 
     else:
-        raise HTTPException(status_code=501, detail="Login de prestador ainda n?o implementado na base PostgreSQL.")
+        # ── Login de agência (Tastur / Kontrip) ───────────────────────────
+        usuario = db.query(UsuarioAgenciaModel).filter(
+            UsuarioAgenciaModel.username == credentials.username,
+            UsuarioAgenciaModel.ativo == True,  # noqa: E712
+        ).first()
+
+        if not usuario or not verify_password(credentials.password, usuario.senha_hash):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Credenciais inválidas para acesso ao portal da agência.",
+            )
+
+        token_jwt = create_access_token(
+            subject=credentials.username,
+            perfil="agencia",
+            extra_claims={"agencia_nome": usuario.agencia_nome},
+        )
+        return schemas.TokenResponse(
+            access_token=token_jwt,
+            nome_usuario=usuario.nome or credentials.username,
+            username=credentials.username,
+            perfil="agencia",
+        )
