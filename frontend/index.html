@@ -141,7 +141,7 @@
                                 <div class="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
                                     <div class="flex items-center gap-3">
                                         <div class="bg-labs-blue/10 p-2 rounded-lg">
-                                            <svg class="w-5 h-5 text-labs-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                            <svg class="w-5 h-5 text-labs-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                                         </div>
                                         <h3 class="text-lg font-bold text-labs-dark">Nova Solicitação</h3>
                                     </div>
@@ -362,7 +362,10 @@
                                                     :class="formViagem.data_ida.length === 10 ? 'border-green-400' : 'border-gray-300'">
                                             </div>
                                             <div>
-                                                <label class="block text-sm font-semibold text-gray-700 mb-2">Data de Volta</label>
+                                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                                    Data de Volta
+                                                    <span v-if="formViagem.tipo_servico.includes('Aereo') && formPreferencias.aereo_tipo_trecho === 'ambos'" class="text-red-500">*</span>
+                                                </label>
                                                 <input :value="formViagem.data_volta" @input="mascaraDataVolta" type="text" placeholder="DD/MM/AAAA" maxlength="10"
                                                     class="w-full px-4 py-2.5 rounded-lg border focus:border-labs-blue focus:ring-1 focus:ring-labs-blue text-sm"
                                                     :class="formViagem.data_volta && formViagem.data_volta.length === 10 ? 'border-green-400' : 'border-gray-300'">
@@ -490,7 +493,7 @@
                                                 <h4 class="font-bold text-sky-800 text-sm">Preferências de Voo</h4>
                                                 <span v-if="classificacaoAereo" :class="classificacaoAereo === 'Emergencial' ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'" class="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">{{ classificacaoAereo }}</span>
                                             </div>
-                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div class="grid grid-cols-1 gap-4">
                                                 <div>
                                                     <label class="block text-xs font-semibold text-gray-600 mb-1.5">Período Preferido</label>
                                                     <select v-model="formPreferencias.aereo_periodo_preferido" class="w-full px-3 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue text-sm bg-white">
@@ -498,14 +501,6 @@
                                                         <option value="manha">Manhã (06h–12h)</option>
                                                         <option value="tarde">Tarde (12h–18h)</option>
                                                         <option value="noite">Noite (18h–23h)</option>
-                                                    </select>
-                                                </div>
-                                                <div>
-                                                    <label class="block text-xs font-semibold text-gray-600 mb-1.5">Trecho</label>
-                                                    <select v-model="formPreferencias.aereo_tipo_trecho" class="w-full px-3 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue text-sm bg-white">
-                                                        <option value="ambos">Ida e Volta</option>
-                                                        <option value="ida">Somente Ida</option>
-                                                        <option value="volta">Somente Volta</option>
                                                     </select>
                                                 </div>
                                             </div>
@@ -762,9 +757,12 @@
 
                 const podeBuscarVoos = computed(() => {
                     const f = formViagem.value;
-                    return f.origem_cidade.trim() !== '' &&
-                           f.destino_cidade.trim() !== '' &&
-                           f.data_ida !== '';
+                    const tipo = formPreferencias.value.aereo_tipo_trecho;
+                    const baseOk = f.origem_cidade.trim() !== '' &&
+                                   f.destino_cidade.trim() !== '' &&
+                                   f.data_ida.length === 10;
+                    if (tipo === 'ambos') return baseOk && f.data_volta.length === 10;
+                    return baseOk;
                 });
 
                 // --- Passo 3: Preferências ---
