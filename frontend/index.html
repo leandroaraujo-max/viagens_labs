@@ -650,6 +650,21 @@
                                                 <h4 class="font-bold text-orange-800 text-sm">Preferências de Veículo</h4>
                                             </div>
                                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                <!-- Data de Retirada -->
+                                                <div>
+                                                    <label class="block text-xs font-semibold text-gray-600 mb-1.5">Data de Retirada</label>
+                                                    <input :value="formPreferencias.carro_data_retirada" @input="mascaraDataCarroRet"
+                                                           type="text" placeholder="DD/MM/AAAA" maxlength="10"
+                                                           class="w-full px-3 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue text-sm">
+                                                </div>
+                                                <!-- Data de Entrega -->
+                                                <div>
+                                                    <label class="block text-xs font-semibold text-gray-600 mb-1.5">Data de Entrega</label>
+                                                    <input :value="formPreferencias.carro_data_devolucao" @input="mascaraDataCarroDev"
+                                                           type="text" placeholder="DD/MM/AAAA" maxlength="10"
+                                                           class="w-full px-3 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue text-sm">
+                                                </div>
+                                                <!-- Cidade de Retirada -->
                                                 <div>
                                                     <label class="block text-xs font-semibold text-gray-600 mb-1.5">Cidade de Retirada</label>
                                                     <div class="relative">
@@ -856,10 +871,12 @@
                     rodov_tipo_trecho: 'ambos',
                     preferencia_hotel_nome: '',
                     quarto_excecao_saude: false,
-                    carro_cidade_retirada: '',
+                    carro_data_retirada: '',
                     carro_hora_retirada: '',
-                    carro_cidade_devolucao: '',
+                    carro_cidade_retirada: '',
+                    carro_data_devolucao: '',
                     carro_hora_devolucao: '',
+                    carro_cidade_devolucao: '',
                     observacoes_viajante: '',
                 });
 
@@ -1166,6 +1183,18 @@
                     e.target.value = v;
                 };
 
+                const mascaraDataCarroRet = (e) => {
+                    const v = _mascaraDateStr(e.target.value);
+                    formPreferencias.value.carro_data_retirada = v;
+                    e.target.value = v;
+                };
+
+                const mascaraDataCarroDev = (e) => {
+                    const v = _mascaraDateStr(e.target.value);
+                    formPreferencias.value.carro_data_devolucao = v;
+                    e.target.value = v;
+                };
+
                 const carregarPerfilViajante = async (username) => {
                     if (!username) return;
                     try {
@@ -1390,7 +1419,7 @@
                     duffelVoosVolta.value = [];
                     duffelVooSelecionadoVolta.value = null;
                     formViagem.value = { origem_cidade: '', origem_estado: '', destino_cidade: '', destino_estado: '', data_ida: '', data_volta: '', motivo_viagem: '', tipo_servico: [], preferencia_voo: null, preferencia_voo_volta: null };
-                    formPreferencias.value = { aereo_periodo_preferido: '', aereo_tipo_trecho: 'ambos', bagagem_extra: false, assento_especial: '', rodov_periodo_preferido: '', rodov_tipo_onibus: '', rodov_tipo_trecho: 'ambos', preferencia_hotel_nome: '', quarto_excecao_saude: false, carro_cidade_retirada: '', carro_hora_retirada: '', carro_cidade_devolucao: '', carro_hora_devolucao: '', observacoes_viajante: '' };
+                    formPreferencias.value = { aereo_periodo_preferido: '', aereo_tipo_trecho: 'ambos', bagagem_extra: false, assento_especial: '', rodov_periodo_preferido: '', rodov_tipo_onibus: '', rodov_tipo_trecho: 'ambos', preferencia_hotel_nome: '', quarto_excecao_saude: false, carro_data_retirada: '', carro_hora_retirada: '', carro_cidade_retirada: '', carro_data_devolucao: '', carro_hora_devolucao: '', carro_cidade_devolucao: '', observacoes_viajante: '' };
                     protocoloGerado.value = null;
                     buscarProprioUsuario();
                 };
@@ -1409,7 +1438,7 @@
                     passoAtual,
                     tipo_solicitacao, cpfBusca, buscandoColaborador, viajanteDados, erroBusca, erroBuscaProprioUsuario, mostrarBuscaFallback, buscarColaboradorGCP,
                     celularViajante, dataNascimentoViajante, perfilSalvo,
-                    formatarCPF, mascaraData, mascaraDataIda, mascaraDataVolta, mascaraCelular, salvarPerfilViajante,
+                    formatarCPF, mascaraData, mascaraDataIda, mascaraDataVolta, mascaraDataCarroRet, mascaraDataCarroDev, mascaraCelular, salvarPerfilViajante,
                     distanciaViagem, distanciaCalculando,
                     formViagem, formPreferencias, servicosDisponiveis,
                     classificacaoAereo, passo2Valido,
