@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     # SMTP — relay interno (sem autenticação)
     SMTP_HOST: str = "smtpml.magazineluiza.intranet"
     SMTP_PORT: int = 25
-    SMTP_FROM: str = "vagenslabs@luizalabs.com"       # endereço sem caixa postal
+    SMTP_FROM: str = "viagenslabs@luizalabs.com"       # endereço sem caixa postal
     SMTP_FROM_NAME: str = "ViagensLabs | Luizalabs"
     SMTP_REPLY_TO: str = "rubia.paim@luizalabs.com"  # respostas redirecionadas aqui
 
@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     AD_GROUP_AGENCIAS: str = "G_ACCESS_VIAGENSLABS_AGENCIAS"  # acesso futuro das agências (VPN + AD)
 
     # Setor de Viagens — endereço que recebe notificações de pré-aprovação
-    SETOR_EMAIL: str = "vagenslabs@luizalabs.com"
+    SETOR_EMAIL: str = "viagenslabs@luizalabs.com"
 
     # Agências — endereços para envio de solicitações de cotação
     AGENCIA_TASTUR_EMAIL: str = ""

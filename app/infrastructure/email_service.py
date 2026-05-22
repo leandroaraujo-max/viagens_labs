@@ -78,8 +78,8 @@ def _base_html(cabecalho_html: str, corpo_html: str) -> str:
           <p style="margin:0;font-size:11px;color:#94a3b8;line-height:1.6">
             Luizalabs — Viagens Corporativas &nbsp;|&nbsp;
             Este é um e-mail automático, não responda.<br>
-            Dúvidas: <a href="mailto:vagenslabs@luizalabs.com"
-                        style="color:{_AZUL_MEDIO};text-decoration:none">vagenslabs@luizalabs.com</a>
+            Dúvidas: <a href="mailto:viagenslabs@luizalabs.com"
+                        style="color:{_AZUL_MEDIO};text-decoration:none">viagenslabs@luizalabs.com</a>
           </p>
         </td>
       </tr>
