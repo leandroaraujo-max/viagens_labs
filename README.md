@@ -206,16 +206,36 @@ viagens_labs/
 | `id` | Integer PK | Auto-increment |
 | `protocolo` | String | Ex: `VL-20260522-0001` |
 | `solicitante_username` | String | Login AD do solicitante |
-| `solicitante_email` | String | E-mail corporativo |
-| `tipo_viagem` | String | `Para mim`, `Conjunto`, `Delegação` |
-| `viajantes_adicionais` | JSON | Lista de viajantes extras |
-| `origem_cidade` | String | Cidade de origem |
+| `via_delegacao` | Boolean | Solicitação feita por delegação |
+| `origem_cidade` / `origem_estado` | String | Origem da viagem |
 | `destino_cidade` / `destino_estado` | String | Destino |
-| `data_ida` / `data_volta` | Date | Datas da viagem |
+| `data_ida` / `data_volta` | String | Datas da viagem |
 | `tipo_servico` | String | `aereo,hotel,carro,rodov` (CSV) |
 | `motivo_viagem` | Text | Justificativa |
 | `classificacao` | String | `Comum` ou `Emergencial` (< 15 dias) |
-| `preferencia_voo` | Text | Preferências de voo informadas |
+| `antecedencia_dias` | Integer | Dias de antecedência calculados |
+| `exige_aprovacao_diretoria` | Boolean | Classificação de diretoria |
+| `aereo_tipo_trecho` | String | `ida_e_volta`, `somente_ida`, `multitrechos` |
+| `aereo_periodo_preferido` | String | Período preferido de voo (manhã, tarde…) |
+| `bagagem_extra` | Boolean | Solicita bagagem despachada |
+| `assento_especial` | String | Preferência de assento |
+| `preferencia_voo` | Text | Voo de ida consultado no Duffel (JSON) |
+| `preferencia_voo_volta` | Text | Voo de volta consultado no Duffel (JSON) |
+| `rodov_periodo_preferido` | String | Período preferido rodoviário |
+| `rodov_tipo_onibus` | String | Tipo de ônibus (executivo, leito…) |
+| `rodov_tipo_trecho` | String | Trecho rodoviário |
+| `preferencia_hotel_nome` | String | Hotel de preferência |
+| `quarto_excecao_saude` | Boolean | Quarto individual por exceção de saúde |
+| `carro_data_retirada` / `carro_data_devolucao` | String | Datas independentes de retirada/devolução |
+| `carro_hora_retirada` / `carro_hora_devolucao` | String | Horários de retirada/devolução |
+| `carro_cidade_retirada` / `carro_cidade_devolucao` | String | Cidades de retirada/devolução |
+| `observacoes_viajante` | Text | Observações livres do viajante |
+| `aprovador_n1_email` / `aprovador_n1_nome` | String | Gestor N1 (do BigQuery) |
+| `aprovador_n2_email` / `aprovador_n2_nome` | String | Gestor N2 (do BigQuery) |
+| `viajante_nome` / `viajante_cpf` / `viajante_matricula` | String | Dados pessoais do colaborador |
+| `viajante_email` / `viajante_cargo` / `viajante_filial` | String | Dados funcionais do colaborador |
+| `viajante_centro_custo` / `viajante_cod_centro_custo` | String | Centro de custo |
+| `viajante_celular` / `viajante_data_nascimento` / `viajante_data_admissao` | String | Dados adicionais |
 | `status` | String | Estado atual do fluxo |
 | `agencia_vencedora` | String | `Tastur` ou `Kontrip` (após decisão) |
 | `created_at` | DateTime | Timestamp de criação |
@@ -471,33 +491,45 @@ Todos os portais usam **Vue.js 3 (CDN) + TailwindCSS (CDN)** — sem node_module
 - [x] Portal da Agência (login + envio de cotação)
 - [x] Painel do Setor (tabela + filtros + indicadores + KPIs + gráficos)
 
+**UX e Formulário (Fase 7)**
+- [x] Máscaras de data (DD/MM/AAAA) nos campos de data_ida, data_volta e data_nascimento
+- [x] Máscara de telefone com auto-detecção fixo/celular
+- [x] Cálculo automático de distância (Nominatim + Haversine) com sidebar de políticas
+- [x] Bloco de preferências aéreas antes da busca Duffel (trecho, período, bagagem, assento)
+- [x] Integração Duffel bidirecional: busca de ida e volta em chamadas separadas
+- [x] Seleção de voo de volta (`selecionarVoo(voo, 'volta')`) persistida em `preferencia_voo_volta`
+- [x] Datas independentes para locação de veículo (`carro_data_retirada` / `carro_data_devolucao`)
+- [x] Painel do setor exibe dados completos: colaborador, aprovadores N1/N2, preferências por serviço
+
 ---
 
 ### 🔜 Próximos Passos
 
-#### Fase 5 — Notificação ao viajante
-- [ ] E-mail para o viajante informando que a viagem foi **aprovada e encaminhada à agência**
-- [ ] E-mail para o viajante ao final com os dados do voo/hotel reservados (`CONCLUIDA`)
-- [ ] E-mail informando reprovação com motivo
+#### Fase 5A — Vouchers e conclusão do fluxo
+- [ ] `setor_service._aprovar_agencia()`: mudar `CONCLUIDA` → `APROVADA_AGUARDANDO_VOUCHER`
+- [ ] `email_service.py`: +5 templates (viajante_aprovado, agencia_perdedora, reprovacao, vouchers, conclusao)
+- [ ] `voucher_service.py`: upload PDF + `_verificar_conclusao_vouchers()`
+- [ ] `app/api/v1/endpoints/voucher.py`: `POST /api/v1/vouchers/{id}/upload`
+- [ ] `agencia.html`: tela de upload de vouchers para a agência vencedora
+
+#### Fase 5B — Motor SLA
+- [ ] `sla_scheduler.py`: thread daemon para lembretes de aprovação/cotação em atraso
+- [ ] Contadores `lembrete_n1_count` / `lembrete_cot_count` já existem no ORM
+
+#### Fase 5C — Casamento de viagens
+- [ ] Vincular/ignorar casamentos no painel do setor (colunas `status`, `operador_acao`, `grupo_viagem` já no ORM)
 
 #### Fase 6 — Portal do Viajante: Histórico completo
-- [ ] Aba "Minhas Solicitações" exibindo todas as solicitações com status em tempo real
-- [ ] Página de detalhe da solicitação com linha do tempo do fluxo de aprovação
+- [ ] Página de detalhe com linha do tempo do fluxo de aprovação
 - [ ] Cancelamento de solicitação pelo viajante (status `AGUARDANDO_N1`)
 
-#### Fase 7 — Integração Duffel (voos reais)
-- [ ] Endpoint `/api/v1/duffel/pesquisar` já criado — conectar ao frontend
-- [ ] Widget de pesquisa de voos no formulário do viajante
-- [ ] Exibir opções de voo retornadas pela Duffel para o viajante selecionar preferência
-
 #### Fase 8 — Relatórios e Exportação
-- [ ] Exportação da lista de solicitações do painel do setor para CSV/Excel
-- [ ] Dashboard com gráfico de gastos por período (após cotações concluídas)
+- [ ] Exportação da lista de solicitações para CSV/Excel
+- [ ] Dashboard com gráfico de gastos por período
 - [ ] Relatório de viagens por colaborador / diretoria
 
 #### Fase 9 — Qualidade e Operação
 - [ ] Testes unitários com `pytest` para os services
-- [ ] Variáveis de ambiente via `.env` carregadas pelo Pydantic `BaseSettings`
 - [ ] Script de deploy / restart automático (Windows Task Scheduler ou NSSM)
 - [ ] Rotação de logs com `logging.handlers.RotatingFileHandler`
 
@@ -558,7 +590,7 @@ Todos os direitos reservados.
 |---|---|---|
 | Desenvolvimento & Arquitetura | Leandro Araújo | [@leandroaraujo-max](https://github.com/leandroaraujo-max) |
 | Gestão de Viagens (setor) | Rubia Paim | rubia.paim@luizalabs.com |
-| E-mail do sistema | ViagensLabs | vagenslabs@luizalabs.com |
+| E-mail do sistema | ViagensLabs | viagenslabs@luizalabs.com |
 
 ### Repositório
 
@@ -610,19 +642,19 @@ Fluxo de status ATUAL (22/05/2026):
     └─ 1 agência cota → COTACAO_ENVIADA
     └─ 2 agências cotam → PENDENTE_APROVACAO_SETOR_COTACAO
   PENDENTE_APROVACAO_SETOR_COTACAO
-    └─ Setor aprova Tastur/Kontrip → CONCLUIDA  ← ERRADO, deve ser APROVADA_AGUARDANDO_VOUCHER
+    └─ Setor aprova Tastur/Kontrip → CONCLUIDA  ← pendente: deve ser APROVADA_AGUARDANDO_VOUCHER
     └─ Setor reprova → REPROVADA
   [FALTANDO] APROVADA_AGUARDANDO_VOUCHER
     └─ Todos vouchers entregues → CONCLUIDA
 
-O PRÓXIMO PASSO É IMPLEMENTAR (Fase 5A):
+O PRÓXIMO PASSO É IMPLEMENTAR (Fase 5A — vouchers):
   1. setor_service._aprovar_agencia(): mudar CONCLUIDA → APROVADA_AGUARDANDO_VOUCHER
   2. email_service.py: +5 templates (viajante_aprovado, agencia_perdedora, reprovacao, vouchers, conclusao)
   3. Novo voucher_service.py: upload PDF + _verificar_conclusao_vouchers()
   4. Novo app/api/v1/endpoints/voucher.py: POST /api/v1/vouchers/{id}/upload
   5. agencia.html: tela de upload de vouchers para a agência vencedora
 
-APOS FASE 5A (ver README seção 'Plano de Implementação' para 5B e 5C):
+Fases seguintes:
   Fase 5B: Motor SLA (thread daemon sla_scheduler.py)
   Fase 5C: Casamento completo (vincular/ignorar no painel do setor)
 
@@ -644,8 +676,27 @@ AD Servers:
   ldap://ML-ASC-AD2.magazineluiza.intranet
   ldap://ML-HB-AD01.magazineluiza.intranet
 
-SMTP: smtpml.magazineluiza.intranet:25 | De: vagenslabs@luizalabs.com
+SMTP: smtpml.magazineluiza.intranet:25 | De: viagenslabs@luizalabs.com
 BQ: maga-bigdata.kirk.assignee + maga-bigdata.mlpap.mag_v_funcionarios_ativos
+
+Novos campos ORM (Fase 7 — commit 15d1bb5):
+  solicitacoes.carro_data_retirada   VARCHAR(20)
+  solicitacoes.carro_data_devolucao  VARCHAR(20)
+  solicitacoes.preferencia_voo_volta TEXT
+  (+ viajante_*, aprovador_n1/n2_* adicionados em fase anterior)
+
+setor.py — padrão atual:
+  _build_setor_response() usa model_validate via sol.__table__.columns
+  Não há mais mapeamento manual — novos campos são incluídos automaticamente
+
+painel.html — modal de detalhe exibe 6 seções:
+  1. Dados do Colaborador (viajante_*)
+  2. Cadeia de Aprovação (aprovador_n1/n2_*)
+  3. Preferências Aéreas (trecho, período, bagagem, assento, voo ida/volta Duffel)
+  4. Preferências Rodoviárias (período, tipo ônibus, trecho)
+  5. Preferências de Hospedagem (hotel, quarto saúde)
+  6. Preferências de Veículo (datas/horas/cidades retirada e devolução)
+  Cada seção exibida condicionalmente via v-if tipo_servico.includes(...)
 
 Regra crítica ao gerar código: NUNCA use '...', '# ...' ou '#existing code'.
 Sempre fornecer o código completo do método/função alterado.
@@ -653,4 +704,4 @@ Sempre fornecer o código completo do método/função alterado.
 
 ---
 
-*Última atualização: 22/05/2026 — Análise GAS vs FastAPI concluída. Próximo: Fase 5A (vouchers).*
+*Última atualização: 22/05/2026 — Fase 7 concluída: Duffel bidirecional, datas independentes de carro, dados completos no portal do setor. Próximo: Fase 5A (vouchers).*
