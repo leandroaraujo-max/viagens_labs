@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
+from sqlalchemy import String, Text, Boolean
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
@@ -9,13 +10,25 @@ from app.services.setor_service import SetorService
 router = APIRouter()
 _setor_svc = SetorService()
 
+# Campos Optional[str] que devem permanecer None quando o banco retorna NULL
+_OPTIONAL_STR_COLS = {'agencia_vencedora'}
+
 
 def _build_setor_response(sol, cot_tastur, cot_kontrip, casamentos) -> SolicitacaoSetorResponse:
-    """Constrói SolicitacaoSetorResponse a partir do ORM e dados relacionados."""
-    data = {
-        col.name: getattr(sol, col.name)
-        for col in sol.__table__.columns
-    }
+    """Constrói SolicitacaoSetorResponse a partir do ORM e dados relacionados.
+
+    Normaliza None → '' para colunas String/Text e None → False para Boolean,
+    exceto campos explicitamente Optional no schema (ex: agencia_vencedora).
+    """
+    data = {}
+    for col in sol.__table__.columns:
+        val = getattr(sol, col.name)
+        if val is None and col.name not in _OPTIONAL_STR_COLS:
+            if isinstance(col.type, (String, Text)):
+                val = ''
+            elif isinstance(col.type, Boolean):
+                val = False
+        data[col.name] = val
     data['cotacao_tastur']  = CotacaoResponse.model_validate(cot_tastur)  if cot_tastur  else None
     data['cotacao_kontrip'] = CotacaoResponse.model_validate(cot_kontrip) if cot_kontrip else None
     data['casamentos'] = casamentos
