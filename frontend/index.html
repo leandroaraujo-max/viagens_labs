@@ -203,21 +203,75 @@
                                             <div v-if="erroBusca" class="text-xs text-red-600 font-medium">⚠ {{ erroBusca }}</div>
                                         </div>
 
-                                        <div v-if="viajanteDados" class="bg-blue-50/60 rounded-xl p-5 border border-blue-100 flex flex-col sm:flex-row justify-between gap-4">
-                                            <div>
-                                                <span class="text-[10px] font-bold text-labs-blue uppercase tracking-widest">Viajante Identificado</span>
-                                                <h4 class="text-base font-bold text-labs-dark mt-1">{{ viajanteDados.nome }}</h4>
-                                                <p class="text-xs text-gray-500 mt-1">{{ viajanteDados.cargo }} | {{ viajanteDados.filial }}</p>
-                                                <p class="text-xs text-gray-500 mt-1">CC: {{ viajanteDados.centro_custo }}</p>
+                                        <!-- Card: Viajante Identificado -->
+                                        <div v-if="viajanteDados" class="bg-blue-50/60 rounded-xl p-5 border border-blue-100">
+                                            <span class="text-[10px] font-bold text-labs-blue uppercase tracking-widest">Viajante Identificado</span>
+                                            <h4 class="text-base font-bold text-labs-dark mt-1 mb-3">{{ viajanteDados.nome }}</h4>
+                                            <div class="grid grid-cols-2 gap-x-6 gap-y-2.5 text-xs">
+                                                <div>
+                                                    <p class="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">CPF</p>
+                                                    <p class="font-semibold text-gray-700">{{ formatarCPF(viajanteDados.cpf) }}</p>
+                                                </div>
+                                                <div>
+                                                    <p class="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Matrícula</p>
+                                                    <p class="font-semibold text-gray-700">{{ viajanteDados.matricula || '—' }}</p>
+                                                </div>
+                                                <div class="col-span-2">
+                                                    <p class="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Cargo</p>
+                                                    <p class="font-semibold text-gray-700">{{ viajanteDados.cargo }}</p>
+                                                </div>
+                                                <div>
+                                                    <p class="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Filial</p>
+                                                    <p class="font-semibold text-gray-700">{{ viajanteDados.filial || '—' }}</p>
+                                                </div>
+                                                <div>
+                                                    <p class="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Cód. CC</p>
+                                                    <p class="font-semibold text-gray-700">{{ viajanteDados.cod_centro_custo || '—' }}</p>
+                                                </div>
+                                                <div class="col-span-2">
+                                                    <p class="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Centro de Custo</p>
+                                                    <p class="font-semibold text-gray-700">{{ viajanteDados.centro_custo || '—' }}</p>
+                                                </div>
+                                                <div v-if="viajanteDados.data_admissao">
+                                                    <p class="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Admissão</p>
+                                                    <p class="font-semibold text-gray-700">{{ viajanteDados.data_admissao }}</p>
+                                                </div>
                                             </div>
-                                            <div class="sm:text-right flex flex-col justify-end text-xs text-gray-500">
-                                                <span>Aprovador N1: <strong>{{ viajanteDados.aprovador_n1_nome || 'Não definido' }}</strong></span>
+                                            <div class="mt-3 pt-3 border-t border-blue-100 text-xs text-gray-500 flex flex-col gap-1">
+                                                <span>Aprovador N1: <strong class="text-labs-dark">{{ viajanteDados.aprovador_n1_nome || 'Não definido' }}</strong></span>
                                                 <span>E-mail: {{ viajanteDados.aprovador_n1_email || '—' }}</span>
                                             </div>
                                         </div>
 
+                                        <!-- Campos manuais obrigatórios — salvos no perfil para reuso -->
+                                        <div v-if="viajanteDados" class="rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-3">
+                                            <div class="flex items-center justify-between">
+                                                <p class="text-xs font-bold text-amber-700 uppercase tracking-wide">Dados complementares</p>
+                                                <span v-if="perfilSalvo" class="text-[11px] text-green-600 font-semibold">✓ Salvo no perfil</span>
+                                            </div>
+                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                <div>
+                                                    <label class="block text-xs font-semibold text-gray-700 mb-1.5">📱 Celular / WhatsApp <span class="text-red-500">*</span></label>
+                                                    <input v-model="celularViajante" @blur="salvarPerfilViajante" type="tel" placeholder="(11) 99999-9999" maxlength="15"
+                                                        class="w-full px-4 py-2.5 rounded-lg border text-sm focus:outline-none focus:ring-1 focus:ring-labs-blue"
+                                                        :class="celularViajante.length >= 10 ? 'border-green-400 bg-green-50' : 'border-gray-300'">
+                                                    <p v-if="celularViajante && celularViajante.length < 10" class="text-[11px] text-red-500 mt-1">Número inválido.</p>
+                                                </div>
+                                                <div>
+                                                    <label class="block text-xs font-semibold text-gray-700 mb-1.5">🎂 Data de Nascimento <span class="text-red-500">*</span></label>
+                                                    <input v-model="dataNascimentoViajante" @blur="salvarPerfilViajante" type="text" placeholder="DD/MM/AAAA" maxlength="10"
+                                                        class="w-full px-4 py-2.5 rounded-lg border text-sm focus:outline-none focus:ring-1 focus:ring-labs-blue"
+                                                        :class="dataNascimentoViajante.length === 10 ? 'border-green-400 bg-green-50' : 'border-gray-300'">
+                                                    <p v-if="dataNascimentoViajante && dataNascimentoViajante.length < 10" class="text-[11px] text-red-500 mt-1">Informe a data completa.</p>
+                                                </div>
+                                            </div>
+                                            <p class="text-[11px] text-amber-600">Esses dados serão salvos automaticamente e pré-preenchidos nas próximas solicitações.</p>
+                                        </div>
+
                                         <div class="text-right pt-4 border-t border-gray-100">
-                                            <button @click="passoAtual = 2" :disabled="!viajanteDados" class="bg-labs-blue hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-lg text-sm shadow transition disabled:opacity-50 disabled:cursor-not-allowed">
+                                            <button @click="passoAtual = 2"
+                                                :disabled="!viajanteDados || celularViajante.length < 10 || dataNascimentoViajante.length < 10"
+                                                class="bg-labs-blue hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-lg text-sm shadow transition disabled:opacity-50 disabled:cursor-not-allowed">
                                                 Avançar para dados da viagem →
                                             </button>
                                         </div>
