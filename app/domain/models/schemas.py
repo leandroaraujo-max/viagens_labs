@@ -52,6 +52,26 @@ class SolicitacaoCreate(BaseModel):
     aprovador_n2_email: str = ''
     aprovador_n2_nome: str = ''
 
+    # Perfil do viajante — dados BQ (snapshot) + campos preenchidos manualmente
+    viajante_nome:            str = ''
+    viajante_cpf:             str = ''
+    viajante_matricula:       str = ''
+    viajante_email:           str = ''
+    viajante_cargo:           str = ''
+    viajante_filial:          str = ''
+    viajante_centro_custo:    str = ''
+    viajante_cod_centro_custo: str = ''
+    viajante_data_admissao:   str = ''
+    viajante_celular:         str = ''   # input manual obrigatório
+    viajante_data_nascimento: str = ''   # input manual obrigatório
+
+
+class UserProfileData(BaseModel):
+    """Perfil do viajante — dados manuais salvos para reuso."""
+    celular:          str = ''
+    data_nascimento:  str = ''
+    model_config = ConfigDict(from_attributes=True)
+
 
 class SolicitacaoResponse(BaseModel):
     """Schema de saída após criação da solicitação."""

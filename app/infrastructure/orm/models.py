@@ -61,6 +61,19 @@ class SolicitacaoModel(Base):
     aprovador_n2_email = Column(String(200), default='')
     aprovador_n2_nome = Column(String(200), default='')
 
+    # Perfil do viajante (snapshot do BQ no momento da solicitação)
+    viajante_nome            = Column(String(200), default='')
+    viajante_cpf             = Column(String(20),  default='')
+    viajante_matricula       = Column(String(20),  default='')
+    viajante_email           = Column(String(200), default='')
+    viajante_cargo           = Column(String(200), default='')
+    viajante_filial          = Column(String(20),  default='')
+    viajante_centro_custo     = Column(String(200), default='')
+    viajante_cod_centro_custo = Column(String(20),  default='')
+    viajante_data_admissao    = Column(String(20),  default='')
+    viajante_celular          = Column(String(20),  default='')  # input manual obrigatório
+    viajante_data_nascimento  = Column(String(20),  default='')  # input manual obrigatório
+
     # Status da solicitação
     status = Column(String(50), default='AGUARDANDO_N1')
 
@@ -173,6 +186,16 @@ class UsuarioAgenciaModel(Base):
     senha_hash   = Column(String(200), nullable=False)
     ativo        = Column(Boolean, default=True)
     data_criacao = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class UserProfileModel(Base):
+    """Perfil persistido do viajante — celular e data de nascimento preenchidos manualmente."""
+    __tablename__ = "user_profiles"
+
+    username         = Column(String(100), primary_key=True, index=True)
+    celular          = Column(String(20),  default='')
+    data_nascimento  = Column(String(20),  default='')
+    updated_at       = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 
 class LogEventoModel(Base):

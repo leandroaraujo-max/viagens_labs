@@ -1,4 +1,4 @@
-from google.cloud import bigquery
+﻿from google.cloud import bigquery
 import logging
 from typing import Optional, Dict
 import re
@@ -8,9 +8,8 @@ class BigQueryService:
         self.project_id = project_id
         self.table_assignee = table_assignee
         self.table_funcionarios = table_funcionarios
-        
+
         try:
-            # Inicializa usando ADC (Application Default Credentials) que voc? configurou no gcloud
             self.client = bigquery.Client(project=project_id)
             logging.info(f"BigQueryService inicializado no projeto {project_id}.")
         except Exception as e:
@@ -23,24 +22,18 @@ class BigQueryService:
         Trata CPFs com zeros suprimidos.
         """
         if not self.client:
-            raise RuntimeError("Cliente BQ n?o ativo. Configure o gcloud ADC.")
+            raise RuntimeError("Cliente BQ nao ativo. Configure o gcloud ADC.")
 
-        # Limpa formata??o mantendo apenas n?meros ou o nome de usu?rio (ex: lnd_araujo)
         chave_limpa = str(cpf_ou_matricula).strip()
-        
-        # L?gica de filtro id?ntica ao GAS (aceita CPF ou Matr?cula/Username)
+
         if chave_limpa.isdigit():
-            # Se s? tem n?meros, trata como CPF ou Matr?cula
             chave_numerica = re.sub(r"\D", "", chave_limpa)
             if len(chave_numerica) == 11:
                 cpf_sem_zero = chave_numerica.lstrip("0")
                 filtro = f"(t1.custom2 = '{chave_numerica}' OR t1.custom2 = '{cpf_sem_zero}' OR LPAD(t1.custom2,11,'0') = '{chave_numerica}')"
             else:
-                # ? matr?cula num?rica
                 filtro = f"t1.CUSTOM1 = '{chave_numerica}'"
         else:
-            # É username de rede (ex: lnd_araujo)
-            # Tenta múltiplos formatos: exato, case-insensitive, email completo, parte antes do @
             chave_lower = chave_limpa.lower()
             filtro = (
                 f"(LOWER(t1.user_name) = '{chave_lower}' "
@@ -48,7 +41,6 @@ class BigQueryService:
                 f"OR LOWER(SPLIT(t1.user_name, '@')[SAFE_OFFSET(0)]) = '{chave_lower}')"
             )
 
-        # A sua Query Real de Produção, com cadeia N1 e N2
         query = f"""
             SELECT DISTINCT
               CAST(t2.ID AS STRING)                          AS matricula,
@@ -57,6 +49,8 @@ class BigQueryService:
               t2.CARGO                                       AS cargo,
               t2.FILIAL                                      AS filial,
               t2.CENTRO_CUSTO                                AS centro_custo,
+              t2.COD_CENTRO_CUSTO                            AS cod_centro_custo,
+              t2.DATA_ADMISSAO                               AS data_admissao,
               t2.SITUACAO                                    AS situacao,
               t1.email                                       AS email,
               t1.user_name                                   AS user_name,
@@ -80,28 +74,38 @@ class BigQueryService:
         try:
             query_job = self.client.query(query)
             resultados = list(query_job.result())
-            
+
             if resultados:
                 linha = resultados[0]
-                # Converte o Row do BQ para Dicion?rio de forma segura
+
+                def _fmt_date(val) -> str:
+                    """Converte date/datetime do BQ para DD/MM/YYYY."""
+                    if val is None:
+                        return ''
+                    if hasattr(val, 'strftime'):
+                        return val.strftime('%d/%m/%Y')
+                    return str(val)
+
                 return {
-                    "matricula": getattr(linha, "matricula", ""),
-                    "cpf": getattr(linha, "cpf", ""),
-                    "nome": getattr(linha, "nome", ""),
-                    "cargo": getattr(linha, "cargo", ""),
-                    "filial": getattr(linha, "filial", ""),
-                    "centro_custo": getattr(linha, "centro_custo", ""),
-                    "situacao": getattr(linha, "situacao", ""),
-                    "email": getattr(linha, "email", ""),
-                    "user_name": getattr(linha, "user_name", ""),
-                    "aprovador_n1_nome": getattr(linha, "aprovador_n1_nome", "Não Definido"),
+                    "matricula":          getattr(linha, "matricula",          ""),
+                    "cpf":                getattr(linha, "cpf",                ""),
+                    "nome":               getattr(linha, "nome",               ""),
+                    "cargo":              getattr(linha, "cargo",              ""),
+                    "filial":             str(getattr(linha, "filial",         "") or ""),
+                    "centro_custo":       getattr(linha, "centro_custo",       ""),
+                    "cod_centro_custo":   str(getattr(linha, "cod_centro_custo", "") or ""),
+                    "data_admissao":      _fmt_date(getattr(linha, "data_admissao",   None)),
+                    "situacao":           getattr(linha, "situacao",           ""),
+                    "email":              getattr(linha, "email",              ""),
+                    "user_name":          getattr(linha, "user_name",          ""),
+                    "aprovador_n1_nome":  getattr(linha, "aprovador_n1_nome",  "N\u00e3o Definido"),
                     "aprovador_n1_email": getattr(linha, "aprovador_n1_email", ""),
-                    "aprovador_n2_nome": getattr(linha, "aprovador_n2_nome", ""),
+                    "aprovador_n2_nome":  getattr(linha, "aprovador_n2_nome",  ""),
                     "aprovador_n2_email": getattr(linha, "aprovador_n2_email", ""),
                 }
-                
-            return None 
-            
+
+            return None
+
         except Exception as e:
             logging.error(f"Falha na consulta BQ: {e}")
             raise e
@@ -109,14 +113,12 @@ class BigQueryService:
     def buscar_situacao_por_email(self, email: str) -> Optional[str]:
         """
         Retorna a coluna SITUACAO de mag_v_funcionarios_ativos para o e-mail informado.
-        Usado para verificar se o aprovador N1 está de Férias antes de iniciar o fluxo.
-        Retorna None se o colaborador não for encontrado ou se o BQ estiver indisponível.
+        Usado para verificar se o aprovador N1 esta de Ferias antes de iniciar o fluxo.
+        Retorna None se o colaborador nao for encontrado ou se o BQ estiver indisponivel.
         """
         if not self.client or not email:
             return None
 
-        # Sanitização básica: e-mail veio do próprio BQ (trustworthy), mas removemos
-        # caracteres que poderiam ser interpretados como SQL.
         email_safe = email.strip().lower().replace("'", "").replace("\\", "")
 
         query = f"""
@@ -135,5 +137,5 @@ class BigQueryService:
                 return getattr(resultado[0], "situacao", None)
             return None
         except Exception as e:
-            logging.error(f"Falha ao buscar situação para {email}: {e}")
+            logging.error(f"Falha ao buscar situacao para {email}: {e}")
             return None

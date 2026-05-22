@@ -31,6 +31,49 @@ def obter_dados_colaborador(
         raise HTTPException(status_code=500, detail=f"Erro no BQ: {str(e)}")
 
 
+@router.get("/perfil/{username}", response_model=schemas.UserProfileData)
+def get_perfil_viajante(
+    username: str,
+    db: Session = Depends(get_db_session),
+    _: str | None = Depends(get_optional_username),
+):
+    """Retorna o perfil salvo do viajante (celular + data nascimento)."""
+    from app.infrastructure.orm import models as orm_models
+    perfil = db.query(orm_models.UserProfileModel).filter(
+        orm_models.UserProfileModel.username == username
+    ).first()
+    if not perfil:
+        return schemas.UserProfileData()
+    return perfil
+
+
+@router.put("/perfil/{username}", response_model=schemas.UserProfileData)
+def salvar_perfil_viajante(
+    username: str,
+    data: schemas.UserProfileData,
+    db: Session = Depends(get_db_session),
+    _: str | None = Depends(get_optional_username),
+):
+    """Salva/atualiza o perfil do viajante (upsert)."""
+    from app.infrastructure.orm import models as orm_models
+    perfil = db.query(orm_models.UserProfileModel).filter(
+        orm_models.UserProfileModel.username == username
+    ).first()
+    if perfil:
+        if data.celular:         perfil.celular         = data.celular
+        if data.data_nascimento: perfil.data_nascimento = data.data_nascimento
+    else:
+        perfil = orm_models.UserProfileModel(
+            username=username,
+            celular=data.celular,
+            data_nascimento=data.data_nascimento,
+        )
+        db.add(perfil)
+    db.commit()
+    db.refresh(perfil)
+    return perfil
+
+
 @router.post("/solicitacoes", response_model=schemas.SolicitacaoResponse, status_code=201)
 def criar_solicitacao_de_viagem(
     solicitacao: schemas.SolicitacaoCreate,

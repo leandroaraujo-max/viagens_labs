@@ -77,6 +77,18 @@ class ViagensService:
             aprovador_n1_nome=solicitacao_data.aprovador_n1_nome,
             aprovador_n2_email=solicitacao_data.aprovador_n2_email,
             aprovador_n2_nome=solicitacao_data.aprovador_n2_nome,
+            # Perfil do viajante
+            viajante_nome=solicitacao_data.viajante_nome,
+            viajante_cpf=solicitacao_data.viajante_cpf,
+            viajante_matricula=solicitacao_data.viajante_matricula,
+            viajante_email=solicitacao_data.viajante_email,
+            viajante_cargo=solicitacao_data.viajante_cargo,
+            viajante_filial=solicitacao_data.viajante_filial,
+            viajante_centro_custo=solicitacao_data.viajante_centro_custo,
+            viajante_cod_centro_custo=solicitacao_data.viajante_cod_centro_custo,
+            viajante_data_admissao=solicitacao_data.viajante_data_admissao,
+            viajante_celular=solicitacao_data.viajante_celular,
+            viajante_data_nascimento=solicitacao_data.viajante_data_nascimento,
             status=status_inicial,
         )
 

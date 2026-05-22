@@ -23,6 +23,18 @@ def _migracoes_seguras():
         "ALTER TABLE casamentos ADD COLUMN IF NOT EXISTS operador_acao VARCHAR(100) DEFAULT '';",
         "ALTER TABLE casamentos ADD COLUMN IF NOT EXISTS data_acao     TIMESTAMP;",
         "ALTER TABLE casamentos ADD COLUMN IF NOT EXISTS grupo_viagem  VARCHAR(20);",
+        # Fase 6 — perfil completo do viajante na solicitação
+        "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS viajante_nome             VARCHAR(200) DEFAULT '';",
+        "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS viajante_cpf              VARCHAR(20)  DEFAULT '';",
+        "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS viajante_matricula        VARCHAR(20)  DEFAULT '';",
+        "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS viajante_email            VARCHAR(200) DEFAULT '';",
+        "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS viajante_cargo            VARCHAR(200) DEFAULT '';",
+        "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS viajante_filial           VARCHAR(20)  DEFAULT '';",
+        "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS viajante_centro_custo     VARCHAR(200) DEFAULT '';",
+        "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS viajante_cod_centro_custo VARCHAR(20)  DEFAULT '';",
+        "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS viajante_data_admissao    VARCHAR(20)  DEFAULT '';",
+        "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS viajante_celular          VARCHAR(20)  DEFAULT '';",
+        "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS viajante_data_nascimento  VARCHAR(20)  DEFAULT '';",
     ]
     with engine.connect() as conn:
         for sql in sqls:
