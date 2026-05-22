@@ -164,6 +164,16 @@ class SetorService:
         tok_kontrip = self._criar_token_agencia(db, sol, "Kontrip", "COTACAO")
         db.flush()
 
+        # Registra tokens no GAS relay para acesso externo das agências
+        try:
+            from app.infrastructure.google_relay_service import get_relay
+            relay = get_relay()
+            if relay.disponivel():
+                relay.registrar_agencia(tok_tastur, sol)
+                relay.registrar_agencia(tok_kontrip, sol)
+        except Exception as e:
+            logger.warning(f"[Setor] Falha ao registrar tokens de agência no GAS: {e}")
+
         try:
             from app.infrastructure.email_service import EmailService
             EmailService().enviar_email_agencias_cotacao(sol, {

@@ -495,7 +495,13 @@ class EmailService:
         dados = _tabela_dados(linhas)
 
         if token_uuid:
-            link   = f"{self.base_url_agencia}/agencia.html?token={token_uuid}"
+            try:
+                from app.infrastructure.google_relay_service import get_relay
+                _relay = get_relay()
+                link = _relay.link_agencia(token_uuid) if _relay.disponivel() \
+                    else f"{self.base_url_agencia}/agencia.html?token={token_uuid}"
+            except Exception:
+                link = f"{self.base_url_agencia}/agencia.html?token={token_uuid}"
             instrucao = _alerta(
                 "⚠ Este link é único e pessoal para esta solicitação. É válido por <strong>7 dias</strong>. "
                 "Clique no botão abaixo para registrar sua cotação diretamente — sem necessidade de login.",
@@ -599,7 +605,13 @@ class EmailService:
             ("Serviços",    solicitacao.tipo_servico.replace(",", " + ")),
         ])
         if token_voucher_uuid:
-            link  = f"{self.base_url_agencia}/agencia.html?token={token_voucher_uuid}"
+            try:
+                from app.infrastructure.google_relay_service import get_relay
+                _relay = get_relay()
+                link = _relay.link_agencia(token_voucher_uuid) if _relay.disponivel() \
+                    else f"{self.base_url_agencia}/agencia.html?token={token_voucher_uuid}"
+            except Exception:
+                link = f"{self.base_url_agencia}/agencia.html?token={token_voucher_uuid}"
             instrucao = _alerta(
                 "🎫 Parabéns! Por favor, emita os vouchers e anexe-os clicando no botão abaixo. "
                 "O link é único e pessoal — válido por <strong>14 dias</strong>.",

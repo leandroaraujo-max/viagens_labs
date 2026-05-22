@@ -78,7 +78,86 @@ def _run_loop(SessionLocal, intervalo: int) -> None:
             _processar_ciclo(SessionLocal)
         except Exception as exc:
             logger.error(f'[GAS relay] Erro no ciclo de poll: {exc}')
+        try:
+            _processar_ciclo_agencia(SessionLocal)
+        except Exception as exc:
+            logger.error(f'[GAS relay] Erro no ciclo de poll (agência): {exc}')
         time.sleep(intervalo)
+
+
+def _processar_ciclo_agencia(SessionLocal) -> None:
+    """Processa cotações de agências recebidas via GAS relay."""
+    from app.infrastructure.google_relay_service import get_relay
+    from app.infrastructure.orm.models import TokenAgenciaModel
+    from app.repositories.viagens_repository import ViagensRepository
+
+    relay = get_relay()
+    cotacoes = relay.poll_cotacoes()
+    if not cotacoes:
+        return
+
+    logger.info(f'[GAS relay agência] {len(cotacoes)} cotação(ões) pendente(s).')
+
+    for c in cotacoes:
+        token_uuid = str(c.get('token', '')).strip()
+        if not token_uuid:
+            continue
+
+        db: Session = SessionLocal()
+        try:
+            repo = ViagensRepository(db)
+            tok = db.query(TokenAgenciaModel).filter(
+                TokenAgenciaModel.uuid == token_uuid
+            ).first()
+
+            if not tok:
+                logger.warning(f'[GAS relay agência] Token {token_uuid[:8]}… não encontrado — descartando.')
+                relay.marcar_cotacao_processada(token_uuid)
+                continue
+
+            if tok.status != 'PENDENTE':
+                logger.info(f'[GAS relay agência] Token {token_uuid[:8]}… já processado localmente — sincronizando GAS.')
+                relay.marcar_cotacao_processada(token_uuid)
+                continue
+
+            from app.domain.models.schemas import CotacaoCreate
+            def _flt(val):
+                try:
+                    return float(val) if val not in (None, '', 'None') else None
+                except (ValueError, TypeError):
+                    return None
+
+            cotacao_data = CotacaoCreate(
+                aereo_companhia       = c.get('aereo_companhia') or None,
+                aereo_numero_voo      = c.get('aereo_numero_voo') or None,
+                aereo_horario_ida     = c.get('aereo_horario_ida') or None,
+                aereo_horario_volta   = c.get('aereo_horario_volta') or None,
+                aereo_valor           = _flt(c.get('aereo_valor')),
+                hotel_nome            = c.get('hotel_nome') or None,
+                hotel_categoria       = c.get('hotel_categoria') or None,
+                hotel_valor_diaria    = _flt(c.get('hotel_valor_diaria')),
+                rodov_empresa         = c.get('rodov_empresa') or None,
+                rodov_horario_ida     = c.get('rodov_horario_ida') or None,
+                rodov_horario_volta   = c.get('rodov_horario_volta') or None,
+                rodov_valor           = _flt(c.get('rodov_valor')),
+                carro_locadora        = c.get('carro_locadora') or None,
+                carro_modelo          = c.get('carro_modelo') or None,
+                carro_valor_diaria    = _flt(c.get('carro_valor_diaria')),
+                valor_total           = _flt(c.get('valor_total')) or 0.0,
+                observacoes           = c.get('observacoes') or None,
+            )
+
+            from app.services.viagens_service import ViagensService
+            svc = ViagensService(db)
+            svc.registrar_cotacao_agencia(tok.solicitacao_id, tok.uuid, cotacao_data)
+
+            relay.marcar_cotacao_processada(token_uuid)
+            logger.info(f'[GAS relay agência] Cotação {tok.agencia_nome} / {tok.uuid[:8]}… registrada com sucesso.')
+
+        except Exception as exc:
+            logger.error(f'[GAS relay agência] Erro ao processar cotação {token_uuid[:8]}…: {exc}')
+        finally:
+            db.close()
 
 
 def iniciar_relay_scheduler(SessionLocal) -> None:

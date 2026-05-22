@@ -124,6 +124,62 @@ class GoogleRelayService:
         base = getattr(settings, 'BASE_URL_APROVACAO', settings.BASE_URL)
         return f'{base}/portal_aprovacao.html?token={token_uuid}'
 
+    # ── Agências ──────────────────────────────────────────────────────────────
+
+    def registrar_agencia(self, token_agencia, solicitacao) -> bool:
+        """Registra token de cotação no GAS para acesso externo da agência."""
+        if not self.disponivel():
+            return False
+        payload = {
+            'action':                 'registrar_agencia',
+            'secret':                 self.secret,
+            'token':                  token_agencia.uuid,
+            'protocolo':              solicitacao.protocolo,
+            'agencia_nome':           token_agencia.agencia_nome,
+            'tipo_servico':           getattr(solicitacao, 'tipo_servico', '') or '',
+            'solicitante':            getattr(solicitacao, 'solicitante_username', '') or '',
+            'destino':                f"{getattr(solicitacao,'destino_cidade','')} / {getattr(solicitacao,'destino_estado','')}",
+            'data_ida':               solicitacao.data_ida.strftime('%d/%m/%Y') if getattr(solicitacao, 'data_ida', None) else '',
+            'data_volta':             solicitacao.data_volta.strftime('%d/%m/%Y') if getattr(solicitacao, 'data_volta', None) else '',
+            'aereo_periodo':          getattr(solicitacao, 'aereo_periodo_preferido', '') or '',
+            'aereo_trecho':           getattr(solicitacao, 'aereo_tipo_trecho', '') or '',
+            'bagagem_extra':          bool(getattr(solicitacao, 'bagagem_extra', False)),
+            'assento':                getattr(solicitacao, 'assento_especial', '') or '',
+            'rodov_periodo':          getattr(solicitacao, 'rodov_periodo_preferido', '') or '',
+            'rodov_tipo':             getattr(solicitacao, 'rodov_tipo_onibus', '') or '',
+            'hotel_nome_pref':        getattr(solicitacao, 'preferencia_hotel_nome', '') or '',
+            'carro_retirada_cidade':  getattr(solicitacao, 'carro_cidade_retirada', '') or '',
+            'carro_devolucao_cidade': getattr(solicitacao, 'carro_cidade_devolucao', '') or '',
+            'observacoes_viajante':   getattr(solicitacao, 'observacoes_viajante', '') or '',
+            'expirado_em':            token_agencia.data_expiracao.isoformat(),
+        }
+        result = self._post(payload)
+        ok = bool(result and result.get('ok'))
+        if not ok:
+            logger.warning(f'[GAS] Falha ao registrar agência {token_agencia.agencia_nome}: {result}')
+        return ok
+
+    def poll_cotacoes(self) -> list[dict]:
+        """Retorna cotações de agências não processadas vindas do GAS."""
+        result = self._post({'action': 'poll_cotacoes', 'secret': self.secret})
+        if not result or not result.get('ok'):
+            if result:
+                logger.warning(f'[GAS] poll_cotacoes retornou erro: {result.get("msg")}')
+            return []
+        return result.get('cotacoes', [])
+
+    def marcar_cotacao_processada(self, token_uuid: str) -> bool:
+        """Marca cotação de agência como processada no GAS."""
+        result = self._post({'action': 'processar_cotacao', 'secret': self.secret, 'token': token_uuid})
+        return bool(result and result.get('ok'))
+
+    def link_agencia(self, token_uuid: str) -> str:
+        """URL pública do portal de cotação da agência no GAS."""
+        if self.disponivel():
+            return f'{self.url}?agencia_token={token_uuid}'
+        base = getattr(settings, 'BASE_URL_AGENCIA', settings.BASE_URL)
+        return f'{base}/agencia.html?token={token_uuid}'
+
 
 # Singleton — importado pelos outros módulos
 _relay = GoogleRelayService()

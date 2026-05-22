@@ -1,4 +1,4 @@
-# ✈️ ViagensLabs — Portal Corporativo de Viagens
+# ✈️ Viagens Labs — Portal Corporativo de Viagens
 
 > Sistema on-premises de solicitação, aprovação e cotação de viagens corporativas do Luizalabs/Magalu.  
 > Migração completa do legado em Google Apps Script (GAS) para FastAPI + PostgreSQL + Vue.js 3 + Active Directory.
@@ -39,9 +39,12 @@ Viajante solicita  →  N1 aprova  →  N2 aprova (se aplicável)
 | Portal | URL | Público | Acesso |
 |---|---|---|---|
 | Portal do Viajante | `/index.html` | Colaboradores Magalu (AD) | Login AD |
-| Portal de Aprovação | `/portal_aprovacao.html?token=...` | Gestores N1/N2 | Link por e-mail |
-| Portal da Agência | `/agencia.html` | Agências externas (Tastur, Kontrip) | Link por e-mail (sem login) |
+| Portal de Aprovação | `GAS_RELAY_URL?token=...` (público) | Gestores N1/N2 | Link por e-mail — acessível pelo celular |
+| Portal da Agência | `GAS_RELAY_URL?agencia_token=...` (público) | Agências externas (Tastur, Kontrip) | Link por e-mail — sem login, sem VPN |
 | Painel do Setor | `/painel.html` | Equipe interna de viagens (AD — grupo admins) | Login AD |
+
+> **GAS Relay:** Aprovações e cotações de agências são servidas via Google Apps Script (deploy público).  
+> O FastAPI registra tokens na planilha GAS; aprovadores e agências acessam pelo celular ou fora da intranet.
 
 ---
 
@@ -225,6 +228,7 @@ python seed_agencia.py
 | JWT | HS256, validade 8h |
 | BigQuery | `google-cloud-bigquery` + ADC |
 | E-mail | `smtplib` → `smtpml.magazineluiza.intranet:25` |
+| GAS Relay (externo) | Google Apps Script Web App (Google Sheets como fila) |
 | Frontend | Vue.js 3 CDN + TailwindCSS CDN (sem build step) |
 | Design System | Inter font, glassmorphism, paleta `labs` (azul `#0055ff`) |
 | Imagem de fundo | Foto aérea servida localmente em `/img/bg-aviao.jpg` |
@@ -259,7 +263,9 @@ viagens_labs/
 │   │   ├── ldap_service.py             # Autenticação AD + verificação de grupos
 │   │   ├── bigquery_service.py         # Consulta hierarquia do colaborador
 │   │   ├── email_service.py            # SMTP relay corporativo (5 templates)
-│   │   └── duffel_service.py           # API Duffel para pesquisa de voos reais
+│   │   ├── duffel_service.py           # API Duffel para pesquisa de voos
+│   │   ├── google_relay_service.py     # Integração com GAS relay (aprovações + agências)
+│   │   └── aprovacao_relay_scheduler.py # Thread daemon: polling GAS → processa decisões/cotações reais
 │   ├── repositories/
 │   │   └── viagens_repository.py       # Acesso ao banco (queries SQLAlchemy)
 │   ├── services/
@@ -426,7 +432,9 @@ CONCLUIDA  ── e-mail com vouchers enviado ao viajante
 
 **Regra de férias:** Se `SITUACAO` do N1 no BigQuery contém a substring `"ferias"` (sem acento), ele é considerado ausente e o fluxo vai direto para N2.
 
-**Regra emergencial:** Solicitações com `data_ida` em menos de 15 dias são classificadas como `Emergencial` e exigem aprovação N2 diretamente.
+**Regra emergencial:** Solicitações com `data_ida` em menos de 15 dias são classificadas como `Emergencial`. Não há etapas adicionais por isso — N2 é apenas escalação (N1 de férias ou SLA excedido).
+
+**GAS Relay:** Quando `GAS_RELAY_URL` e `GAS_SECRET` estão configurados no `.env`, o FastAPI registra cada token (aprovação N1/N2 e cotação de agência) no Google Apps Script. Aprovadores e agências recebem um link GAS público acessível de qualquer lugar. Um scheduler (thread daemon, intervalo configurável) faz polling a cada `GAS_POLL_INTERVALO` segundos e processa as respostas recebidas.
 
 ---
 
@@ -461,32 +469,42 @@ O acesso funciona via **link único enviado por e-mail**, sem necessidade de log
 
 > Login via usuário/senha também permanece funcíonal para uso interno (quando VPN estiver disponível).
 
-### Configuração de URL para as agências
+### GAS Relay — Aprovações e Cotações Externas (sem VPN)
+
+O sistema usa um **Google Apps Script Web App** como fila pública intermediária:
+- **Aprovações N1/N2:** gestores aprovam pelo celular sem precisar de intranet ou VPN
+- **Cotações de Agências:** Tastur e Kontrip preenchem cotação via link público Google
+
 ```dotenv
-# Intranet (testes — você está na rede):
-BASE_URL_AGENCIA=http://viagenslabs.magazineluiza.intranet
-
-# VPN disponível para as agências:
-BASE_URL_AGENCIA=http://viagenslabs.magazineluiza.intranet
-
-# Sistema exposto à internet (DMZ / cloud):
-BASE_URL_AGENCIA=https://viagenslabs.magazineluiza.com.br
+# Habilita o relay GAS (quando configurado, substitui BASE_URL_APROVACAO e BASE_URL_AGENCIA)
+GAS_RELAY_URL=https://script.google.com/macros/s/AKfycb.../exec
+GAS_SECRET=vl-secret-2026          # igual ao Script Property GAS_SECRET no GAS editor
+GAS_POLL_INTERVALO=60              # segundos entre polls
 ```
 
-### Configuração de URL para aprovações (N1/N2 pelo celular)
+**Como funciona:**
+1. FastAPI registra token no GAS via `POST {action: registrar | registrar_agencia}`
+2. E-mail enviado com link `GAS_RELAY_URL?token=UUID` ou `?agencia_token=UUID`
+3. Aprovador/Agência acessa o portal HTML servido pelo GAS (sem login, qualquer browser)
+4. Decisão/cotação é gravada na planilha do Google Sheets
+5. Scheduler Python faz polling a cada 60s → processa e avança o workflow
 
-Os gestores N1/N2 recebem o link de aprovação por e-mail e frequentemente aprovam **pelo celular**, fora da intranet. A URL usada nos botões de aprovação é configurada separadamente:
+**Setup do GAS (uma vez por deploy):**
+```javascript
+// No editor do Google Apps Script:
+setup()        // cria sheets 'pendentes' e 'decisoes'
+setupAgencia() // cria sheets 'cotacoes_agencia' e 'respostas_agencia'
+// Propriedades do script: GAS_SECRET = vl-secret-2026
+```
 
+**Fallback:** Se `GAS_RELAY_URL` não estiver configurado, o sistema usa `BASE_URL_APROVACAO` e `BASE_URL_AGENCIA` como antes (intranet). Os dois modos coexistem.
+
+### Configuração de URL (fallback sem GAS)
 ```dotenv
-# Intranet (testes):
+# Quando GAS não está configurado, usa estas URLs como fallback:
 BASE_URL_APROVACAO=http://viagenslabs.magazineluiza.intranet
-
-# Quando o sistema tiver VPN ou URL pública (aprovação pelo celular funciona):
-BASE_URL_APROVACAO=https://viagenslabs.magazineluiza.com.br
+BASE_URL_AGENCIA=http://viagenslabs.magazineluiza.intranet
 ```
-
-> Basta alterar `BASE_URL_APROVACAO` no `.env`. Nenhum código precisa ser alterado.
-> Os templates de e-mail de N1, N2, lembretes e escala N2 usam esta URL.
 
 ### JWT
 - Algoritmo: HS256 — Expiração: 8 horas
@@ -646,10 +664,22 @@ Todos os portais usam **Vue.js 3 (CDN) + TailwindCSS (CDN)** — sem node_module
 **Agências por Link de E-mail (Fase 5A — tokens)**
 - [x] `tokens_agencia` — tabela no banco com finalidade `COTACAO` / `VOUCHER`
 - [x] Token criado ao pré-aprovar (COTACAO, TTL 7 dias) e ao escolher vencedora (VOUCHER, TTL 14 dias)
-- [x] E-mail para agências inclui botão com `agencia.html?token=UUID` — link único por agência/solicitação
+- [x] E-mail para agências inclui botão com link único por agência/solicitação
 - [x] `agencia.html` detecta `?token=` → carrega solicitação sem login
 - [x] Rotas sem auth: `GET /agencia/token/{uuid}`, `POST /agencia/token/{uuid}/cotacao`, `POST /agencia/token/{uuid}/voucher`
 - [x] `BASE_URL_AGENCIA` configurável no `.env` — independente de `BASE_URL`
+
+**GAS Relay — Portal Público para Aprovadores e Agências (Fase 5D)**
+- [x] `gas/Code.gs`: Web App GAS com portal de aprovação (N1/N2) e portal de cotação (agências)
+- [x] `doGet ?token=UUID` → portal HTML de aprovação acessível de qualquer lugar
+- [x] `doGet ?agencia_token=UUID` → formulário de cotação HTML servido pelo GAS
+- [x] `submitDecision(token, decisao, obs)` → agrava decisão na planilha Google Sheets
+- [x] `submitCotacao(agencia_token, dados)` → grava cotação na planilha Google Sheets
+- [x] `google_relay_service.py`: métodos `registrar_aprovacao`, `registrar_agencia`, `poll_decisoes`, `poll_cotacoes`, `marcar_processado`, `marcar_cotacao_processada`, `link_aprovacao`, `link_agencia`
+- [x] `aprovacao_relay_scheduler.py`: polling duplo — aprovações (N1/N2) + cotações de agências
+- [x] `setor_service._pre_aprovar()`: registra tokens Tastur e Kontrip no GAS após criar
+- [x] `email_service`: usa `link_agencia()` do relay quando disponível (fallback intranet)
+- [x] Deploy v4: `https://script.google.com/macros/s/AKfycbykFk0vwKSe2tRcdcFY5Tm8Gt7udb_bcued1qwAQl4XOSpqjJySiga6lTRZ8NKrbT1xKQ/exec`
 
 **Vouchers**
 - [x] `VoucherModel` + tabela `vouchers` no banco
@@ -692,14 +722,18 @@ Todos os portais usam **Vue.js 3 (CDN) + TailwindCSS (CDN)** — sem node_module
 #### Fase 5C — Casamento de viagens
 - [ ] Vincular/ignorar casamentos no painel do setor (colunas `status`, `operador_acao`, `grupo_viagem` já no ORM)
 
+#### Fase 5D — GAS Relay ✅ (concluído 22/05/2026)
+- [x] Portal público de aprovação via Google Apps Script
+- [x] Portal público de cotação de agências via Google Apps Script
+- [x] Scheduler de polling duplo (aprovações + cotações)
+
 #### Fase 6 — Portal do Viajante: Histórico completo
 - [ ] Página de detalhe com linha do tempo do fluxo de aprovação
 - [ ] Cancelamento de solicitação pelo viajante (status `AGUARDANDO_N1`)
 
-#### Fase 7 — Acesso de agências via VPN/Internet
-- [ ] Quando VPN disponível: trocar `BASE_URL_AGENCIA` no `.env` (sem código)
-- [ ] Quando sistema for exposto à internet: trocar `BASE_URL_AGENCIA` para URL pública
-- [ ] Avaliar exposição seletiva via DMZ (apenas `/agencia.html` e `/api/v1/agencia/token/*`)
+#### Fase 7 — GAS Relay para Vouchers
+- [ ] Estender `Code.gs` para portal de envio de vouchers (upload via Google Drive)
+- [ ] Ou manter fluxo de vouchers via intranet com VPN
 
 #### Fase 8 — Relatórios e Exportação
 - [ ] Exportação da lista de solicitações para CSV/Excel
@@ -800,23 +834,34 @@ Banco de Dados:
 Arquitetura: Clean Architecture
   app/api/v1/endpoints/  → auth, viagens, aprovacao, agencia, setor, duffel, voucher
   app/services/          → viagens, aprovacao, cotacao, casamento, setor, voucher
-  app/infrastructure/    → database, ldap_service, bigquery_service, email_service, duffel_service, sla_scheduler
+  app/infrastructure/    → database, ldap_service, bigquery_service, email_service,
+                           duffel_service, google_relay_service, aprovacao_relay_scheduler
   app/domain/models/     → schemas.py (Pydantic)
   frontend/              → index.html, portal_aprovacao.html, agencia.html, painel.html
+  gas/                   → Code.gs (relay GAS), appsscript.json, .clasp.json
+
+GAS Relay (aprovações externas + cotações de agências):
+  Script ID : 1VqosNh6_Sqv8vr_210MKHp0G5anbZJDmYtIAUw1WnfbPCVWOXtwMI8lY
+  Deploy v4 : https://script.google.com/macros/s/AKfycbykFk0vwKSe2tRcdcFY5Tm8Gt7udb_bcued1qwAQl4XOSpqjJySiga6lTRZ8NKrbT1xKQ/exec
+  SHEET_ID  : 1o5PBNWpv9y89EVyCIXjNtuQx27Mcn0gIKPlUU_KQrrU
+  GAS_SECRET: vl-secret-2026 (Script Property key: GAS_SECRET)
+  Planilha  : 4 sheets: pendentes, decisoes, cotacoes_agencia, respostas_agencia
+  Setup GAS : executar setup() e setupAgencia() no editor do GAS (uma vez)
+  clasp     : cd gas && clasp push --force && clasp deploy --description "..."
 
 Fluxo de status ATUAL (22/05/2026):
   AGUARDANDO_N1
     ├─ N1 férias (BQ SITUACAO contém substring 'ferias') → AGUARDANDO_N2
-    ├─ N1 aprova + exige N2 → AGUARDANDO_N2
-    ├─ N1 aprova + comum   → PENDENTE_PRE_APROVACAO_SETOR
-    └─ N1 reprova           → REPROVADA
+    ├─ N1 aprova → PENDENTE_PRE_APROVACAO_SETOR  (N2 apenas se N1 de férias)
+    └─ N1 reprova → REPROVADA
   AGUARDANDO_N2
     ├─ N2 aprova → PENDENTE_PRE_APROVACAO_SETOR
     └─ N2 reprova → REPROVADA
   PENDENTE_PRE_APROVACAO_SETOR
     ├─ Setor pré-aprova → AGUARDANDO_COTACAO
     |   + cria TokenAgenciaModel(finalidade=COTACAO, TTL=7d) para Tastur e Kontrip
-    |   + e-mail com link agencia.html?token=UUID (um por agência)
+    |   + registra tokens no GAS relay (portal de cotação público)
+    |   + e-mail com link GAS?agencia_token=UUID (um por agência)
     └─ Setor pré-reprova → REPROVADA
   AGUARDANDO_COTACAO
     ├─ 1 agência cota → COTACAO_ENVIADA
@@ -829,21 +874,26 @@ Fluxo de status ATUAL (22/05/2026):
   APROVADA_AGUARDANDO_VOUCHER
     └─ Todos vouchers entregues → CONCLUIDA + e-mail viajante
 
-ACESSO DAS AGÊNCIAS (externas — sem intranet/VPN):
-  Agências recebem e-mail com link agencia.html?token=UUID
-  Frontend detecta ?token= → GET /api/v1/agencia/token/{uuid} (sem auth)
-  Token COTACAO: mostra formulário de cotação
-  Token VOUCHER: mostra tela de upload de vouchers
-  URL dos links: BASE_URL_AGENCIA (configurável no .env — intranet/VPN/internet)
+ACESSO DAS AGÊNCIAS (externas — via GAS relay, sem intranet/VPN):
+  Agências recebem e-mail com link GAS_RELAY_URL?agencia_token=UUID
+  GAS serve formulário HTML → agência preenche e submete
+  Scheduler Python faz poll GAS a cada 60s → processa cotação via ViagensService
+  Fallback: BASE_URL_AGENCIA/agencia.html?token=UUID (quando GAS não configurado)
 
-Para mudar a URL dos links das agências (sem alterar código):
-  .env: BASE_URL_AGENCIA=https://viagenslabs.magazineluiza.com.br
+ACESSO DOS APROVADORES (via GAS relay, celular/qualquer browser):
+  Aprovadores recebem e-mail com link GAS_RELAY_URL?token=UUID
+  GAS serve portal de aprovação HTML → aprova/reprova
+  Scheduler Python faz poll GAS a cada 60s → processa decisão via AprovacaoService
+  Fallback: BASE_URL_APROVACAO/portal_aprovacao.html?token=UUID
 
 Variáveis de ambiente importantes (.env):
+  GAS_RELAY_URL         = URL deploy v4 GAS (aprovações + cotações de agências)
+  GAS_SECRET            = vl-secret-2026 (deve ser igual ao Script Property GAS_SECRET)
+  GAS_POLL_INTERVALO    = 60 (segundos)
   AGENCIA_TASTUR_EMAIL  = e-mail definitivo da Tastur (testes: leandro.araujo@luizalabs.com)
   AGENCIA_KONTRIP_EMAIL = e-mail definitivo da Kontrip (testes: leandro.araujo@luizalabs.com)
-  BASE_URL_AGENCIA      = URL base dos links enviados às agências por e-mail
-  BASE_URL_APROVACAO    = URL base dos links de aprovação N1/N2 (celular/fora da intranet)
+  BASE_URL_AGENCIA      = fallback URL interna para agências
+  BASE_URL_APROVACAO    = fallback URL interna para aprovadores
   QA_APROVADOR_EMAIL    = redireciona tokens de aprovação N1/N2 para testador
 
 Tabelas ORM (app/infrastructure/orm/models.py):
@@ -855,12 +905,6 @@ Tabelas ORM (app/infrastructure/orm/models.py):
   CasamentoModel         → casamentos
   UsuarioAgenciaModel    → usuarios_agencia
   UserProfileModel       → user_profiles
-
-Novos campos ORM (Fase 7):
-  solicitacoes.carro_data_retirada   VARCHAR(20)
-  solicitacoes.carro_data_devolucao  VARCHAR(20)
-  solicitacoes.preferencia_voo_volta TEXT
-  (+ viajante_*, aprovador_n1/n2_* adicionados em fases anteriores)
 
 setor.py — padrão atual:
   _build_setor_response() usa model_validate via sol.__table__.columns
@@ -890,8 +934,7 @@ PRÓXIMOS PASSOS:
   Fase 5B: Motor SLA (sla_scheduler.py — lembretes N1/cotacao)
   Fase 5C: Casamento completo (vincular/ignorar no painel do setor)
   Fase 6: Histórico com linha do tempo no portal do viajante
-  Fase 7 (acesso agências): trocar BASE_URL_AGENCIA no .env quando VPN/internet
-  Fase 7 (aprovações celular): trocar BASE_URL_APROVACAO no .env quando VPN/internet
+  Fase 7: GAS relay para vouchers (upload via Google Drive) OU VPN para agências
 
 Regra crítica ao gerar código: NUNCA use '...', '# ...' ou '#existing code'.
 Sempre fornecer o código completo do método/função alterado.
