@@ -28,10 +28,10 @@
     + 'to{transform:translate3d(calc(100vw + 200px),-200px,0) rotate(-6deg)}'
     + '}'
     + '@keyframes vl-trail{'
-    + '0%{opacity:0;width:0}'
-    + '30%{opacity:0.5;width:200px}'
+    + '0%{transform:scaleX(0);opacity:0}'
+    + '30%{opacity:0.5}'
     + '80%{opacity:0.3}'
-    + '100%{opacity:0;width:240px}'
+    + '100%{transform:scaleX(1);opacity:0}'
     + '}';
 
   function injectCSS() {
@@ -59,6 +59,7 @@
       + '</svg>';
 
     var trail = '<div style="position:absolute;left:0;bottom:calc(50% - 1px);height:2px'
+      + ';width:300px;transform-origin:left center;transform:scaleX(0)'
       + ';background:linear-gradient(90deg,transparent,rgba(147,197,253,0.6) 50%,rgba(255,255,255,0.8))'
       + ';border-radius:2px;animation:vl-trail 1.4s linear forwards"></div>';
 
