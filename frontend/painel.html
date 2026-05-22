@@ -312,6 +312,33 @@
     <!-- ─────────────────────── ABA INDICADORES ─────────────────────── -->
     <template v-if="aba === 'indicadores'">
 
+      <!-- Barra de exportação -->
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+        <h2 class="text-sm font-bold text-labs-dark">Exportar relatórios (CSV)</h2>
+        <div class="flex flex-wrap gap-2">
+          <button @click="exportarSolicitacoes()"
+            class="flex items-center gap-1.5 text-xs font-semibold border border-labs-border bg-white hover:bg-labs-gray text-gray-700 rounded-lg px-3 py-2 transition-all">
+            <svg class="w-3.5 h-3.5 text-labs-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Todas as Solicitações
+          </button>
+          <button @click="exportarStatus()"
+            class="flex items-center gap-1.5 text-xs font-semibold border border-labs-border bg-white hover:bg-labs-gray text-gray-700 rounded-lg px-3 py-2 transition-all">
+            <svg class="w-3.5 h-3.5 text-labs-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Por Status
+          </button>
+          <button @click="exportarCentroCusto()"
+            class="flex items-center gap-1.5 text-xs font-semibold border border-labs-border bg-white hover:bg-labs-gray text-gray-700 rounded-lg px-3 py-2 transition-all">
+            <svg class="w-3.5 h-3.5 text-labs-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Por Centro de Custo
+          </button>
+          <button @click="exportarVolumeMensal()"
+            class="flex items-center gap-1.5 text-xs font-semibold border border-labs-border bg-white hover:bg-labs-gray text-gray-700 rounded-lg px-3 py-2 transition-all">
+            <svg class="w-3.5 h-3.5 text-labs-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Volume Mensal
+          </button>
+        </div>
+      </div>
+
       <!-- KPI cards -->
       <div class="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-3 mb-6">
         <div v-for="kpi in kpis" :key="kpi.label"
@@ -1022,6 +1049,77 @@ createApp({
         .slice(0, 10);
     };
 
+    // ── Exportação CSV ────────────────────────────────────────────────────────
+    const _csvEscape = (v) => {
+      const s = (v === null || v === undefined) ? '' : String(v);
+      return s.includes(',') || s.includes('"') || s.includes('\n')
+        ? `"${s.replace(/"/g, '""')}"`
+        : s;
+    };
+
+    const _baixarCSV = (rows, filename) => {
+      const bom  = '\uFEFF'; // BOM UTF-8 para Excel abrir corretamente
+      const csv  = bom + rows.map(r => r.map(_csvEscape).join(',')).join('\r\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+
+    const _hoje = () => new Date().toISOString().slice(0, 10);
+
+    const exportarSolicitacoes = () => {
+      const cabecalho = [
+        'Protocolo', 'Solicitante', 'Viajante', 'Matrícula', 'Centro de Custo',
+        'Cód. Centro de Custo', 'Cargo', 'Filial', 'Origem', 'Destino', 'UF Destino',
+        'Data Ida', 'Data Volta', 'Tipo Serviço', 'Classificação', 'Status',
+        'Agência Vencedora', 'Motivo', 'Data Criação',
+      ];
+      const linhas = solicitacoes.value.map(s => [
+        s.protocolo,
+        s.solicitante_username,
+        s.viajante_nome,
+        s.viajante_matricula,
+        s.viajante_centro_custo,
+        s.viajante_cod_centro_custo,
+        s.viajante_cargo,
+        s.viajante_filial,
+        s.origem_cidade,
+        s.destino_cidade,
+        s.destino_estado,
+        fmtData(s.data_ida),
+        s.data_volta ? fmtData(s.data_volta) : '',
+        (s.tipo_servico || '').replace(/,/g, ' / '),
+        s.classificacao,
+        statusLabel(s.status),
+        s.agencia_vencedora || '',
+        s.motivo_viagem,
+        s.data_criacao ? fmtData(s.data_criacao) : '',
+      ]);
+      _baixarCSV([cabecalho, ...linhas], `solicitacoes_${_hoje()}.csv`);
+    };
+
+    const exportarStatus = () => {
+      const cabecalho = ['Status', 'Quantidade', 'Percentual (%)'];
+      const linhas = distribuicaoStatus.value.map(i => [i.label, i.count, i.pct]);
+      _baixarCSV([cabecalho, ...linhas], `distribuicao_status_${_hoje()}.csv`);
+    };
+
+    const exportarCentroCusto = () => {
+      const cabecalho = ['Posição', 'Código CC', 'Nome CC', 'Solicitações'];
+      const linhas = centroCustoRanking.value.map((i, idx) => [idx + 1, i.cod, i.nome, i.count]);
+      _baixarCSV([cabecalho, ...linhas], `centros_custo_${_hoje()}.csv`);
+    };
+
+    const exportarVolumeMensal = () => {
+      const cabecalho = ['Mês', 'Total de Solicitações'];
+      const linhas = volumeMensal.value.map(m => [m.mes, m.total]);
+      _baixarCSV([cabecalho, ...linhas], `volume_mensal_${_hoje()}.csv`);
+    };
+
     // ── Helpers ───────────────────────────────────────────────────────────────
     const sair = () => {
       localStorage.clear();
@@ -1139,6 +1237,7 @@ createApp({
       kpis, distribuicaoStatus, volumeMensal, maxMensal, centroCustoRanking, maxCC,
       carregarSolicitacoes, debounceCarregar,
       abrirDetalhe, fecharModal, confirmarAcao, executarAcao, calcularIndicadores,
+      exportarSolicitacoes, exportarStatus, exportarCentroCusto, exportarVolumeMensal,
       casamentos, casamentosCount, casamentoMsgOk, casamentoMsgErr,
       carregarCasamentos, agirCasamento, tipoCasamentoCor,
       sair, fmtData, fmtValor, statusLabel, statusCor, acaoLabel,
