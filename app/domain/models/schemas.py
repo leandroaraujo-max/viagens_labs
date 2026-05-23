@@ -102,10 +102,9 @@ class AprovacaoAcaoRequest(BaseModel):
 # --- SCHEMAS DE AUTENTICAÇÃO ---
 
 class LoginCredentials(BaseModel):
-    """Schema para receber o usuário e a senha da requisição de login."""
+    """Schema para receber o usuário e a senha da requisição de login (Apenas AD)."""
     username: str
     password: str
-    agencia: Optional[str] = None
 
 
 class TokenResponse(BaseModel):
@@ -214,6 +213,12 @@ class SolicitacaoAgenciaResponse(BaseModel):
     viajante_matricula: str = ''
     viajante_cargo: str = ''
     viajante_filial: str = ''
+    viajante_cpf: str = ''
+    viajante_email: str = ''
+    viajante_centro_custo: str = ''
+    viajante_cod_centro_custo: str = ''
+    viajante_celular: str = ''
+    viajante_data_nascimento: str = ''
     cotacao: Optional[CotacaoResponse] = None
     casamentos: List[dict] = []
 
@@ -302,6 +307,7 @@ class SolicitacaoSetorResponse(BaseModel):
     agencia_vencedora: Optional[str] = None
     cotacao_tastur: Optional[CotacaoResponse] = None
     cotacao_kontrip: Optional[CotacaoResponse] = None
+    todas_cotacoes: List[CotacaoResponse] = []
     casamentos: List[dict] = []
 
     model_config = ConfigDict(from_attributes=True)
@@ -384,3 +390,20 @@ class AgenciaResponse(BaseModel):
     data_criacao:              Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+# --- SCHEMAS DE USUÁRIOS QA TESTE ---
+
+class UsuarioQATesteCreate(BaseModel):
+    username: str
+    email: str
+
+class UsuarioQATesteResponse(BaseModel):
+    id: int
+    username: str
+    email: str
+    ativo: bool
+    data_criacao: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+

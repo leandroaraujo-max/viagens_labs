@@ -114,4 +114,13 @@ class ViagensService:
             import logging
             logging.getLogger(__name__).warning(f"Falha ao enviar e-mail de confirmação: {e}")
 
+        # Se for solicitação para terceiros (via delegação), notifica o terceiro por e-mail
+        if solicitacao_salva.via_delegacao and solicitacao_salva.viajante_email:
+            try:
+                from app.infrastructure.email_service import EmailService
+                EmailService().enviar_email_notificacao_terceiro(solicitacao_salva)
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).warning(f"Falha ao enviar e-mail de notificação ao terceiro: {e}")
+
         return solicitacao_salva

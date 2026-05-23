@@ -1,4 +1,10 @@
 """Migration: adiciona carro_data_retirada, carro_data_devolucao, preferencia_voo_volta"""
+import sys
+import os
+
+# Adiciona o diretório pai (raiz do projeto) ao sys.path para importar app corretamente
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from app.infrastructure.database import engine
 from sqlalchemy import text
 

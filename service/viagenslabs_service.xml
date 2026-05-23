@@ -1,0 +1,17 @@
+<service>
+  <id>ViagensLabs</id>
+  <name>ViagensLabs</name>
+  <description>Portal de Viagens do Setor de Infraestrutura CDs - Magalu</description>
+  <executable>c:\Projetos\viagens_labs\venv\Scripts\python.exe</executable>
+  <arguments>-m uvicorn app.main:app --host 0.0.0.0 --port 8000</arguments>
+  <workingdirectory>c:\Projetos\viagens_labs</workingdirectory>
+  <logpath>c:\Projetos\viagens_labs\logs</logpath>
+  <log mode="roll-by-size">
+    <sizeThreshold>10240</sizeThreshold>
+    <keepFiles>8</keepFiles>
+  </log>
+  <env name="PYTHONPATH" value="." />
+  <env name="GOOGLE_CLOUD_PROJECT" value="maga-bigdata" />
+  <env name="GOOGLE_APPLICATION_CREDENTIALS" value="C:\Users\_araujo\AppData\Roaming\gcloud\application_default_credentials.json" />
+  <onfailure action="restart" delay="10 sec"/>
+</service>

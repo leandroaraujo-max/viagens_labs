@@ -255,6 +255,7 @@
                   <th class="px-4 py-3 text-left font-semibold hidden lg:table-cell">Serviço</th>
                   <th class="px-4 py-3 text-left font-semibold">Status</th>
                   <th class="px-4 py-3 text-left font-semibold hidden lg:table-cell">Criado</th>
+                  <th class="px-4 py-3 text-right font-semibold">Ações</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-dev-border/50">
@@ -270,6 +271,11 @@
                     <span :class="corStatus(s.status)" class="badge-status">{{ s.status.replace(/_/g,' ') }}</span>
                   </td>
                   <td class="px-4 py-3 text-slate-500 font-mono hidden lg:table-cell">{{ formatarData(s.data_criacao) }}</td>
+                  <td class="px-4 py-3 text-right">
+                    <button @click="solicitarExcluir(s)" class="text-red-400 hover:text-red-300 hover:bg-red-500/10 px-2 py-1 rounded-lg border border-transparent hover:border-red-500/30 transition shrink-0 inline-flex items-center gap-1">
+                      🗑 Excluir
+                    </button>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -427,7 +433,145 @@
         </div>
       </div>
 
+      <!-- ── ABA: Testadores QA ───────────────────────────────────────────── -->
+      <div v-if="abaAtiva === 'qa_testers'">
+        <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
+          <div>
+            <h2 class="text-xl font-bold text-white">Testadores QA</h2>
+            <p class="text-slate-500 text-xs mt-0.5">Cadastre usuários QA cujos e-mails de solicitação serão desviados para testes.</p>
+          </div>
+          <button @click="carregarQATesters" class="text-xs px-3 py-1.5 bg-dev-card border border-dev-border text-slate-400 hover:text-slate-200 rounded-lg transition">
+            Recarregar
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Formulário de cadastro -->
+          <div class="bg-dev-card border border-dev-border rounded-xl p-5 h-fit glow">
+            <h3 class="text-sm font-bold text-white mb-3">Novo Testador QA</h3>
+            <div class="space-y-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">Username AD (Luizalabs)</label>
+                <input v-model="qaForm.username" type="text" placeholder="ex: fulano.silva"
+                       class="w-full bg-dev-panel border border-dev-border text-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 placeholder-slate-600 font-mono">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">E-mail de Redirecionamento</label>
+                <input v-model="qaForm.email" type="email" placeholder="ex: qa.teste@magazineluiza.com.br"
+                       class="w-full bg-dev-panel border border-dev-border text-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 placeholder-slate-600">
+              </div>
+              <div v-if="qaFormErro" class="text-xs text-red-400">{{ qaFormErro }}</div>
+              <div v-if="qaFormOk" class="text-xs text-green-400">✓ Testador cadastrado com sucesso!</div>
+              <button @click="salvarQATester" :disabled="qaFormLoading"
+                      class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 rounded-lg text-xs transition disabled:opacity-60">
+                {{ qaFormLoading ? 'Cadastrando…' : 'Cadastrar' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Lista de testadores -->
+          <div class="lg:col-span-2 bg-dev-card border border-dev-border rounded-xl p-5">
+            <h3 class="text-sm font-bold text-white mb-3">Testadores Ativos</h3>
+            <div v-if="qaTestersCarregando" class="flex justify-center py-6">
+              <div class="animate-spin w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full"></div>
+            </div>
+            <div v-else-if="!qaTesters.length" class="text-center py-6 text-slate-500 text-xs">
+              Nenhum testador QA ativo cadastrado.
+            </div>
+            <div v-else class="space-y-3">
+              <div v-for="t in qaTesters" :key="t.id"
+                   class="flex items-center justify-between p-3 bg-dev-panel border border-dev-border/60 rounded-xl">
+                <div>
+                  <span class="text-sm font-bold text-white font-mono">{{ t.username }}</span>
+                  <span class="text-xs text-slate-500 block mt-0.5">{{ t.email }}</span>
+                </div>
+                <button @click="removerQATester(t)" class="text-red-400 hover:text-red-300 text-xs font-semibold px-2.5 py-1.5 rounded border border-red-500/20 hover:border-red-500/50 transition bg-red-500/5">
+                  Excluir
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ABA: Logs do Sistema ─────────────────────────────────────────── -->
+      <div v-if="abaAtiva === 'logs'">
+        <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
+          <div>
+            <h2 class="text-xl font-bold text-white">Logs do Sistema</h2>
+            <p class="text-slate-500 text-xs mt-0.5">Acompanhamento em tempo real de logs do FastAPI e do Nginx</p>
+          </div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <select v-model="logServico" @change="carregarLogs"
+                    class="bg-dev-card border border-dev-border text-xs text-slate-300 px-3 py-1.5 rounded-lg focus:outline-none focus:border-indigo-500 bg-dev-panel">
+              <option value="app_out">FastAPI (viagenslabs_service.out.log)</option>
+              <option value="app_err">FastAPI Errors (viagenslabs_service.err.log)</option>
+              <option value="nginx_access">Nginx Access (access.log)</option>
+              <option value="nginx_error">Nginx Error (error.log)</option>
+              <option value="nginx_service_err">Nginx Service Wrapper (viagenslabs_service.wrapper.log)</option>
+            </select>
+            <select v-model="logLinhas" @change="carregarLogs"
+                    class="bg-dev-card border border-dev-border text-xs text-slate-300 px-3 py-1.5 rounded-lg focus:outline-none focus:border-indigo-500 w-28 bg-dev-panel">
+              <option :value="50">50 linhas</option>
+              <option :value="100">100 linhas</option>
+              <option :value="200">200 linhas</option>
+              <option :value="500">500 linhas</option>
+            </select>
+            <button @click="logPausado = !logPausado"
+                    :class="logPausado ? 'bg-amber-600/20 border-amber-500/40 text-amber-300' : 'bg-green-600/20 border-green-500/40 text-green-300'"
+                    class="px-3 py-1.5 border rounded-lg text-xs font-semibold transition">
+              {{ logPausado ? '⏸ Pausado' : '⚡ Auto-Refresh' }}
+            </button>
+            <button @click="limparLogsConsole"
+                    class="px-3 py-1.5 bg-dev-card border border-dev-border text-slate-400 hover:text-slate-200 rounded-lg text-xs transition">
+              Limpar Tela
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-[#030712] border border-dev-border rounded-2xl overflow-hidden glow">
+          <div class="bg-[#0f172a] px-4 py-2 border-b border-dev-border flex items-center justify-between text-[10px] text-slate-400 font-mono">
+            <span>Caminho: {{ logCaminho || 'Procurando log…' }}</span>
+            <span class="animate-pulse flex items-center gap-1" v-if="!logPausado && logCarregando">
+              <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> Carregando…
+            </span>
+            <span v-else-if="logPausado">⏸ Atualização pausada</span>
+            <span class="text-slate-500" v-else>Próxima verificação em 3s</span>
+          </div>
+          <!-- Terminal container -->
+          <div class="p-4 font-mono text-[11px] leading-relaxed text-[#10b981] overflow-y-auto h-[55vh] bg-[#030712] whitespace-pre-wrap select-text">
+            {{ logConteudo || 'Nenhum log para exibir.' }}
+          </div>
+        </div>
+      </div>
+
     </main>
+  </div>
+
+  <!-- Modal confirmação de exclusão cascade -->
+  <div v-if="excluirModal.aberto" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div class="bg-dev-card border border-dev-border rounded-2xl p-6 w-full max-w-sm glow">
+      <div class="flex items-center gap-2.5 text-red-400 mb-3">
+        <span class="text-2xl">⚠</span>
+        <h3 class="text-sm font-bold text-white">Excluir Solicitação</h3>
+      </div>
+      <p class="text-xs text-slate-400 mb-4 leading-relaxed">
+        Tem certeza que deseja excluir a solicitação <strong class="font-mono text-indigo-300">{{ excluirModal.solicitacao?.protocolo }}</strong> de forma definitiva?
+        <span class="block mt-2 text-red-400 font-semibold">Esta ação removerá logs, cotações, tokens, vouchers e casamentos em cascata.</span>
+      </p>
+      <div v-if="excluirModal.erro" class="text-xs text-red-400 mb-3">{{ excluirModal.erro }}</div>
+      <div class="flex gap-2">
+        <button @click="confirmarExclusaoCascade"
+                :disabled="excluirModal.carregando"
+                class="flex-1 py-2 text-xs font-semibold bg-red-600 hover:bg-red-500 text-white rounded-lg transition disabled:opacity-60">
+          {{ excluirModal.carregando ? 'Excluindo…' : 'Excluir Definitivamente' }}
+        </button>
+        <button @click="excluirModal.aberto = false"
+                class="flex-1 py-2 text-xs font-semibold border border-dev-border text-slate-400 rounded-lg hover:border-slate-500 transition">
+          Cancelar
+        </button>
+      </div>
+    </div>
   </div>
 
 </div>
@@ -451,13 +595,15 @@ createApp({
       { id: 'dashboard',    icon: '◈', label: 'Dashboard' },
       { id: 'solicitacoes', icon: '⊞', label: 'Solicitações' },
       { id: 'agencias',     icon: '🏢', label: 'Agências' },
+      { id: 'qa_testers',   icon: '🧪', label: 'Testadores QA' },
+      { id: 'logs',         icon: '⌨', label: 'Logs do Sistema' },
       { id: 'config',       icon: '⚙', label: 'Configuração' },
       { id: 'plataforma',   icon: '⬡', label: 'Plataforma' },
     ];
 
     const portais = [
       { icon: '✈', nome: 'Portal do Viajante', desc: 'Solicitação de viagens', grupo: 'G_ACCESS_VIAGENSLABS_USERS', url: '/index.html' },
-      { icon: '🏢', nome: 'Portal do Setor', desc: 'Pré-aprovação e gestão', grupo: 'G_ACCESS_VIAGENSLABS_ADMINS', url: '/painel.html' },
+      { icon: '🏢', nome: 'Portal do Setor', desc: 'Pré-aprovação e gestão', grupo: 'G_ACCESS_VIAGENSLABS_ADMINS', url: '/setor.html' },
       { icon: '🧳', nome: 'Portal da Agência', desc: 'Cotação e vouchers (token)', grupo: 'Link por e-mail', url: '/agencia.html' },
       { icon: '💻', nome: 'Portal Dev', desc: 'Gestão irrestrita', grupo: 'G_ACCESS_VIAGENSLABS_DEV', url: '/dev.html' },
     ];
@@ -703,11 +849,115 @@ createApp({
       }
     });
 
+    // ── Testadores QA ──────────────────────────────────────────────────
+    const qaTesters = ref([]);
+    const qaTestersCarregando = ref(false);
+    const qaForm = reactive({ username: '', email: '' });
+    const qaFormErro = ref('');
+    const qaFormOk = ref(false);
+    const qaFormLoading = ref(false);
+
+    async function carregarQATesters() {
+      qaTestersCarregando.value = true;
+      try {
+        const res = await fetch(`${API}/dev/usuarios-qa`, { headers: authHeaders() });
+        if (!res.ok) return;
+        qaTesters.value = await res.json();
+      } finally { qaTestersCarregando.value = false; }
+    }
+
+    async function salvarQATester() {
+      if (!qaForm.username || !qaForm.email) {
+        qaFormErro.value = 'Preencha o username e o e-mail.'; return;
+      }
+      qaFormLoading.value = true; qaFormErro.value = ''; qaFormOk.value = false;
+      try {
+        const res = await fetch(`${API}/dev/usuarios-qa`, {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify({ username: qaForm.username, email: qaForm.email }),
+        });
+        const d = await res.json();
+        if (!res.ok) { qaFormErro.value = d.detail || 'Erro ao cadastrar.'; return; }
+        qaFormOk.value = true;
+        qaForm.username = ''; qaForm.email = '';
+        await carregarQATesters();
+      } finally { qaFormLoading.value = false; }
+    }
+
+    async function removerQATester(t) {
+      if (!confirm(`Remover testador QA "${t.username}"?`)) return;
+      const res = await fetch(`${API}/dev/usuarios-qa/${t.id}`, { method: 'DELETE', headers: authHeaders() });
+      if (res.ok) await carregarQATesters();
+    }
+
+    // ── Logs ──────────────────────────────────────────────────────────
+    const logServico   = ref('app_out');
+    const logLinhas    = ref(100);
+    const logPausado   = ref(false);
+    const logConteudo  = ref('');
+    const logCaminho   = ref('');
+    const logCarregando = ref(false);
+
+    async function carregarLogs(showLoading = true) {
+      if (showLoading) logCarregando.value = true;
+      try {
+        const params = new URLSearchParams({ servico: logServico.value, linhas: logLinhas.value });
+        const res = await fetch(`${API}/dev/logs?${params}`, { headers: authHeaders() });
+        if (!res.ok) return;
+        const d = await res.json();
+        logConteudo.value = d.conteudo;
+        logCaminho.value  = d.caminho;
+      } finally { logCarregando.value = false; }
+    }
+
+    function limparLogsConsole() {
+      logConteudo.value = '';
+    }
+
+    // ── Exclusão Cascade ──────────────────────────────────────────────
+    const excluirModal = reactive({ aberto: false, solicitacao: null, erro: '', carregando: false });
+
+    function solicitarExcluir(s) {
+      Object.assign(excluirModal, { aberto: true, solicitacao: s, erro: '', carregando: false });
+    }
+
+    async function confirmarExclusaoCascade() {
+      excluirModal.carregando = true; excluirModal.erro = '';
+      try {
+        const res = await fetch(`${API}/dev/solicitacoes/${excluirModal.solicitacao.id}`, {
+          method: 'DELETE',
+          headers: authHeaders()
+        });
+        if (!res.ok) {
+          const d = await res.json();
+          excluirModal.erro = d.detail || 'Erro ao excluir solicitação.';
+          return;
+        }
+        excluirModal.aberto = false;
+        await carregarSolicitacoes();
+        await carregarStats();
+      } finally { excluirModal.carregando = false; }
+    }
+
     // Carregar dados ao trocar aba
+    const logInterval = ref(null);
     Vue.watch(abaAtiva, (aba) => {
       if (aba === 'solicitacoes' && !solicitacoes.value.length) carregarSolicitacoes();
       if (aba === 'agencias' && !agencias.value.length) carregarAgencias();
       if (aba === 'config' && !config.value) carregarConfig();
+      if (aba === 'qa_testers') carregarQATesters();
+      
+      // Controla polling de logs
+      if (aba === 'logs') {
+        carregarLogs();
+        clearInterval(logInterval.value);
+        logInterval.value = setInterval(() => {
+          if (!logPausado.value) carregarLogs(false);
+        }, 3000);
+      } else {
+        clearInterval(logInterval.value);
+      }
     });
 
     return {
@@ -720,6 +970,9 @@ createApp({
       resetSenhaModal, abrirResetSenha, confirmarResetSenha,
       config, configCarregando, configGrupos, carregarConfig,
       corStatus, corBarraStatus, formatarData, formatarTempo,
+      qaTesters, qaTestersCarregando, qaForm, qaFormErro, qaFormOk, qaFormLoading, carregarQATesters, salvarQATester, removerQATester,
+      logServico, logLinhas, logPausado, logConteudo, logCaminho, logCarregando, carregarLogs, limparLogsConsole,
+      excluirModal, solicitarExcluir, confirmarExclusaoCascade,
     };
   }
 }).mount('#app');

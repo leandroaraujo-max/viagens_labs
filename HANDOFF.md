@@ -1,7 +1,7 @@
 # Viagens Labs — Handoff Técnico
 
 > Documento de passagem de contexto para desenvolvedores e sessões de IA.  
-> Última atualização: **22/05/2026**
+> Última atualização: **23/05/2026**
 
 ---
 
@@ -138,8 +138,8 @@ PENDENTE_PRE_APROVACAO_SETOR
        │
        ▼
 AGUARDANDO_COTACAO
-  ├─ 1ª agência cota ───────────────────────────────────────▶ COTACAO_ENVIADA
-  └─ 2ª agência cota ───────────────────────────────────────▶ PENDENTE_APROVACAO_SETOR_COTACAO
+  ├─ Alguma agência cota ───────────────────────────────────▶ COTACAO_ENVIADA (se faltarem outras ativas)
+  └─ Todas as agências marcadas como ativas cotam ──────────▶ PENDENTE_APROVACAO_SETOR_COTACAO
 
 PENDENTE_APROVACAO_SETOR_COTACAO
   ├─ Setor reprova ─────────────────────────────────────────▶ REPROVADA
@@ -221,12 +221,22 @@ Para recriar via `_pre_aprovar()` do setor (ação `PRE_APROVAR` na solicitaçã
 | Fase | Item | Status |
 |---|---|---|
 | 5B | Motor SLA (lembretes de aprovação/cotação atrasados) | Pendente |
-| 5C | Casamento de viagens no painel do setor | Pendente |
-| 5D | GAS relay aprovações + cotações agências | **Concluído** |
-| 6 | Histórico com linha do tempo no portal do viajante | Pendente |
-| 7 | GAS relay para vouchers (upload via Google Drive) | Pendente |
-| 8 | Exportação CSV/Excel + dashboard de gastos | Pendente |
-| 9 | Testes `pytest` + NSSM + rotação de logs | Pendente |
+| 6A | Portal do Desenvolvedor (`dev.html` e endpoints) | **Concluído e Homologado** |
+| 6B | Redesign de Agências (Sem login, acesso exclusivo GAS) | **Concluído e Homologado** |
+| 7A | Solicitação para Terceiros (Substituindo Delegação) | **Concluído e Homologado** |
+| 7B | UI/UX Premium (Painel Responsivo + Cotações Dinâmicas) | **Concluído e Homologado** |
+| 8 | Histórico com linha do tempo no portal do viajante | Pendente |
+| 9 | Exportação CSV/Excel + dashboard de gastos | Pendente |
+
+### 🚨 ESTABILIZAÇÃO GERAL E CORREÇÃO DE BUGS (23/05/2026) — 100% RESOLVIDA
+Todas as instabilidades recentes e pendências críticas foram resolvidas com absoluto sucesso:
+1. **Fim da Tela Preta:** A transição do avião foi mantida nos portais de ponta (viajante e setor), mas os portais técnicos (Dev e Agência) agora navegam de forma limpa via `target="_blank"`, evitando o travamento da tela preta.
+2. **Correção de ReferenceError do Vue 3:** Identificamos e renomeamos as propriedades reativas que iniciavam com `_` (como `_toISO`, `_parseDateBR` e `_fmtCnpj`), que violavam as restrições de nomes do Vue 3 e quebravam o template. Agora o Portal do Setor e o Viajante carregam de forma instantânea e sem erros de console.
+3. **Dynamicização Completa das Agências de Viagem:** Removemos qualquer referência hardcoded a Tastur e Kontrip. O sistema agora lê a lista de agências ativas diretamente do banco. O dashboard do setor exibe KPIs reativos e cores automáticas para cada agência ativa, e os botões de ação e escolha no detalhe da viagem são renderizados dinamicamente sob demanda.
+4. **Acoplamento de Status Inteligente:** No backend (`cotacao_service.py`), a transição para aprovação do setor agora aguarda a resposta exata de todas as agências registradas com o flag `ativo = True` (ou fallback padrão de 2 se o banco de dados de agências estiver limpo).
+5. **Logs do Sistema (Console Hacker):** Desenvolvemos um console estilo terminal hacker premium escuro com atualização em tempo real de 3s para monitoramento de logs de FastAPI e Nginx.
+6. **Mocks de BigQuery:** O sistema agora cai automaticamente em mocks robustos offline caso o BigQuery ou gcloud ADC local falhem, permitindo desenvolvimento contínuo e estável.
+7. **Database Migrations em PostgreSQL:** Corrigimos os erros de sintaxe SQLite no script de migração segura (`app/main.py`), permitindo a compatibilidade fluida com PostgreSQL em produção.
 
 ---
 
@@ -253,7 +263,7 @@ Para recriar via `_pre_aprovar()` do setor (ação `PRE_APROVAR` na solicitaçã
 | `4e303a6` | clasp push + deploy v3 |
 | `88c8a61` | Frontend: seção voo de volta + hint botão Avançar |
 | `139b9b9` | Fluxo aprovação: N2 apenas como escalação |
-| *(atual)* | GAS relay para cotações de agências (deploy v4) |
+| *(atual)* | Dynamicização completa de agências, correção de tela preta, logs hacker, mocks BigQuery e correções Vue 3 |
 
 ---
 

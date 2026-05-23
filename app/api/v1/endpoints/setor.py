@@ -3,7 +3,7 @@ from sqlalchemy import String, Text, Boolean
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
-from app.api.dependencies import get_db_session, require_setor
+from app.api.dependencies import get_db_session, require_setor, require_setor_username
 from app.domain.models.schemas import (
     SolicitacaoSetorResponse, SetorAcaoRequest, CotacaoResponse,
     AgenciaCreate, AgenciaUpdate, AgenciaResponse,
@@ -18,7 +18,7 @@ _setor_svc = SetorService()
 _OPTIONAL_STR_COLS = {'agencia_vencedora'}
 
 
-def _build_setor_response(sol, cot_tastur, cot_kontrip, casamentos) -> SolicitacaoSetorResponse:
+def _build_setor_response(sol, cot_tastur, cot_kontrip, casamentos, todas_cotacoes) -> SolicitacaoSetorResponse:
     """Constrói SolicitacaoSetorResponse a partir do ORM e dados relacionados.
 
     Normaliza None → '' para colunas String/Text e None → False para Boolean,
@@ -35,6 +35,7 @@ def _build_setor_response(sol, cot_tastur, cot_kontrip, casamentos) -> Solicitac
         data[col.name] = val
     data['cotacao_tastur']  = CotacaoResponse.model_validate(cot_tastur)  if cot_tastur  else None
     data['cotacao_kontrip'] = CotacaoResponse.model_validate(cot_kontrip) if cot_kontrip else None
+    data['todas_cotacoes']  = [CotacaoResponse.model_validate(c) for c in todas_cotacoes] if todas_cotacoes else []
     data['casamentos'] = casamentos
     return SolicitacaoSetorResponse.model_validate(data)
 
@@ -69,10 +70,10 @@ def detalhar_solicitacao(
     _: str = Depends(require_setor),
 ):
     """Detalhes completos de uma solicitação para o portal do setor."""
-    sol, cot_tastur, cot_kontrip, casamentos = _setor_svc.get_solicitacao(db, solicitacao_id)
+    sol, cot_tastur, cot_kontrip, casamentos, todas_cotacoes = _setor_svc.get_solicitacao(db, solicitacao_id)
     if not sol:
         raise HTTPException(status_code=404, detail="Solicitação não encontrada.")
-    return _build_setor_response(sol, cot_tastur, cot_kontrip, casamentos)
+    return _build_setor_response(sol, cot_tastur, cot_kontrip, casamentos, todas_cotacoes)
 
 
 @router.post("/solicitacoes/{solicitacao_id}/acao", status_code=status.HTTP_200_OK)
@@ -80,7 +81,7 @@ def executar_acao(
     solicitacao_id: int,
     body: SetorAcaoRequest,
     db: Session = Depends(get_db_session),
-    username: str = Depends(require_setor),
+    username: str = Depends(require_setor_username),
 ):
     """
     Executa uma ação do setor sobre a solicitação.
@@ -124,7 +125,7 @@ def listar_casamentos(
 def vincular_casamento(
     casamento_id: int,
     db: Session = Depends(get_db_session),
-    username: str = Depends(require_setor),
+    username: str = Depends(require_setor_username),
 ):
     """Confirma o match — gera código de grupo e marca como VINCULADO."""
     try:
@@ -139,7 +140,7 @@ def vincular_casamento(
 def ignorar_casamento(
     casamento_id: int,
     db: Session = Depends(get_db_session),
-    username: str = Depends(require_setor),
+    username: str = Depends(require_setor_username),
 ):
     """Descarta o match — marca como IGNORADO."""
     try:

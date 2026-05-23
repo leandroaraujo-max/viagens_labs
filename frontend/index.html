@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -64,8 +64,25 @@
                         <p class="text-gray-500 text-xs mt-1 font-semibold uppercase tracking-widest">Acesso Corporativo</p>
                     </div>
 
-                    <div v-if="erroLogin" class="mb-5 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded-md shadow-sm">
+                    <div v-if="erroLogin && !semAcessoAd" class="mb-5 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded-md shadow-sm">
                         {{ erroLogin }}
+                    </div>
+
+                    <div v-if="semAcessoAd" class="mb-5 p-4 bg-amber-50 border-l-4 border-amber-500 text-amber-900 text-sm rounded-lg shadow-sm">
+                        <div class="flex items-center gap-2 mb-2 font-bold text-amber-800">
+                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                            <span>Acesso Negado</span>
+                        </div>
+                        <p class="mb-2 font-medium">Você não possui acesso ao sistema.</p>
+                        <div class="text-xs text-gray-700 bg-white/70 p-3 rounded border border-amber-200/50 leading-relaxed space-y-2">
+                            <span>Para solicitar sua liberação, acesse o portal <a href="https://iam.corp.luizalabs.com/v2/requisicao/new/add_access" target="_blank" class="text-blue-600 hover:text-blue-800 underline font-bold transition">TURIA</a> e siga o passo a passo:</span>
+                            <div class="text-[11px] text-gray-600 bg-gray-50/80 p-2 rounded font-mono border border-gray-200/50 flex flex-col gap-1">
+                                <div><strong>Solicitar</strong> &gt; <strong>Solicitar Acessos</strong></div>
+                                <div>&gt; <strong>Pra mim</strong> &gt; <strong>Montar manualmente</strong></div>
+                                <div>&gt; Buscar: <strong>AD Magalu</strong> &gt; <strong>Solicitar acesso</strong></div>
+                                <div>&gt; Buscar grupo: <span class="bg-blue-50 text-blue-700 px-1 py-0.5 rounded font-bold">G_ACCESS_VIAGENSLABS_USERS</span></div>
+                            </div>
+                        </div>
                     </div>
 
                     <form @submit.prevent="realizarLogin" class="space-y-6">
@@ -114,12 +131,26 @@
                                 {{ nomeUsuario.charAt(0).toUpperCase() }}
                             </div>
                             <div class="h-6 w-px bg-gray-300 mx-2"></div>
-                            <!-- Link para o Painel do Setor (só aparece para usuários do setor) -->
-                            <a v-if="perfilUsuario === 'setor'" href="#" @click.prevent="vlNavigate('/painel.html')"
+                            <!-- Link para o Painel do Setor (só aparece para usuários do setor ou dev) -->
+                            <a v-if="perfilUsuario === 'setor' || perfilUsuario === 'dev'" href="#" @click.prevent="vlNavigate('/setor.html')"
                                class="flex items-center gap-1.5 text-sm font-semibold text-white bg-blue-700 hover:bg-blue-800 px-3 py-1.5 rounded-lg transition-colors duration-200 shadow-sm"
                                title="Acessar o Painel do Setor">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
                                 Painel do Setor
+                            </a>
+                            <!-- Link para o Portal do Dev (só aparece para desenvolvedores) -->
+                            <a v-if="perfilUsuario === 'dev'" href="/dev.html" target="_blank"
+                               class="flex items-center gap-1.5 text-sm font-semibold text-white bg-purple-700 hover:bg-purple-800 px-3 py-1.5 rounded-lg transition-colors duration-200 shadow-sm"
+                               title="Acessar o Portal do Desenvolvedor">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+                                Portal Dev
+                            </a>
+                            <!-- Link para o Portal da Agência (só aparece para desenvolvedores) -->
+                            <a v-if="perfilUsuario === 'dev'" href="/agencia.html" target="_blank"
+                               class="flex items-center gap-1.5 text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 px-3 py-1.5 rounded-lg transition-colors duration-200 shadow-sm"
+                               title="Acessar o Portal da Agência">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                                Portal Agência
                             </a>
                             <!-- Política de Viagens -->
                             <a href="https://drive.google.com/file/d/1SFxzQXkTSr36KR4xJLNwp6vNMCa9_Rrg/view?usp=drive_link" target="_blank" rel="noopener noreferrer"
@@ -128,7 +159,7 @@
                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                                <span class="hidden sm:inline">Políticas de Viagens</span>
                             </a>
-                            <div v-if="perfilUsuario === 'setor'" class="h-6 w-px bg-gray-300 mx-1"></div>
+                            <div v-if="perfilUsuario === 'setor' || perfilUsuario === 'dev'" class="h-6 w-px bg-gray-300 mx-1"></div>
                             <button @click="logout" class="text-gray-500 hover:text-red-600 transition-colors duration-200" title="Sair do Sistema">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                             </button>
@@ -197,10 +228,38 @@
                                             </div>
                                         </div>
 
-                                                        <!-- Busca por CPF/Matrícula (co-viajante/delegado OU fallback do proprio) -->
-                                        <div v-if="tipo_solicitacao !== 'proprio' || mostrarBuscaFallback" class="bg-gray-50 p-5 rounded-xl border border-gray-200 space-y-4">
+                                        <!-- Delegação / Solicitação para Outro -->
+                                        <div v-if="tipo_solicitacao === 'delegado'" class="bg-gray-50 p-5 rounded-xl border border-gray-200 space-y-4">
+                                            <div class="flex items-center justify-between">
+                                                <h4 class="text-sm font-bold text-labs-dark">Autorizações de Acesso</h4>
+                                                <button type="button" @click="mostrandoModalTerceiro = true" class="text-xs font-semibold text-labs-blue hover:text-blue-800 flex items-center gap-1">
+                                                    <span>➕ Solicitar Novo Acesso</span>
+                                                </button>
+                                            </div>
+                                            
+                                            <div v-if="autorizacoesTerceiros.filter(a => a.status === 'APROVADA').length === 0" class="p-4 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 space-y-2">
+                                                <p class="font-medium">Você não possui nenhuma autorização de terceiro aprovada e ativa no momento.</p>
+                                                <p>Para abrir viagens em nome de terceiros, você precisa enviar uma solicitação com o PDF assinado de autorização.</p>
+                                                <button type="button" @click="mostrandoModalTerceiro = true" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded text-[11px] font-bold transition">
+                                                    Solicitar Acesso Agora
+                                                </button>
+                                            </div>
+                                            
+                                            <div v-else class="space-y-3">
+                                                <label class="block text-xs font-semibold text-gray-600">Selecione o terceiro para quem deseja solicitar a viagem:</label>
+                                                <select v-model="autorizacaoSelecionada" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-labs-blue text-sm">
+                                                    <option :value="null">-- Escolha um colaborador autorizado --</option>
+                                                    <option v-for="aut in autorizacoesTerceiros.filter(a => a.status === 'APROVADA')" :key="aut.id" :value="aut">
+                                                        {{ aut.terceiro_nome || aut.terceiro_username }} ({{ aut.terceiro_username }})
+                                                    </option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <!-- Busca por CPF/Matrícula (co-viajante OU fallback do proprio) -->
+                                        <div v-if="tipo_solicitacao === 'conjunto' || (tipo_solicitacao === 'proprio' && mostrarBuscaFallback)" class="bg-gray-50 p-5 rounded-xl border border-gray-200 space-y-4">
                                             <h4 class="text-sm font-bold text-labs-dark">
-                                                <span v-if="tipo_solicitacao !== 'proprio'">Identificar Co-viajante ou Delegado</span>
+                                                <span v-if="tipo_solicitacao !== 'proprio'">Identificar Co-viajante</span>
                                                 <span v-else>Confirmar sua identidade</span>
                                             </h4>
                                             <div v-if="erroBuscaProprioUsuario" class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3 font-medium">⚠ {{ erroBuscaProprioUsuario }}</div>
@@ -367,30 +426,20 @@
                                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div>
                                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Data de Ida <span class="text-red-500">*</span></label>
-                                                <div class="flex gap-2">
-                                                    <input :value="formViagem.data_ida" @input="mascaraDataIda" type="text" placeholder="DD/MM/AAAA" maxlength="10"
-                                                        class="flex-1 px-4 py-2.5 rounded-lg border focus:border-labs-blue focus:ring-1 focus:ring-labs-blue text-sm"
-                                                        :class="formViagem.data_ida.length === 10 ? 'border-green-400' : 'border-gray-300'">
-                                                    <label title="Abrir calendário" class="flex items-center justify-center w-10 border border-gray-300 hover:border-labs-blue rounded-lg cursor-pointer hover:bg-blue-50 transition shrink-0">
-                                                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                                        <input type="date" class="sr-only" @change="e => pickerFormViagem(e, 'data_ida')">
-                                                    </label>
-                                                </div>
+                                                <input type="date" :value="formViagem.data_ida ? toISO(formViagem.data_ida)?.split('T')[0] : ''"
+                                                    @change="e => formViagem.data_ida = isoToDisplay(e.target.value)"
+                                                    class="w-full px-4 py-2.5 rounded-lg border text-sm focus:border-labs-blue focus:ring-1 focus:ring-labs-blue"
+                                                    :class="formViagem.data_ida ? 'border-green-400 bg-green-50/10' : 'border-gray-300'">
                                             </div>
                                             <div>
                                                 <label class="block text-sm font-semibold text-gray-700 mb-2">
                                                     Data de Volta
                                                     <span v-if="formViagem.tipo_servico.includes('Aereo') && formPreferencias.aereo_tipo_trecho === 'ambos'" class="text-red-500">*</span>
                                                 </label>
-                                                <div class="flex gap-2">
-                                                    <input :value="formViagem.data_volta" @input="mascaraDataVolta" type="text" placeholder="DD/MM/AAAA" maxlength="10"
-                                                        class="flex-1 px-4 py-2.5 rounded-lg border focus:border-labs-blue focus:ring-1 focus:ring-labs-blue text-sm"
-                                                        :class="formViagem.data_volta && formViagem.data_volta.length === 10 ? 'border-green-400' : 'border-gray-300'">
-                                                    <label title="Abrir calendário" class="flex items-center justify-center w-10 border border-gray-300 hover:border-labs-blue rounded-lg cursor-pointer hover:bg-blue-50 transition shrink-0">
-                                                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                                        <input type="date" class="sr-only" @change="e => pickerFormViagem(e, 'data_volta')">
-                                                    </label>
-                                                </div>
+                                                <input type="date" :value="formViagem.data_volta ? toISO(formViagem.data_volta)?.split('T')[0] : ''"
+                                                    @change="e => formViagem.data_volta = isoToDisplay(e.target.value)"
+                                                    class="w-full px-4 py-2.5 rounded-lg border text-sm focus:border-labs-blue focus:ring-1 focus:ring-labs-blue"
+                                                    :class="formViagem.data_volta ? 'border-green-400 bg-green-50/10' : 'border-gray-300'">
                                             </div>
                                         </div>
 
@@ -669,29 +718,17 @@
                                             <div v-if="!formViagem.tipo_servico.includes('Aereo')" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                 <div>
                                                     <label class="block text-xs font-semibold text-gray-600 mb-1.5">Check-in <span class="text-red-500">*</span></label>
-                                                    <div class="flex gap-2">
-                                                        <input :value="formPreferencias.hosp_data_checkin" @input="e => mascaraDataGeneric(e, 'hosp_data_checkin')"
-                                                               type="text" placeholder="DD/MM/AAAA" maxlength="10"
-                                                               class="flex-1 px-3 py-2.5 rounded-lg border focus:border-labs-blue text-sm"
-                                                               :class="formPreferencias.hosp_data_checkin.length === 10 ? 'border-green-400' : 'border-gray-300'">
-                                                        <label title="Calendário" class="flex items-center justify-center w-10 border border-gray-300 hover:border-labs-blue rounded-lg cursor-pointer hover:bg-blue-50 transition shrink-0">
-                                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                                            <input type="date" class="sr-only" @change="e => pickerPreferencias(e, 'hosp_data_checkin')">
-                                                        </label>
-                                                    </div>
+                                                    <input type="date" :value="formPreferencias.hosp_data_checkin ? toISO(formPreferencias.hosp_data_checkin)?.split('T')[0] : ''"
+                                                           @change="e => formPreferencias.hosp_data_checkin = isoToDisplay(e.target.value)"
+                                                           class="w-full px-3 py-2.5 rounded-lg border text-sm focus:border-labs-blue"
+                                                           :class="formPreferencias.hosp_data_checkin ? 'border-green-400 bg-green-50/10' : 'border-gray-300'">
                                                 </div>
                                                 <div>
                                                     <label class="block text-xs font-semibold text-gray-600 mb-1.5">Check-out <span class="text-red-500">*</span></label>
-                                                    <div class="flex gap-2">
-                                                        <input :value="formPreferencias.hosp_data_checkout" @input="e => mascaraDataGeneric(e, 'hosp_data_checkout')"
-                                                               type="text" placeholder="DD/MM/AAAA" maxlength="10"
-                                                               class="flex-1 px-3 py-2.5 rounded-lg border focus:border-labs-blue text-sm"
-                                                               :class="formPreferencias.hosp_data_checkout.length === 10 ? 'border-green-400' : 'border-gray-300'">
-                                                        <label title="Calendário" class="flex items-center justify-center w-10 border border-gray-300 hover:border-labs-blue rounded-lg cursor-pointer hover:bg-blue-50 transition shrink-0">
-                                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                                            <input type="date" class="sr-only" @change="e => pickerPreferencias(e, 'hosp_data_checkout')">
-                                                        </label>
-                                                    </div>
+                                                    <input type="date" :value="formPreferencias.hosp_data_checkout ? toISO(formPreferencias.hosp_data_checkout)?.split('T')[0] : ''"
+                                                           @change="e => formPreferencias.hosp_data_checkout = isoToDisplay(e.target.value)"
+                                                           class="w-full px-3 py-2.5 rounded-lg border text-sm focus:border-labs-blue"
+                                                           :class="formPreferencias.hosp_data_checkout ? 'border-green-400 bg-green-50/10' : 'border-gray-300'">
                                                 </div>
                                             </div>
                                             <div class="relative">
@@ -747,28 +784,16 @@
                                                 <!-- Data de Retirada -->
                                                 <div>
                                                     <label class="block text-xs font-semibold text-gray-600 mb-1.5">Data de Retirada</label>
-                                                    <div class="flex gap-2">
-                                                        <input :value="formPreferencias.carro_data_retirada" @input="mascaraDataCarroRet"
-                                                               type="text" placeholder="DD/MM/AAAA" maxlength="10"
-                                                               class="flex-1 px-3 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue text-sm">
-                                                        <label title="Calendário" class="flex items-center justify-center w-10 border border-gray-300 hover:border-labs-blue rounded-lg cursor-pointer hover:bg-blue-50 transition shrink-0">
-                                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                                            <input type="date" class="sr-only" @change="e => pickerPreferencias(e, 'carro_data_retirada')">
-                                                        </label>
-                                                    </div>
+                                                    <input type="date" :value="formPreferencias.carro_data_retirada ? toISO(formPreferencias.carro_data_retirada)?.split('T')[0] : ''"
+                                                           @change="e => formPreferencias.carro_data_retirada = isoToDisplay(e.target.value)"
+                                                           class="w-full px-3 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue text-sm">
                                                 </div>
                                                 <!-- Data de Entrega -->
                                                 <div>
                                                     <label class="block text-xs font-semibold text-gray-600 mb-1.5">Data de Entrega</label>
-                                                    <div class="flex gap-2">
-                                                        <input :value="formPreferencias.carro_data_devolucao" @input="mascaraDataCarroDev"
-                                                               type="text" placeholder="DD/MM/AAAA" maxlength="10"
-                                                               class="flex-1 px-3 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue text-sm">
-                                                        <label title="Calendário" class="flex items-center justify-center w-10 border border-gray-300 hover:border-labs-blue rounded-lg cursor-pointer hover:bg-blue-50 transition shrink-0">
-                                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                                            <input type="date" class="sr-only" @change="e => pickerPreferencias(e, 'carro_data_devolucao')">
-                                                        </label>
-                                                    </div>
+                                                    <input type="date" :value="formPreferencias.carro_data_devolucao ? toISO(formPreferencias.carro_data_devolucao)?.split('T')[0] : ''"
+                                                           @change="e => formPreferencias.carro_data_devolucao = isoToDisplay(e.target.value)"
+                                                           class="w-full px-3 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue text-sm">
                                                 </div>
                                                 <!-- Cidade de Retirada -->
                                                 <div>
@@ -923,6 +948,98 @@
                 </main>
             </div>
         </transition>
+
+        <!-- MODAL: SOLICITAR ACESSO PARA TERCEIROS -->
+        <transition name="fade">
+            <div v-show="mostrandoModalTerceiro" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
+                <div class="relative w-full max-w-lg bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 flex flex-col max-h-[90vh]">
+                    
+                    <!-- Cabeçalho -->
+                    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-labs-dark text-white">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xl">🤝</span>
+                            <h3 class="font-bold text-base">Solicitar Acesso (Terceiros)</h3>
+                        </div>
+                        <button @click="mostrandoModalTerceiro = false" class="text-white/70 hover:text-white transition">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+
+                    <!-- Conteúdo -->
+                    <div class="p-6 space-y-4 overflow-y-auto flex-1">
+                        
+                        <div v-if="terceiroMensagemSucesso" class="p-4 bg-green-50 border border-green-200 rounded-xl text-sm text-green-800 flex items-start gap-2.5">
+                            <span class="text-lg">✅</span>
+                            <div>
+                                <p class="font-bold">Sucesso!</p>
+                                <p class="text-xs mt-0.5">{{ terceiroMensagemSucesso }}</p>
+                            </div>
+                        </div>
+
+                        <div v-if="terceiroErroSubmissao" class="p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-800 flex items-start gap-2.5">
+                            <span class="text-lg">⚠️</span>
+                            <div>
+                                <p class="font-bold">Falha ao enviar ticket</p>
+                                <p class="text-xs mt-0.5">{{ terceiroErroSubmissao }}</p>
+                            </div>
+                        </div>
+
+                        <!-- 1. Buscar Terceiro -->
+                        <div class="space-y-2">
+                            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide">1. Identificar Colaborador Superior</label>
+                            <p class="text-[11px] text-gray-400">Informe a matrícula ou ID Magalu de quem você deseja solicitar viagens em nome.</p>
+                            <div class="flex gap-2">
+                                <input v-model="terceiroBuscaMatricula" type="text" placeholder="Matrícula / ID Magalu" class="flex-1 px-4 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue text-sm">
+                                <button type="button" @click="buscarTerceiroPorMatricula" :disabled="terceiroBuscando" class="px-4 py-2.5 bg-labs-blue hover:bg-blue-700 text-white rounded-lg font-semibold text-sm transition disabled:opacity-50">
+                                    {{ terceiroBuscando ? 'Buscando...' : 'Confirmar' }}
+                                </button>
+                            </div>
+                            <p v-if="terceiroErroBusca" class="text-xs text-red-500 font-medium">⚠️ {{ terceiroErroBusca }}</p>
+                        </div>
+
+                        <!-- Card Terceiro Encontrado -->
+                        <div v-if="terceiroEncontrado" class="p-4 bg-blue-50/60 rounded-xl border border-blue-100 space-y-2 text-xs">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-labs-blue uppercase tracking-wider text-[10px]">Colaborador Identificado</span>
+                                <span class="bg-blue-100 text-labs-blue font-bold px-2 py-0.5 rounded text-[9px]">{{ terceiroEncontrado.filial || 'Magalu' }}</span>
+                            </div>
+                            <p class="font-bold text-labs-dark text-sm">{{ terceiroEncontrado.nome }}</p>
+                            <p class="text-gray-500"><strong>E-mail:</strong> {{ terceiroEncontrado.email }}</p>
+                            <p class="text-gray-500"><strong>Cargo:</strong> {{ terceiroEncontrado.cargo }}</p>
+                        </div>
+
+                        <!-- 2. Upload do PDF -->
+                        <div class="space-y-2 pt-2 border-t border-gray-100">
+                            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide">2. Anexar PDF de Autorização</label>
+                            <p class="text-[11px] text-gray-400">É obrigatório anexar o PDF de autorização assinado pelo terceiro para validação do setor.</p>
+                            <div class="flex items-center justify-center w-full">
+                                <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100/60 transition">
+                                    <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                        <svg class="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                                        <p class="text-xs font-semibold text-gray-500">{{ pdfArquivo ? pdfArquivo.name : 'Clique para selecionar o PDF' }}</p>
+                                        <p class="text-[10px] text-gray-400 mt-1">Apenas PDF (máx. 10 MB)</p>
+                                    </div>
+                                    <input type="file" accept="application/pdf" class="hidden" @change="lidarComUploadPDF">
+                                </label>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Rodapé -->
+                    <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-3 shrink-0">
+                        <button type="button" @click="mostrandoModalTerceiro = false" class="px-4 py-2 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600 font-semibold transition">
+                            Fechar
+                        </button>
+                        <button type="button" @click="submeterTicketTerceiro" :disabled="terceiroSubmetendo || !terceiroEncontrado || !pdfArquivo" class="px-5 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold transition disabled:opacity-50 flex items-center gap-1.5 shadow-sm">
+                            <span v-if="terceiroSubmetendo" class="animate-spin w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full"></span>
+                            <span>Enviar Solicitação</span>
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </transition>
     </div>
 
     <!-- Lógica Vue.js -->
@@ -937,10 +1054,12 @@
                 const perfilUsuario = ref(''); // 'viajante' | 'setor'
                 const carregando = ref(false);
                 const erroLogin = ref('');
+                const semAcessoAd = ref(false);
                 const loginForm = ref({ username: '', password: '' });
 
                 const badgePerfil = computed(() => {
                     if (perfilUsuario.value === 'setor') return 'Setor de Viagens';
+                    if (perfilUsuario.value === 'dev') return 'Desenvolvedor';
                     return 'Colaborador';
                 });
 
@@ -1062,7 +1181,7 @@
                 // --- Computados ---
                 const classificacaoAereo = computed(() => {
                     if (!formViagem.value.data_ida || !formViagem.value.tipo_servico.includes('Aereo')) return null;
-                    const dataIda = _parseDateBR(formViagem.value.data_ida);
+                    const dataIda = parseDateBR(formViagem.value.data_ida);
                     if (!dataIda) return null;
                     const diffDias = Math.floor((dataIda - new Date()) / (1000 * 60 * 60 * 24));
                     return diffDias < 15 ? 'Emergencial' : 'Comum';
@@ -1083,8 +1202,9 @@
                     token.value = localStorage.getItem('token');
                     nomeUsuario.value = localStorage.getItem('nome_usuario') || 'Usuário';
                     perfilUsuario.value = localStorage.getItem('perfil') || 'viajante';
-                    if (token.value && tipo_solicitacao.value === 'proprio') {
-                        buscarProprioUsuario();
+                    if (token.value) {
+                        if (tipo_solicitacao.value === 'proprio') buscarProprioUsuario();
+                        carregarAutorizacoesTerceiros();
                     }
                     carregarHistorico();
                 });
@@ -1324,14 +1444,14 @@
                 };
 
                 // Converte DD/MM/AAAA -> Date
-                const _parseDateBR = (s) => {
+                const parseDateBR = (s) => {
                     if (!s || s.length < 10) return null;
                     const [d, m, y] = s.split('/');
                     return new Date(`${y}-${m}-${d}T12:00:00`);
                 };
 
                 // Converte DD/MM/AAAA -> ISO string para o backend
-                const _toISO = (s) => {
+                const toISO = (s) => {
                     if (!s || s.length < 10) return null;
                     const [d, m, y] = s.split('/');
                     return `${y}-${m}-${d}T12:00:00`;
@@ -1368,66 +1488,58 @@
                 };
 
                 // Converte YYYY-MM-DD (input type=date) para DD/MM/AAAA
-                const _isoToDisplay = (iso) => {
+                const isoToDisplay = (iso) => {
                     if (!iso) return '';
                     const [y, m, d] = iso.split('-');
                     return `${d}/${m}/${y}`;
                 };
 
-                    // ── Google Places API ─────────────────────────────────────────
-                    const GOOGLE_PLACES_KEY = '';
-                    const hoteisGoogle = ref([]);
-                    const hoteisGoogleBuscando = ref(false);
-                    const hoteisDropdown = ref(false);
-                    const hoteisGoogleErro = ref('');
+                // ── Google Places API ─────────────────────────────────────────
+                const hoteisGoogle = ref([]);
+                const hoteisGoogleBuscando = ref(false);
+                const hoteisDropdown = ref(false);
+                const hoteisGoogleErro = ref('');
 
-                    async function buscarHoteisGoogle() {
-                        const cidade = formViagem.value.destino_cidade.trim();
-                        const estado = formViagem.value.destino_estado?.trim() || '';
-                        if (!cidade) return;
-                        if (!GOOGLE_PLACES_KEY) {
-                            hoteisGoogleErro.value = 'Chave da API Google Places não configurada.';
-                            return;
-                        }
-                        hoteisGoogleBuscando.value = true;
-                        hoteisGoogleErro.value = '';
-                        hoteisDropdown.value = false;
-                        try {
-                            const query = `hotéis em ${cidade}${estado ? ' ' + estado : ''} Brasil`;
-                            const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'X-Goog-Api-Key': GOOGLE_PLACES_KEY,
-                                    'X-Goog-FieldMask': 'places.id,places.displayName,places.rating,places.userRatingCount,places.formattedAddress',
-                                },
-                                body: JSON.stringify({
-                                    textQuery: query,
-                                    languageCode: 'pt-BR',
-                                    maxResultCount: 10,
-                                    includedType: 'lodging',
-                                }),
-                            });
-                            const dados = await res.json();
-                            if (!res.ok) throw new Error(dados.error?.message || 'Erro na API');
-                            hoteisGoogle.value = dados.places || [];
-                            hoteisDropdown.value = hoteisGoogle.value.length > 0;
-                            if (!hoteisGoogle.value.length) hoteisGoogleErro.value = 'Nenhum hotel encontrado para esse destino.';
-                        } catch (e) {
-                            hoteisGoogleErro.value = 'Falha ao buscar hotéis: ' + e.message;
-                        } finally {
-                            hoteisGoogleBuscando.value = false;
-                        }
+                async function buscarHoteisGoogle() {
+                    const cidade = formViagem.value.destino_cidade.trim();
+                    const estado = formViagem.value.destino_estado?.trim() || '';
+                    if (!cidade) return;
+                    hoteisGoogleBuscando.value = true;
+                    hoteisGoogleErro.value = '';
+                    hoteisDropdown.value = false;
+                    try {
+                        const termo = `hotéis em ${cidade}${estado ? ' ' + estado : ''} Brasil`;
+                        const res = await fetch(`/api/v1/hoteis/sugestoes?q=${encodeURIComponent(termo)}`);
+                        if (!res.ok) throw new Error('Erro ao buscar sugestões de hotéis');
+                        const dados = await res.json();
+                        hoteisGoogle.value = (dados || []).map(h => ({
+                            displayName: { text: h.descricao },
+                            formattedAddress: '',
+                            rating: '',
+                            ...h
+                        }));
+                        hoteisDropdown.value = hoteisGoogle.value.length > 0;
+                        if (!hoteisGoogle.value.length) hoteisGoogleErro.value = 'Nenhum hotel encontrado para esse destino.';
+                    } catch (e) {
+                        hoteisGoogleErro.value = 'Falha ao buscar hotéis: ' + e.message;
+                    } finally {
+                        hoteisGoogleBuscando.value = false;
                     }
+                }
 
-                    function selecionarHotelGoogle(hotel) {
-                        formPreferencias.value.preferencia_hotel_nome = hotel.displayName?.text || '';
-                        hoteisDropdown.value = false;
-                    }
+                function selecionarHotelGoogle(hotel) {
+                    formPreferencias.value.preferencia_hotel_nome = hotel.displayName?.text || '';
+                    hoteisDropdown.value = false;
+                }
+
+                const pickerFormViagem = (e, campo) => {
+                    const v = isoToDisplay(e.target.value);
+                    if (!v) return;
+                    formViagem.value[campo] = v;
                 };
 
                 const pickerPreferencias = (e, campo) => {
-                    const v = _isoToDisplay(e.target.value);
+                    const v = isoToDisplay(e.target.value);
                     if (!v) return;
                     formPreferencias.value[campo] = v;
                 };
@@ -1475,6 +1587,7 @@
 
                 const realizarLogin = async () => {
                     erroLogin.value = '';
+                    semAcessoAd.value = false;
                     carregando.value = true;
                     try {
                         const response = await fetch('/api/v1/auth/login', {
@@ -1483,6 +1596,10 @@
                             body: JSON.stringify({ ...loginForm.value, agencia: null }),
                         });
                         const dados = await response.json();
+                        if (response.status === 403) {
+                            semAcessoAd.value = true;
+                            throw new Error(dados.detail || 'Você não possui acesso ao sistema.');
+                        }
                         if (!response.ok) throw new Error(dados.detail || 'Erro de autenticação.');
                         localStorage.setItem('token', dados.access_token);
                         localStorage.setItem('nome_usuario', dados.nome_usuario);
@@ -1493,10 +1610,11 @@
                         perfilUsuario.value = dados.perfil;
                         // Setor é redirecionado para o painel; viajantes ficam no portal de solicitação
                         if (dados.perfil === 'setor') {
-                            vlNavigate('/painel.html');
+                            vlNavigate('/setor.html');
                             return;
                         }
                         if (tipo_solicitacao.value === 'proprio') buscarProprioUsuario();
+                        carregarAutorizacoesTerceiros();
                     } catch (err) {
                         erroLogin.value = err.message;
                     } finally {
@@ -1515,8 +1633,8 @@
                     const payload = {
                         ...formViagem.value,
                         ...formPreferencias.value,
-                        data_ida:   _toISO(formViagem.value.data_ida),
-                        data_volta: _toISO(formViagem.value.data_volta) || null,
+                        data_ida:   toISO(formViagem.value.data_ida),
+                        data_volta: toISO(formViagem.value.data_volta) || null,
                         via_delegacao:             tipo_solicitacao.value !== 'proprio',
                         aprovador_n1_email:         viajanteDados.value?.aprovador_n1_email || '',
                         aprovador_n1_nome:          viajanteDados.value?.aprovador_n1_nome  || '',
@@ -1580,7 +1698,7 @@
                         const bodyIda = {
                             origem:         f.origem_cidade.trim(),
                             destino:        f.destino_cidade.trim(),
-                            data_ida:       _toISO(f.data_ida) || f.data_ida,
+                            data_ida:       toISO(f.data_ida) || f.data_ida,
                             data_volta:     null,
                             adultos:        1,
                             exigir_bagagem: formPreferencias.value.bagagem_extra,
@@ -1604,7 +1722,7 @@
                             const bodyVolta = {
                                 origem:         f.destino_cidade.trim(),
                                 destino:        f.origem_cidade.trim(),
-                                data_ida:       _toISO(f.data_volta) || f.data_volta,
+                                data_ida:       toISO(f.data_volta) || f.data_volta,
                                 data_volta:     null,
                                 adultos:        1,
                                 exigir_bagagem: formPreferencias.value.bagagem_extra,
@@ -1672,6 +1790,127 @@
                     buscarProprioUsuario();
                 };
 
+                // --- Lógica de Acesso a Terceiros (Delegação) ---
+                const autorizacoesTerceiros = ref([]);
+                const autorizacaoSelecionada = ref(null);
+                
+                const carregarAutorizacoesTerceiros = async () => {
+                    if (!token.value) return;
+                    try {
+                        const resp = await fetch('/api/v1/terceiros/minhas', {
+                            headers: { 'Authorization': `Bearer ${token.value}` },
+                        });
+                        if (resp.ok) autorizacoesTerceiros.value = await resp.json();
+                    } catch (e) {
+                        console.warn('Erro ao carregar autorizações:', e);
+                    }
+                };
+
+                const mostrandoModalTerceiro = ref(false);
+                const terceiroBuscaMatricula = ref('');
+                const terceiroEncontrado = ref(null);
+                const terceiroErroBusca = ref('');
+                const terceiroBuscando = ref(false);
+                
+                const pdfArquivo = ref(null);
+                const terceiroSubmetendo = ref(false);
+                const terceiroMensagemSucesso = ref('');
+                const terceiroErroSubmissao = ref('');
+
+                const buscarTerceiroPorMatricula = async () => {
+                    terceiroErroBusca.value = '';
+                    terceiroEncontrado.value = null;
+                    if (!terceiroBuscaMatricula.value.trim()) {
+                        terceiroErroBusca.value = 'Por favor, informe a matrícula ou ID do terceiro.';
+                        return;
+                    }
+                    terceiroBuscando.value = true;
+                    try {
+                        const resp = await fetch(`/api/v1/terceiros/terceiros/buscar/${terceiroBuscaMatricula.value.trim()}`, {
+                            headers: { 'Authorization': `Bearer ${token.value}` },
+                        });
+                        const dados = await resp.json();
+                        if (!resp.ok) throw new Error(dados.detail || 'Não foi possível encontrar este colaborador.');
+                        terceiroEncontrado.value = dados;
+                    } catch (e) {
+                        terceiroErroBusca.value = e.message;
+                    } finally {
+                        terceiroBuscando.value = false;
+                    }
+                };
+
+                const lidarComUploadPDF = (e) => {
+                    const arquivo = e.target.files[0];
+                    if (arquivo) {
+                        pdfArquivo.value = arquivo;
+                    }
+                };
+
+                const submeterTicketTerceiro = async () => {
+                    terceiroErroSubmissao.value = '';
+                    terceiroMensagemSucesso.value = '';
+                    if (!terceiroEncontrado.value) {
+                        terceiroErroSubmissao.value = 'Por favor, busque e identifique o terceiro primeiro.';
+                        return;
+                    }
+                    if (!pdfArquivo.value) {
+                        terceiroErroSubmissao.value = 'Por favor, selecione o arquivo PDF de autorização assinado.';
+                        return;
+                    }
+                    terceiroSubmetendo.value = true;
+                    try {
+                        const formData = new FormData();
+                        formData.append('terceiro_username', terceiroEncontrado.value.username);
+                        formData.append('terceiro_nome', terceiroEncontrado.value.nome);
+                        formData.append('terceiro_email', terceiroEncontrado.value.email);
+                        formData.append('pdf_autorizacao', pdfArquivo.value);
+
+                        const resp = await fetch('/api/v1/terceiros/terceiros/solicitar', {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${token.value}` },
+                            body: formData,
+                        });
+                        const dados = await resp.json();
+                        if (!resp.ok) throw new Error(dados.detail || 'Erro ao submeter ticket.');
+                        
+                        terceiroMensagemSucesso.value = dados.mensagem || 'Ticket enviado com sucesso! Aguarde a aprovação do setor de viagens.';
+                        // Limpa inputs
+                        terceiroBuscaMatricula.value = '';
+                        terceiroEncontrado.value = null;
+                        pdfArquivo.value = null;
+                        // Recarrega lista
+                        await carregarAutorizacoesTerceiros();
+                    } catch (e) {
+                        terceiroErroSubmissao.value = e.message;
+                    } finally {
+                        terceiroSubmetendo.value = false;
+                    }
+                };
+
+                watch(autorizacaoSelecionada, async (novaAut) => {
+                    if (!novaAut) {
+                        viajanteDados.value = null;
+                        return;
+                    }
+                    erroBusca.value = '';
+                    buscandoColaborador.value = true;
+                    viajanteDados.value = null;
+                    try {
+                        const response = await fetch(`/api/v1/viagens/colaborador/${novaAut.terceiro_username}`, {
+                            headers: { 'Authorization': `Bearer ${token.value}` },
+                        });
+                        const r = await response.json();
+                        if (!response.ok) throw new Error(r.detail || 'Colaborador não encontrado.');
+                        viajanteDados.value = r.dados;
+                        celularViajante.value = ''; dataNascimentoViajante.value = ''; perfilSalvo.value = false;
+                        carregarPerfilViajante(r.dados.user_name);
+                    } catch (err) {
+                        erroBusca.value = 'Falha ao buscar dados detalhados do terceiro: ' + err.message;
+                    } finally {
+                        buscandoColaborador.value = false;
+                    }
+                });
+
                 const logout = () => {
                     localStorage.clear();
                     token.value = null;
@@ -1682,12 +1921,16 @@
                 };
 
                 return {
-                    token, nomeUsuario, perfilUsuario, badgePerfil, carregando, erroLogin, loginForm, realizarLogin, logout,
+                    token, nomeUsuario, perfilUsuario, badgePerfil, carregando, erroLogin, semAcessoAd, loginForm, realizarLogin, logout,
                     passoAtual,
                     tipo_solicitacao, cpfBusca, buscandoColaborador, viajanteDados, erroBusca, erroBuscaProprioUsuario, mostrarBuscaFallback, buscarColaboradorGCP,
                     celularViajante, dataNascimentoViajante, perfilSalvo,
                     formatarCPF, mascaraData, mascaraDataIda, mascaraDataVolta, mascaraDataCarroRet, mascaraDataCarroDev, mascaraDataGeneric, mascaraCelular, salvarPerfilViajante,
-                    pickerFormViagem, pickerPreferencias,
+                    pickerFormViagem, pickerPreferencias, toISO, isoToDisplay, parseDateBR,
+                    // Terceiros / Delegações
+                    autorizacoesTerceiros, autorizacaoSelecionada, carregarAutorizacoesTerceiros,
+                    mostrandoModalTerceiro, terceiroBuscaMatricula, terceiroEncontrado, terceiroErroBusca, terceiroBuscando, buscarTerceiroPorMatricula,
+                    pdfArquivo, terceiroSubmetendo, terceiroMensagemSucesso, terceiroErroSubmissao, submeterTicketTerceiro, lidarComUploadPDF,
                     // Google Places
                     hoteisGoogle, hoteisGoogleBuscando, hoteisDropdown, hoteisGoogleErro,
                     buscarHoteisGoogle, selecionarHotelGoogle,

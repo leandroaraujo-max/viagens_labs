@@ -64,8 +64,15 @@ class CotacaoService:
         cotacoes_existentes = db.query(CotacaoModel).filter(
             CotacaoModel.solicitacao_id == solicitacao_id
         ).count()
-        # Quando as duas agências (Tastur + Kontrip) já cotaram → aguarda decisão do Setor
-        if cotacoes_existentes >= 2:
+        
+        # Busca dinamicamente a quantidade de agências ativas cadastradas no banco
+        from app.infrastructure.orm.models import AgenciaModel
+        qtd_agencias_ativas = db.query(AgenciaModel).filter_by(ativo=True).count()
+        if qtd_agencias_ativas == 0:
+            qtd_agencias_ativas = 2  # Fallback padrão legado (Tastur + Kontrip)
+
+        # Quando todas as agências ativas já cotaram → aguarda decisão do Setor
+        if cotacoes_existentes >= qtd_agencias_ativas:
             solicitacao.status = "PENDENTE_APROVACAO_SETOR_COTACAO"
             try:
                 from app.infrastructure.email_service import EmailService

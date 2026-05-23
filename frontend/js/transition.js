@@ -119,21 +119,32 @@
     else { document.addEventListener('DOMContentLoaded', run, { once: true }); }
   }
 
+  // ─── Proteção anti-tela-preta ──────────────────────────────────────────────
+  // Se já chegou na página mas o onArrival não rodou (erro de JS anterior),
+  // o KEY fica "sujo" na sessionStorage e trava em preto na próxima visita.
+  // Gravamos o timestamp da partida e descartamos se > 8s (algo deu errado).
+  var TIMESTAMP_KEY = 'vl_pg_ts';
+  var storedTs = parseInt(sessionStorage.getItem(TIMESTAMP_KEY) || '0', 10);
+  if (sessionStorage.getItem(KEY) && Date.now() - storedTs > 8000) {
+    sessionStorage.removeItem(KEY);
+    sessionStorage.removeItem(TIMESTAMP_KEY);
+  }
+
   if (sessionStorage.getItem(KEY)) { onArrival(); }
+
 
   window.vlNavigate = function (url) {
     if (window._vln) return;
     window._vln = true;
-    // Cobre a pagina atual instantaneamente (sem aviao na saida).
-    // O aviao voa UMA UNICA VEZ na chegada, via onArrival().
     var snap = document.createElement('div');
     snap.style.cssText = 'position:fixed;inset:0;z-index:99999;'
       + 'background:linear-gradient(135deg,#0f172a 0%,#001e7a 100%);'
       + 'pointer-events:all';
     document.body.appendChild(snap);
     sessionStorage.setItem(KEY, '1');
-    // Navegar apos um frame para garantir que o snap foi pintado
+    sessionStorage.setItem(TIMESTAMP_KEY, String(Date.now())); // anti-trava
     requestAnimationFrame(function () { window.location.href = url; });
   };
+
 
 })();

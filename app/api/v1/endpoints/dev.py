@@ -2,20 +2,78 @@
 Portal do Desenvolvedor — endpoints exclusivos para G_ACCESS_VIAGENSLABS_DEV.
 Acesso irrestrito a toda a plataforma: métricas, solicitações, agências, configuração.
 """
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
-from typing import Optional
+from typing import Optional, List
 import logging
+import os
 
 from app.api.dependencies import get_db_session, require_dev
 from app.infrastructure.orm.models import (
-    SolicitacaoModel, AgenciaModel, CotacaoModel, VoucherModel, TokenAprovacaoModel
+    SolicitacaoModel, AgenciaModel, CotacaoModel, VoucherModel, TokenAprovacaoModel, UsuarioQATesteModel
 )
+from app.domain.models.schemas import UsuarioQATesteCreate, UsuarioQATesteResponse
 from app.core.config import settings
 from app.core.security import get_password_hash
 
 router = APIRouter()
+
+LOG_FILES = {
+    "app_out": [
+        r"c:\Projetos\viagens_labs\logs\viagenslabs_service.out.log",
+        r"C:\Projetos\viagens_labs\logs\viagenslabs_service.out.log",
+    ],
+    "app_err": [
+        r"c:\Projetos\viagens_labs\logs\viagenslabs_service.err.log",
+        r"C:\Projetos\viagens_labs\logs\viagenslabs_service.err.log",
+    ],
+    "nginx_access": [
+        r"C:\nginx\logs\access.log",
+        r"c:\nginx\logs\access.log",
+        r"C:\nginx-1.24.0\logs\access.log",
+        r"c:\nginx-1.24.0\logs\access.log",
+    ],
+    "nginx_error": [
+        r"C:\nginx\logs\error.log",
+        r"c:\nginx\logs\error.log",
+        r"C:\nginx-1.24.0\logs\error.log",
+        r"c:\nginx-1.24.0\logs\error.log",
+    ],
+    "nginx_service_err": [
+        r"c:\Projetos\viagens_labs\logs\viagenslabs_service.wrapper.log",
+        r"C:\Projetos\viagens_labs\logs\viagenslabs_service.wrapper.log",
+    ]
+}
+
+def tail_file(filepath: str, lines_count: int = 100) -> str:
+    if not os.path.exists(filepath):
+        return f"[LOGS] Arquivo {filepath} não existe."
+    try:
+        chunk_size = 4096
+        with open(filepath, "rb") as f:
+            f.seek(0, os.SEEK_END)
+            file_size = f.tell()
+            
+            lines = []
+            buffer = bytearray()
+            seek_pos = file_size
+            
+            while seek_pos > 0 and len(lines) <= lines_count:
+                seek_pos = max(0, seek_pos - chunk_size)
+                f.seek(seek_pos)
+                chunk = f.read(min(chunk_size, file_size - seek_pos))
+                buffer = chunk + buffer
+                lines = buffer.split(b"\n")
+            
+            last_lines = lines[-lines_count:]
+            return b"\n".join(last_lines).decode("utf-8", errors="ignore")
+    except Exception:
+        try:
+            with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
+                return "".join(f.readlines()[-lines_count:])
+        except Exception as e2:
+            return f"[ERRO] Falha ao ler logs: {e2}"
 
 # ── Stats gerais ──────────────────────────────────────────────────────────────
 
@@ -98,15 +156,15 @@ def listar_agencias(
     db: Session = Depends(get_db_session),
     _: str = Depends(require_dev),
 ):
-    agencias = db.query(AgenciaModel).order_by(AgenciaModel.nome_fantasia).all()
+    agencias = db.query(AgenciaModel).order_by(AgenciaModel.agencia_nome).all()
     return [
         {
             "id": a.id,
-            "nome_fantasia": a.nome_fantasia,
+            "agencia_nome": a.agencia_nome,
             "razao_social": a.razao_social,
             "cnpj": a.cnpj,
-            "email_contato": a.email_contato,
-            "ativa": a.ativa,
+            "email": a.email,
+            "ativo": a.ativo,
             "data_criacao": a.data_criacao.isoformat() if a.data_criacao else None,
         }
         for a in agencias
@@ -123,30 +181,10 @@ def toggle_agencia_ativa(
     if not ag:
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Agência não encontrada.")
-    ag.ativa = not ag.ativa
+    ag.ativo = not ag.ativo
     db.commit()
-    return {"id": ag.id, "ativa": ag.ativa}
+    return {"id": ag.id, "ativo": ag.ativo}
 
-
-@router.post("/agencias/{agencia_id}/reset-senha")
-def reset_senha_agencia(
-    agencia_id: int,
-    payload: dict,
-    db: Session = Depends(get_db_session),
-    dev_user: str = Depends(require_dev),
-):
-    ag = db.query(AgenciaModel).filter(AgenciaModel.id == agencia_id).first()
-    if not ag:
-        from fastapi import HTTPException
-        raise HTTPException(status_code=404, detail="Agência não encontrada.")
-    nova_senha = payload.get("nova_senha", "")
-    if len(nova_senha) < 8:
-        from fastapi import HTTPException
-        raise HTTPException(status_code=400, detail="Senha deve ter pelo menos 8 caracteres.")
-    ag.senha_hash = get_password_hash(nova_senha)
-    db.commit()
-    logging.info(f"[DEV] {dev_user} resetou senha da agência {ag.nome_fantasia} (id={agencia_id})")
-    return {"ok": True, "agencia": ag.nome_fantasia}
 
 
 # ── Configuração (sanitizada, sem secrets completos) ──────────────────────────
@@ -213,3 +251,121 @@ def atividade_recente(
         }
         for s in itens
     ]
+
+
+# ── Gestão de QA & Exclusão de Solicitações ───────────────────────────────────
+
+@router.delete("/solicitacoes/{solicitacao_id}", status_code=204)
+def excluir_solicitacao(
+    solicitacao_id: int,
+    db: Session = Depends(get_db_session),
+    _: str = Depends(require_dev),
+):
+    """Exclui uma solicitação de viagem de ponta a ponta, com exclusão em cascata."""
+    sol = db.query(SolicitacaoModel).filter(SolicitacaoModel.id == solicitacao_id).first()
+    if not sol:
+        raise HTTPException(status_code=404, detail="Solicitação não encontrada.")
+    
+    # 1. Casamentos
+    from app.infrastructure.orm.models import CasamentoModel, LogEventoModel, TokenAgenciaModel
+    db.query(CasamentoModel).filter(
+        (CasamentoModel.solicitacao_a_id == solicitacao_id) | 
+        (CasamentoModel.solicitacao_b_id == solicitacao_id)
+    ).delete(synchronize_session=False)
+    
+    # 2. Vouchers
+    db.query(VoucherModel).filter(VoucherModel.solicitacao_id == solicitacao_id).delete(synchronize_session=False)
+    
+    # 3. Cotações
+    db.query(CotacaoModel).filter(CotacaoModel.solicitacao_id == solicitacao_id).delete(synchronize_session=False)
+    
+    # 4. Tokens da Agência
+    db.query(TokenAgenciaModel).filter(TokenAgenciaModel.solicitacao_id == solicitacao_id).delete(synchronize_session=False)
+    
+    # 5. Tokens de Aprovação
+    db.query(TokenAprovacaoModel).filter(TokenAprovacaoModel.solicitacao_id == solicitacao_id).delete(synchronize_session=False)
+    
+    # 6. Logs de Evento
+    db.query(LogEventoModel).filter(LogEventoModel.solicitacao_id == solicitacao_id).delete(synchronize_session=False)
+    
+    # 7. Solicitação principal
+    db.delete(sol)
+    db.commit()
+    return None
+
+
+@router.get("/usuarios-qa", response_model=List[UsuarioQATesteResponse])
+def listar_usuarios_qa(
+    db: Session = Depends(get_db_session),
+    _: str = Depends(require_dev),
+):
+    """Lista todos os testadores QA cadastrados."""
+    return db.query(UsuarioQATesteModel).order_by(UsuarioQATesteModel.data_criacao.desc()).all()
+
+
+@router.post("/usuarios-qa", response_model=UsuarioQATesteResponse, status_code=201)
+def cadastrar_usuario_qa(
+    body: UsuarioQATesteCreate,
+    db: Session = Depends(get_db_session),
+    _: str = Depends(require_dev),
+):
+    """Cadastra um novo testador QA."""
+    existente = db.query(UsuarioQATesteModel).filter(UsuarioQATesteModel.username == body.username).first()
+    if existente:
+        raise HTTPException(status_code=409, detail="Este username QA já está cadastrado.")
+    
+    novo = UsuarioQATesteModel(
+        username=body.username.strip(),
+        email=body.email.strip(),
+        ativo=True,
+    )
+    db.add(novo)
+    db.commit()
+    db.refresh(novo)
+    return novo
+
+
+@router.delete("/usuarios-qa/{qa_id}", status_code=204)
+def excluir_usuario_qa(
+    qa_id: int,
+    db: Session = Depends(get_db_session),
+    _: str = Depends(require_dev),
+):
+    """Exclui um testador QA."""
+    qa = db.query(UsuarioQATesteModel).filter(UsuarioQATesteModel.id == qa_id).first()
+    if not qa:
+        raise HTTPException(status_code=404, detail="Testador QA não encontrado.")
+    db.delete(qa)
+    db.commit()
+    return None
+
+
+# ── Dashboard de Monitoramento de Logs ───────────────────────────────────────
+
+@router.get("/logs")
+def ler_logs(
+    servico: str = Query("app_out"),
+    linhas: int = Query(100, le=500),
+    _: str = Depends(require_dev),
+):
+    """Retorna as últimas N linhas de log do serviço selecionado."""
+    paths = LOG_FILES.get(servico)
+    if not paths:
+        raise HTTPException(status_code=400, detail="Serviço de log inválido.")
+    
+    actual_path = None
+    for p in paths:
+        if os.path.exists(p):
+            actual_path = p
+            break
+            
+    if not actual_path:
+        return {
+            "caminho": paths[0],
+            "conteudo": f"[LOGS] Arquivo de log para '{servico}' não encontrado nos caminhos mapeados."
+        }
+        
+    return {
+        "caminho": actual_path,
+        "conteudo": tail_file(actual_path, linhas)
+    }

@@ -225,9 +225,19 @@ class AprovacaoService:
             nome = solicitacao.aprovador_n2_nome
 
         # ── QA override: redireciona TODOS os tokens para o testador ─────────
-        if settings.QA_APROVADOR_EMAIL:
-            logger.warning("[QA] Token %s-%s redirecionado: %s → %s", solicitacao.protocolo, nivel, email, settings.QA_APROVADOR_EMAIL)
-            email = settings.QA_APROVADOR_EMAIL
+        try:
+            from app.infrastructure.orm.models import UsuarioQATesteModel
+            qa = self.db.query(UsuarioQATesteModel).filter_by(username=solicitacao.solicitante_username, ativo=True).first()
+            if qa and qa.email:
+                logger.warning("[QA Dynamic Override] Token %s-%s redirecionado: %s → %s", solicitacao.protocolo, nivel, email, qa.email)
+                email = qa.email
+            elif settings.QA_APROVADOR_EMAIL:
+                logger.warning("[QA Static Fallback] Token %s-%s redirecionado: %s → %s", solicitacao.protocolo, nivel, email, settings.QA_APROVADOR_EMAIL)
+                email = settings.QA_APROVADOR_EMAIL
+        except Exception as e:
+            logger.warning(f"Erro ao verificar testador QA dinâmico no banco: {e}")
+            if settings.QA_APROVADOR_EMAIL:
+                email = settings.QA_APROVADOR_EMAIL
         # ─────────────────────────────────────────────────────────────────────
 
         token = TokenAprovacaoModel(

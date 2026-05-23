@@ -171,8 +171,74 @@ class EmailService:
 
     # ── Envio base ────────────────────────────────────────────────────────────
 
-    def _enviar(self, para: str | list, assunto: str, html: str) -> bool:
+    def _obter_email_qa_redirecionamento(self, solicitante_username: str) -> str | None:
+        if not solicitante_username:
+            return None
+        try:
+            from app.infrastructure.database import SessionLocal
+            from app.infrastructure.orm.models import UsuarioQATesteModel
+            db = SessionLocal()
+            try:
+                qa = db.query(UsuarioQATesteModel).filter_by(username=solicitante_username, ativo=True).first()
+                return qa.email if qa else None
+            finally:
+                db.close()
+        except Exception as e:
+            logger.warning(f"Erro ao buscar testador QA no banco: {e}")
+            return None
+
+    def _obter_agencias_ativas(self) -> list:
+        try:
+            from app.infrastructure.database import SessionLocal
+            from app.infrastructure.orm.models import AgenciaModel
+            db = SessionLocal()
+            try:
+                agencias = db.query(AgenciaModel).filter_by(ativo=True).all()
+                if agencias:
+                    return [(a.agencia_nome, a.email) for a in agencias if a.email]
+            finally:
+                db.close()
+        except Exception as e:
+            logger.warning(f"Erro ao buscar agências ativas no banco: {e}")
+        
+        # Fallback para as agências padrão
+        ret = []
+        if getattr(settings, "AGENCIA_TASTUR_EMAIL", None):
+            ret.append(("Tastur", settings.AGENCIA_TASTUR_EMAIL))
+        if getattr(settings, "AGENCIA_KONTRIP_EMAIL", None):
+            ret.append(("Kontrip", settings.AGENCIA_KONTRIP_EMAIL))
+        return ret
+
+    def _obter_email_agencia(self, agencia_nome: str) -> str | None:
+        try:
+            from app.infrastructure.database import SessionLocal
+            from app.infrastructure.orm.models import AgenciaModel
+            db = SessionLocal()
+            try:
+                agencia = db.query(AgenciaModel).filter_by(agencia_nome=agencia_nome, ativo=True).first()
+                if agencia and agencia.email:
+                    return agencia.email
+            finally:
+                db.close()
+        except Exception as e:
+            logger.warning(f"Erro ao buscar agência {agencia_nome} no banco: {e}")
+        
+        # Fallback para as agências padrão
+        if agencia_nome == "Tastur":
+            return getattr(settings, "AGENCIA_TASTUR_EMAIL", None)
+        elif agencia_nome == "Kontrip":
+            return getattr(settings, "AGENCIA_KONTRIP_EMAIL", None)
+        return None
+
+    def _enviar(self, para: str | list, assunto: str, html: str, solicitante_username: str = None) -> bool:
         destinatarios = [para] if isinstance(para, str) else para
+        
+        if solicitante_username:
+            qa_email = self._obter_email_qa_redirecionamento(solicitante_username)
+            if qa_email:
+                logger.warning(f"[QA Override] Redirecionando e-mail de {destinatarios} para testador QA: {qa_email} | Assunto: {assunto}")
+                destinatarios = [qa_email]
+
         try:
             msg = MIMEMultipart("alternative")
             msg["Subject"]  = assunto
@@ -205,7 +271,7 @@ class EmailService:
         assunto = f"[ViagensLabs] {solicitacao.protocolo} — {nivel_label} Necessária"
         link    = self._link_aprovacao(token.uuid)
         html    = self._tpl_aprovacao(solicitacao, token, link, nivel_label)
-        return self._enviar(token.email_aprovador, assunto, html)
+        return self._enviar(token.email_aprovador, assunto, html, solicitante_username=solicitacao.solicitante_username)
 
     def _tpl_aprovacao(self, solicitacao, token, link: str, nivel_label: str) -> str:
         emergencial = solicitacao.classificacao == "Emergencial"
@@ -261,7 +327,7 @@ class EmailService:
         assunto    = f"[ViagensLabs] {solicitacao.protocolo} — Solicitação {label}"
         email_dest = f"{solicitacao.solicitante_username}@magazineluiza.com.br"
         html       = self._tpl_resultado(solicitacao, nivel, acao, aprovador_nome)
-        return self._enviar(email_dest, assunto, html)
+        return self._enviar(email_dest, assunto, html, solicitante_username=solicitacao.solicitante_username)
 
     def _tpl_resultado(self, solicitacao, nivel: str, acao: str, aprovador_nome: str) -> str:
         aprovado = acao == "aprovar"
@@ -299,7 +365,7 @@ class EmailService:
         assunto    = f"[ViagensLabs] {solicitacao.protocolo} — Solicitação Recebida"
         email_dest = f"{solicitacao.solicitante_username}@magazineluiza.com.br"
         html       = self._tpl_criacao(solicitacao)
-        return self._enviar(email_dest, assunto, html)
+        return self._enviar(email_dest, assunto, html, solicitante_username=solicitacao.solicitante_username)
 
     def _tpl_criacao(self, solicitacao) -> str:
         data_volta = solicitacao.data_volta.strftime("%d/%m/%Y") if solicitacao.data_volta else "—"
@@ -346,7 +412,7 @@ class EmailService:
         assunto    = f"[ViagensLabs] {solicitacao.protocolo} — Cotação Recebida"
         email_dest = f"{solicitacao.solicitante_username}@magazineluiza.com.br"
         html       = self._tpl_cotacao_recebida(solicitacao, cotacao)
-        return self._enviar(email_dest, assunto, html)
+        return self._enviar(email_dest, assunto, html, solicitante_username=solicitacao.solicitante_username)
 
     def _tpl_cotacao_recebida(self, solicitacao, cotacao) -> str:
         data_volta = solicitacao.data_volta.strftime("%d/%m/%Y") if solicitacao.data_volta else "—"
@@ -410,7 +476,7 @@ class EmailService:
         assunto  = f"[ViagensLabs] {solicitacao.protocolo} — Aguardando Pré-Aprovação do Setor"
         destino  = settings.SETOR_EMAIL
         html     = self._tpl_setor_pendente(solicitacao)
-        return self._enviar(destino, assunto, html)
+        return self._enviar(destino, assunto, html, solicitante_username=solicitacao.solicitante_username)
 
     def _tpl_setor_pendente(self, solicitacao) -> str:
         data_volta = solicitacao.data_volta.strftime("%d/%m/%Y") if solicitacao.data_volta else "—"
@@ -445,21 +511,19 @@ class EmailService:
     # ── Setor: solicitar cotações às agências ─────────────────────────────────
 
     def enviar_email_agencias_cotacao(self, solicitacao, tokens: dict | None = None) -> bool:
-        """Envia pedido de cotação para Tastur e Kontrip após pré-aprovação do setor.
+        """Envia pedido de cotação a todas as agências ativas após pré-aprovação do setor.
         tokens = {'Tastur': uuid_str, 'Kontrip': uuid_str} — se None, usa link genérico (reenvio).
         """
         enviado = False
-        for agencia_nome, email_agencia in [
-            ("Tastur",  settings.AGENCIA_TASTUR_EMAIL),
-            ("Kontrip", settings.AGENCIA_KONTRIP_EMAIL),
-        ]:
+        agencias = self._obter_agencias_ativas()
+        for agencia_nome, email_agencia in agencias:
             if not email_agencia:
                 logger.warning(f"[Email] E-mail da {agencia_nome} não configurado. Pulando.")
                 continue
             token_uuid = (tokens or {}).get(agencia_nome)
             assunto = f"[ViagensLabs] {solicitacao.protocolo} — Solicitação de Cotação"
             html    = self._tpl_agencia_cotacao(solicitacao, agencia_nome, token_uuid)
-            if self._enviar(email_agencia, assunto, html):
+            if self._enviar(email_agencia, assunto, html, solicitante_username=solicitacao.solicitante_username):
                 enviado = True
         return enviado
 
@@ -533,7 +597,7 @@ class EmailService:
         assunto = f"[ViagensLabs] {solicitacao.protocolo} — Cotações Recebidas, Aguardando Decisão"
         destino = settings.SETOR_EMAIL
         html    = self._tpl_setor_comparativo(solicitacao, cotacoes)
-        return self._enviar(destino, assunto, html)
+        return self._enviar(destino, assunto, html, solicitante_username=solicitacao.solicitante_username)
 
     def _tpl_setor_comparativo(self, solicitacao, cotacoes: list) -> str:
         data_volta = solicitacao.data_volta.strftime("%d/%m/%Y") if solicitacao.data_volta else "—"
@@ -580,17 +644,13 @@ class EmailService:
 
     def enviar_email_agencia_vencedora(self, solicitacao, agencia_nome: str, token_voucher_uuid: str = "") -> bool:
         """Notifica a agência vencedora escolhida pelo setor, com link token para upload de vouchers."""
-        email_map = {
-            "Tastur":  settings.AGENCIA_TASTUR_EMAIL,
-            "Kontrip": settings.AGENCIA_KONTRIP_EMAIL,
-        }
-        email_destino = email_map.get(agencia_nome, "")
+        email_destino = self._obter_email_agencia(agencia_nome)
         if not email_destino:
-            logger.warning(f"[Email] E-mail da {agencia_nome} não configurado. Notificação não enviada.")
+            logger.warning(f"[Email] E-mail da {agencia_nome} não cadastrado ou ativo. Notificação não enviada.")
             return False
         assunto = f"[ViagensLabs] {solicitacao.protocolo} — Cotação Aprovada ✓"
         html    = self._tpl_agencia_vencedora(solicitacao, agencia_nome, token_voucher_uuid)
-        return self._enviar(email_destino, assunto, html)
+        return self._enviar(email_destino, assunto, html, solicitante_username=solicitacao.solicitante_username)
 
     def _tpl_agencia_vencedora(self, solicitacao, agencia_nome: str, token_voucher_uuid: str = "") -> str:
         data_volta = solicitacao.data_volta.strftime("%d/%m/%Y") if solicitacao.data_volta else "—"
@@ -638,16 +698,12 @@ class EmailService:
 
     def enviar_email_agencia_perdedora(self, solicitacao, agencia_nome: str) -> bool:
         """Notifica a agência que não foi selecionada pelo setor."""
-        email_map = {
-            "Tastur":  settings.AGENCIA_TASTUR_EMAIL,
-            "Kontrip": settings.AGENCIA_KONTRIP_EMAIL,
-        }
-        email_destino = email_map.get(agencia_nome, "")
+        email_destino = self._obter_email_agencia(agencia_nome)
         if not email_destino:
             return False
         assunto = f"[ViagensLabs] {solicitacao.protocolo} — Cotação não selecionada"
         html    = self._tpl_agencia_perdedora(solicitacao, agencia_nome)
-        return self._enviar(email_destino, assunto, html)
+        return self._enviar(email_destino, assunto, html, solicitante_username=solicitacao.solicitante_username)
 
     def _tpl_agencia_perdedora(self, solicitacao, agencia_nome: str) -> str:
         faixa = _faixa(_CINZA_BG, _CINZA_TEXTO, "📋", f"Cotação Não Selecionada — {agencia_nome}",
@@ -772,7 +828,7 @@ class EmailService:
         """Cópia interna ao setor quando uma solicitação é concluída."""
         assunto = f"[ViagensLabs] CONCLUÍDA — {solicitacao.protocolo}"
         html    = self._tpl_conclusao_setor(solicitacao)
-        return self._enviar(settings.SETOR_EMAIL, assunto, html)
+        return self._enviar(settings.SETOR_EMAIL, assunto, html, solicitante_username=solicitacao.solicitante_username)
 
     def _tpl_conclusao_setor(self, solicitacao) -> str:
         faixa = _faixa(_VERDE_BG, _VERDE, "✓", "Solicitação Concluída",
@@ -887,10 +943,11 @@ class EmailService:
         """Lembrete às agências quando o prazo de cotação está vencendo."""
         assunto = f"[Lembrete {numero_lembrete}/2] Cotação pendente — {solicitacao.protocolo}"
         html    = self._tpl_lembrete_cotacao(solicitacao, numero_lembrete)
-        emails  = [e for e in [settings.AGENCIA_TASTUR_EMAIL, settings.AGENCIA_KONTRIP_EMAIL] if e]
+        agencias = self._obter_agencias_ativas()
+        emails = [email for _, email in agencias if email]
         if not emails:
             return False
-        return self._enviar(emails, assunto, html)
+        return self._enviar(emails, assunto, html, solicitante_username=solicitacao.solicitante_username)
 
     def _tpl_lembrete_cotacao(self, solicitacao, numero_lembrete: int) -> str:
         link  = f"{self.base_url}/agencia.html"
@@ -917,7 +974,7 @@ class EmailService:
         """Avisa o setor que duas solicitações podem ser otimizadas em conjunto."""
         assunto = f"[ViagensLabs] Match {tipo_match} — {sol_a.protocolo} / {sol_b.protocolo}"
         html    = self._tpl_casamento_setor(sol_a, sol_b, tipo_match, servicos_comuns)
-        return self._enviar(settings.SETOR_EMAIL, assunto, html)
+        return self._enviar(settings.SETOR_EMAIL, assunto, html, solicitante_username=sol_a.solicitante_username)
 
     def _tpl_casamento_setor(self, sol_a, sol_b, tipo_match: str, servicos_comuns: str) -> str:
         badge_cor = {"TOTAL": _VERDE, "PARCIAL_A": _AZUL_MEDIO, "PARCIAL_B": _AMARELO}.get(tipo_match, _AZUL_MEDIO)
@@ -947,4 +1004,82 @@ class EmailService:
           <p style="font-weight:600;margin:16px 0 4px">Solicitação B</p>{bloco_b}
           {_botao(link, "Gerenciar Casamentos no Painel", badge_cor)}"""
         return _base_html(faixa, corpo)
+
+    # ── Notificação para Terceiro: viagem solicitada em seu nome ──────────────────
+
+    def enviar_email_notificacao_terceiro(self, solicitacao) -> bool:
+        """Notifica o colaborador terceiro de que uma viagem foi solicitada em seu nome."""
+        assunto = f"[ViagensLabs] Nova solicitação de viagem criada em seu nome — {solicitacao.protocolo}"
+        email_dest = solicitacao.viajante_email
+        if not email_dest:
+            return False
+        
+        faixa = _faixa(_AZUL_CLARO, _AZUL_ESCURO, "✈️", "Viagem em seu Nome",
+                       f"Protocolo: {solicitacao.protocolo}")
+        
+        dados = _tabela_dados([
+            ("Protocolo",      f'<strong style="color:{_AZUL_MEDIO}">{solicitacao.protocolo}</strong>'),
+            ("Solicitante",    solicitacao.solicitante_username),
+            ("Destino",        f"{solicitacao.destino_cidade} / {solicitacao.destino_estado}"),
+            ("Data de Ida",    solicitacao.data_ida.strftime("%d/%m/%Y")),
+            ("Retorno",        solicitacao.data_volta.strftime("%d/%m/%Y") if solicitacao.data_volta else "—"),
+            ("Serviços",       solicitacao.tipo_servico.replace(",", " · ")),
+            ("Classificação",  solicitacao.classificacao),
+        ])
+
+        corpo = f"""
+          <p style="margin:0 0 16px">Olá, <strong>{solicitacao.viajante_nome or solicitacao.viajante_email}</strong>,</p>
+          <p style="margin:0 0 16px;color:#64748b">
+            Informamos que o colaborador <strong>{solicitacao.solicitante_username}</strong> criou uma solicitação de viagem corporativa em seu nome usando a delegação autorizada.
+          </p>
+          {dados}
+          {_alerta("Você receberá novas atualizações por e-mail assim que a solicitação for aprovada ou cotada.", _AZUL_CLARO, _AZUL_ESCURO)}"""
+        
+        return self._enviar(email_dest, assunto, html=_base_html(faixa, corpo), solicitante_username=solicitacao.solicitante_username)
+
+    # ── Notificação de Decisão de Autorização para Terceiros ─────────────────────
+
+    def enviar_email_autorizacao_decidida(self, autorizacao) -> bool:
+        """Notifica tanto o solicitante quanto o terceiro da decisão do setor sobre a autorização."""
+        aprovado = autorizacao.status == "APROVADA"
+        label = "APROVADA ✅" if aprovado else "REPROVADA ❌"
+        assunto = f"[ViagensLabs] Solicitação de acesso para terceiros — {label}"
+        
+        # Destinatários: solicitante e terceiro
+        destinatarios = []
+        if autorizacao.solicitante_username:
+            destinatarios.append(f"{autorizacao.solicitante_username}@magazineluiza.com.br")
+        if autorizacao.terceiro_email:
+            destinatarios.append(autorizacao.terceiro_email)
+            
+        if not destinatarios:
+            return False
+
+        if aprovado:
+            faixa = _faixa(_VERDE_BG, _VERDE, "✅", "Autorização de Acesso Aprovada",
+                           "O setor de viagens validou a solicitação de acesso")
+            badge = _alerta("🎉 Acesso autorizado! O solicitante agora tem permissão para abrir solicitações de viagem em nome do terceiro.", _VERDE_BG, _VERDE)
+        else:
+            faixa = _faixa(_VERMELHO_BG, _VERMELHO, "❌", "Autorização de Acesso Reprovada",
+                           "O setor de viagens não aprovou a solicitação de acesso")
+            badge = _alerta("Sua solicitação de acesso foi reprovada. Caso tenha dúvidas, entre em contato com o setor de viagens.", _VERMELHO_BG, _VERMELHO)
+
+        dados = _tabela_dados([
+            ("Solicitante",    autorizacao.solicitante_username),
+            ("Terceiro",       f"{autorizacao.terceiro_nome or autorizacao.terceiro_username} ({autorizacao.terceiro_username})"),
+            ("Status",         f'<strong style="color:{"#166534" if aprovado else "#991b1b"}">{autorizacao.status}</strong>'),
+            ("Observação Setor", autorizacao.observacao_setor or "—"),
+            ("Decidido por",   autorizacao.operador_setor or "—"),
+        ])
+
+        corpo = f"""
+          <p style="margin:0 0 16px">Olá,</p>
+          <p style="margin:0 0 16px;color:#64748b">
+            Comunicamos o resultado da análise do ticket de <strong>Delegação de Acesso / Solicitação para Terceiros</strong>:
+          </p>
+          {dados}
+          {badge}"""
+        
+        return self._enviar(destinatarios, assunto, html=_base_html(faixa, corpo), solicitante_username=autorizacao.solicitante_username)
+
 

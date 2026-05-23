@@ -77,19 +77,42 @@ def require_agencia(
 
 def require_setor(
     credentials: HTTPAuthorizationCredentials = Depends(_security_bearer),
-) -> str:
+) -> tuple:
     """
     Garante que o token pertence a um usuário com perfil 'setor'.
-    Retorna o username do colaborador.
+    Retorna (username, perfil).
     """
     payload = _decode_payload(credentials)
     perfil: str = payload.get("perfil", "")
-    if perfil != "setor":
+    if perfil not in ("setor", "dev"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Acesso restrito ao portal do setor.",
         )
-    return payload.get("sub", "")
+    return payload.get("sub", ""), perfil
+
+
+def require_auth(
+    credentials: HTTPAuthorizationCredentials = Depends(_security_bearer),
+) -> tuple:
+    """
+    Garante que qualquer usuário autenticado (viajante, setor ou dev) tenha JWT válido.
+    Retorna (username, perfil).
+    """
+    payload = _decode_payload(credentials)
+    username: str = payload.get("sub", "")
+    perfil: str = payload.get("perfil", "")
+    if not username:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido.")
+    return username, perfil
+
+
+def require_setor_username(
+    info: tuple = Depends(require_setor),
+) -> str:
+    """Extrai apenas o username do require_setor. Mantém compatibilidade com setor.py."""
+    return info[0]
+
 
 
 def require_dev(

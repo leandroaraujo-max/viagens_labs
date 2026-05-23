@@ -1,4 +1,4 @@
-﻿from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text, Numeric
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text, Numeric
 from sqlalchemy.sql import func
 from app.infrastructure.database import Base
 
@@ -256,3 +256,50 @@ class LogEventoModel(Base):
     ator           = Column(String(200), default='')       # username ou 'sistema'
     observacao     = Column(Text, default='')
     data_criacao   = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class AutorizacaoTerceiroModel(Base):
+    """
+    Autorização para que um colaborador (solicitante) possa abrir viagens
+    em nome de outro colaborador (terceiro) de hierarquia superior.
+
+    Fluxo:
+      1. Viajante abre ticket via portal informando o ID Magalu do terceiro + PDF.
+      2. Setor aprova ou reprova o ticket.
+      3. Enquanto status='APROVADA', o viajante pode criar solicitações via_delegacao para aquele terceiro.
+    """
+    __tablename__ = "autorizacoes_terceiros"
+
+    id                    = Column(Integer, primary_key=True, index=True)
+    # Quem pede (solicitante logado)
+    solicitante_username  = Column(String(100), nullable=False, index=True)
+    # Para quem (colaborador de hierarquia superior)
+    terceiro_username     = Column(String(100), nullable=False, index=True)
+    terceiro_nome         = Column(String(200), default='')
+    terceiro_email        = Column(String(200), default='')
+    # PDF de autorização assinado pelo terceiro
+    pdf_path              = Column(String(500), default='')
+    # PENDENTE / APROVADA / REPROVADA / REVOGADA
+    status                = Column(String(20), default='PENDENTE', index=True)
+    # Observação do setor ao aprovar/reprovar
+    observacao_setor      = Column(Text, default='')
+    # Operador do setor que tomou a decisão
+    operador_setor        = Column(String(100), default='')
+    data_criacao          = Column(DateTime(timezone=True), server_default=func.now())
+    data_decisao          = Column(DateTime, nullable=True)
+
+
+class UsuarioQATesteModel(Base):
+    """
+    Usuários registrados para a realização de testes de QA de ponta a ponta.
+    Qualquer solicitação criada por esses usuários terá seus e-mails desviados para os testadores.
+    """
+    __tablename__ = "usuarios_qa_teste"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String(100), unique=True, index=True, nullable=False)
+    email = Column(String(200), nullable=False)
+    ativo = Column(Boolean, default=True)
+    data_criacao = Column(DateTime(timezone=True), server_default=func.now())
+
+

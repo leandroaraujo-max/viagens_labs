@@ -75,10 +75,10 @@ class SetorService:
         return query.order_by(SolicitacaoModel.data_criacao.desc()).all()
 
     def get_solicitacao(self, db: Session, solicitacao_id: int):
-        """Retorna (solicitacao, cotacao_tastur, cotacao_kontrip, casamentos)."""
+        """Retorna (solicitacao, cotacao_tastur, cotacao_kontrip, casamentos, todas_cotacoes)."""
         sol = db.query(SolicitacaoModel).filter(SolicitacaoModel.id == solicitacao_id).first()
         if not sol:
-            return None, None, None, []
+            return None, None, None, [], []
 
         cotacoes = (
             db.query(CotacaoModel)
@@ -89,7 +89,7 @@ class SetorService:
         cot_kontrip = next((c for c in cotacoes if c.agencia_nome == "Kontrip"), None)
         casamentos  = _casamento_svc.listar_casamentos_da_solicitacao(db, solicitacao_id)
 
-        return sol, cot_tastur, cot_kontrip, casamentos
+        return sol, cot_tastur, cot_kontrip, casamentos, cotacoes
 
     # ── Executar ação ─────────────────────────────────────────────────────────
 
@@ -106,7 +106,14 @@ class SetorService:
         Retorna dict com 'protocolo', 'status', 'acao' ou lança ValueError em caso de erro.
         """
         acao = acao.upper()
-        if acao not in ACOES_VALIDAS:
+        
+        is_aprovar_dinamica = False
+        agencia_nome_dinamica = None
+        if acao.startswith("APROVAR_") and acao != "APROVAR_MANUAL":
+            agencia_nome_dinamica = acao[len("APROVAR_"):]
+            is_aprovar_dinamica = True
+
+        if acao not in ACOES_VALIDAS and not is_aprovar_dinamica:
             raise ValueError(f"Ação '{acao}' desconhecida. Opções: {sorted(ACOES_VALIDAS)}")
 
         sol = db.query(SolicitacaoModel).filter(SolicitacaoModel.id == solicitacao_id).first()
@@ -114,7 +121,13 @@ class SetorService:
             raise ValueError(f"Solicitação {solicitacao_id} não encontrada.")
 
         permitidas = ACOES_POR_STATUS.get(sol.status, set())
-        if acao not in permitidas:
+        
+        # Se for aprovação dinâmica e o status for PENDENTE_APROVACAO_SETOR_COTACAO, é permitido!
+        permitido_status = acao in permitidas
+        if not permitido_status and is_aprovar_dinamica and sol.status == "PENDENTE_APROVACAO_SETOR_COTACAO":
+            permitido_status = True
+
+        if not permitido_status:
             raise ValueError(
                 f"Ação '{acao}' não é permitida no status '{sol.status}'. "
                 f"Permitidas: {sorted(permitidas) or 'nenhuma'}"
@@ -132,8 +145,17 @@ class SetorService:
             except Exception as e:
                 logger.error(f"[Setor] Falha ao notificar viajante sobre pré-reprovação em {sol.protocolo}: {e}")
 
-        elif acao in ("APROVAR_TASTUR", "APROVAR_KONTRIP"):
-            agencia = "Tastur" if acao == "APROVAR_TASTUR" else "Kontrip"
+        elif is_aprovar_dinamica:
+            # Pegamos o nome exato da agência (ex: Tastur, Kontrip ou outra dinâmica)
+            # Para manter capitalização correta, tentamos achar no banco de dados ou cotações
+            agencia = agencia_nome_dinamica.title()
+            cotacao_existente = db.query(CotacaoModel).filter(
+                CotacaoModel.solicitacao_id == solicitacao_id
+            ).all()
+            for c in cotacao_existente:
+                if c.agencia_nome.upper() == agencia_nome_dinamica:
+                    agencia = c.agencia_nome
+                    break
             self._aprovar_agencia(db, sol, agencia)
 
         elif acao == "REPROVAR":
@@ -146,7 +168,7 @@ class SetorService:
                 logger.error(f"[Setor] Falha ao notificar viajante sobre reprovação em {sol.protocolo}: {e}")
 
         elif acao == "REENVIAR_AGENCIAS":
-            self._reenviar_agencias(sol)
+            self._reenviar_agencias(db, sol)
 
         db.commit()
         return {"protocolo": sol.protocolo, "status": sol.status, "acao": acao}
@@ -154,32 +176,37 @@ class SetorService:
     # ── Helpers internos ──────────────────────────────────────────────────────
 
     def _pre_aprovar(self, db: Session, sol: SolicitacaoModel) -> None:
-        """Pré-aprova a solicitação e solicita cotações às duas agências via link token."""
+        """Pré-aprova a solicitação e solicita cotações a todas as agências ativas via link token."""
         sol.status = "AGUARDANDO_COTACAO"
         db.flush()
         logger.info(f"[Setor] {sol.protocolo} pré-aprovado → AGUARDANDO_COTACAO")
 
-        # Cria token independente por agência (único para esta solicitação)
-        tok_tastur  = self._criar_token_agencia(db, sol, "Tastur",  "COTACAO")
-        tok_kontrip = self._criar_token_agencia(db, sol, "Kontrip", "COTACAO")
-        db.flush()
+        # Busca todas as agências ativas no banco
+        from app.infrastructure.orm.models import AgenciaModel
+        agencias = db.query(AgenciaModel).filter_by(ativo=True).all()
+        if not agencias:
+            lista_agencias = ["Tastur", "Kontrip"]
+        else:
+            lista_agencias = [a.agencia_nome for a in agencias]
 
-        # Registra tokens no GAS relay para acesso externo das agências
-        try:
-            from app.infrastructure.google_relay_service import get_relay
-            relay = get_relay()
-            if relay.disponivel():
-                relay.registrar_agencia(tok_tastur, sol)
-                relay.registrar_agencia(tok_kontrip, sol)
-        except Exception as e:
-            logger.warning(f"[Setor] Falha ao registrar tokens de agência no GAS: {e}")
+        tokens_dict = {}
+        for ag_nome in lista_agencias:
+            tok = self._criar_token_agencia(db, sol, ag_nome, "COTACAO")
+            db.flush()
+            tokens_dict[ag_nome] = tok.uuid
+
+            # Registra tokens no GAS relay para acesso externo das agências
+            try:
+                from app.infrastructure.google_relay_service import get_relay
+                relay = get_relay()
+                if relay.disponivel():
+                    relay.registrar_agencia(tok, sol)
+            except Exception as e:
+                logger.warning(f"[Setor] Falha ao registrar token da agência {ag_nome} no GAS: {e}")
 
         try:
             from app.infrastructure.email_service import EmailService
-            EmailService().enviar_email_agencias_cotacao(sol, {
-                "Tastur":  tok_tastur.uuid,
-                "Kontrip": tok_kontrip.uuid,
-            })
+            EmailService().enviar_email_agencias_cotacao(sol, tokens_dict)
         except Exception as e:
             logger.error(f"[Setor] Falha ao enviar e-mail às agências para {sol.protocolo}: {e}")
 
@@ -194,22 +221,33 @@ class SetorService:
         tok_voucher = self._criar_token_agencia(db, sol, agencia_nome, "VOUCHER")
         db.flush()
 
-        agencia_perdedora = "Kontrip" if agencia_nome == "Tastur" else "Tastur"
+        # Notificar todas as agências perdedoras dinamicamente
         try:
             from app.infrastructure.email_service import EmailService
             svc = EmailService()
             svc.enviar_email_agencia_vencedora(sol, agencia_nome, tok_voucher.uuid)
-            svc.enviar_email_agencia_perdedora(sol, agencia_perdedora)
+            
+            # Notifica as outras agências que cotaram ou que receberam token de cotação
+            tokens_cotacao = db.query(TokenAgenciaModel).filter_by(solicitacao_id=sol.id, finalidade="COTACAO").all()
+            outras_agencias = set(t.agencia_nome for t in tokens_cotacao if t.agencia_nome.lower() != agencia_nome.lower())
+            for outra in outras_agencias:
+                svc.enviar_email_agencia_perdedora(sol, outra)
+
             svc.enviar_email_viajante_aprovado(sol, agencia_nome)
         except Exception as e:
             logger.error(f"[Setor] Falha ao notificar partes em {sol.protocolo}: {e}")
 
-    def _reenviar_agencias(self, sol: SolicitacaoModel) -> None:
-        """Reenvia pedido de cotação às duas agências sem alterar o status."""
+    def _reenviar_agencias(self, db: Session, sol: SolicitacaoModel) -> None:
+        """Reenvia pedido de cotação a todas as agências ativas."""
         logger.info(f"[Setor] Reenvio de cotação solicitado para {sol.protocolo}")
+        
+        # Buscar tokens existentes de COTACAO para esta solicitação
+        tokens = db.query(TokenAgenciaModel).filter_by(solicitacao_id=sol.id, finalidade="COTACAO").all()
+        tokens_dict = {t.agencia_nome: t.uuid for t in tokens}
+        
         try:
             from app.infrastructure.email_service import EmailService
-            EmailService().enviar_email_agencias_cotacao(sol)
+            EmailService().enviar_email_agencias_cotacao(sol, tokens_dict)
         except Exception as e:
             logger.error(f"[Setor] Falha ao reenviar e-mails para {sol.protocolo}: {e}")
 

@@ -1,4 +1,4 @@
-﻿from google.cloud import bigquery
+from google.cloud import bigquery
 import logging
 from typing import Optional, Dict
 import re
@@ -10,13 +10,18 @@ class BigQueryService:
         self.project_id = project_id
         self.table_assignee = table_assignee
         self.table_funcionarios = table_funcionarios
+        self._client = None
 
-        try:
-            self.client = bigquery.Client(project=project_id)
-            logging.info(f"BigQueryService inicializado no projeto {project_id}.")
-        except Exception as e:
-            logging.error(f"Falha ao conectar no BigQuery: {e}")
-            self.client = None
+    @property
+    def client(self):
+        if self._client is None:
+            try:
+                self._client = bigquery.Client(project=self.project_id)
+                logging.info(f"BigQueryService: Cliente BigQuery inicializado com sucesso para o projeto '{self.project_id}'.")
+            except Exception as e:
+                logging.error(f"Falha ao conectar no BigQuery: {e}")
+                self._client = None
+        return self._client
 
     def buscar_colaborador(self, cpf_ou_matricula: str) -> Optional[Dict]:
         """

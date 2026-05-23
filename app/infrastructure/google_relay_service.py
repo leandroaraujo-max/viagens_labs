@@ -152,6 +152,14 @@ class GoogleRelayService:
             'carro_devolucao_cidade': getattr(solicitacao, 'carro_cidade_devolucao', '') or '',
             'observacoes_viajante':   getattr(solicitacao, 'observacoes_viajante', '') or '',
             'expirado_em':            token_agencia.data_expiracao.isoformat(),
+            'viajante_nome':          getattr(solicitacao, 'viajante_nome', '') or '',
+            'viajante_cpf':           getattr(solicitacao, 'viajante_cpf', '') or '',
+            'viajante_data_nascimento': getattr(solicitacao, 'viajante_data_nascimento', '') or '',
+            'viajante_celular':       getattr(solicitacao, 'viajante_celular', '') or '',
+            'viajante_matricula':     getattr(solicitacao, 'viajante_matricula', '') or '',
+            'viajante_centro_custo':  getattr(solicitacao, 'viajante_centro_custo', '') or '',
+            'preferencia_voo':        getattr(solicitacao, 'preferencia_voo', '') or '',
+            'preferencia_voo_volta':  getattr(solicitacao, 'preferencia_voo_volta', '') or '',
         }
         result = self._post(payload)
         ok = bool(result and result.get('ok'))

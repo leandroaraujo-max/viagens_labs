@@ -55,7 +55,7 @@ Viajante solicita  →  N1 aprova  →  N2 aprova (se aplicável)
 | Portal do Viajante | Painel do Setor |
 |:---:|:---:|
 | Login com credenciais AD + foto aérea de fundo | Tabela de solicitações com filtros e KPIs |
-| Formulário multi-passo (viajante, rota, preferências) | Modal comparativo de cotações Tastur vs Kontrip |
+| Formulário multi-passo (viajante, rota, preferências) | Modal comparativo dinâmico de cotações das agências |
 
 ### Funcionalidades por Perfil
 
@@ -75,7 +75,7 @@ Viajante solicita  →  N1 aprova  →  N2 aprova (se aplicável)
 - 🔒 Link de uso único — não pode ser reutilizado após decisão
 
 **Agência (Tastur / Kontrip)**
-- 🔐 Login exclusivo com credenciais cadastradas no sistema
+- 🔐 Acesso exclusivo e seguro via link de token enviado por e-mail (GAS Relay)
 - 📥 Visualiza solicitações aguardando cotação
 - 💰 Envia cotação detalhada por serviço (voo, hotel, carro, rodoviário)
 - 🔄 Pode atualizar cotação enquanto o setor não decidiu
@@ -83,9 +83,9 @@ Viajante solicita  →  N1 aprova  →  N2 aprova (se aplicável)
 **Setor de Viagens (admin)**
 - 🗂️ Painel com todas as solicitações, filtráveis por status, período, agência e busca
 - ⚡ Ações rápidas: pré-aprovar, reprovar, reenviar e-mail para agências
-- ⚖️ Comparativo lado a lado das cotações das duas agências
-- 🏆 Seleção da agência vencedora com notificação automática
-- 📈 Indicadores: 9 KPIs + gráficos de distribuição e volume mensal
+- ⚖️ Comparativo lado a lado e responsivo das cotações de todas as agências que enviaram ofertas
+- 🏆 Seleção da agência vencedora com notificação automática e geração dinâmica de tokens
+- 📈 Indicadores: KPIs dinâmicos + gráfico de distribuição por status + volume mensal por agência vencedora
 
 ---
 
@@ -363,8 +363,8 @@ viagens_labs/
 | Coluna | Tipo | Descrição |
 |---|---|---|
 | `id` | Integer PK | — |
-| `solicitacao_id` | FK + index | Suporta 2 cotações por solicitação (Tastur + Kontrip) |
-| `agencia_nome` | String | `Tastur` ou `Kontrip` |
+| `solicitacao_id` | FK + index | Suporta múltiplas cotações dinâmicas por solicitação |
+| `agencia_nome` | String | Nome da agência cadastrada no banco |
 | `aereo_companhia` / `aereo_valor` | String / Numeric | Dados do voo cotado |
 | `hotel_nome` / `hotel_valor_diaria` | String / Numeric | Dados do hotel cotado |
 | `rodov_empresa` / `rodov_valor` | String / Numeric | Dados rodoviários |
@@ -373,14 +373,16 @@ viagens_labs/
 | `observacoes` | Text | Observações da agência |
 | `criado_em` | DateTime | — |
 
-### Tabela `agencias_usuarios`
+### Tabela `usuarios_agencia` (AgenciaModel)
 | Coluna | Tipo | Descrição |
 |---|---|---|
 | `id` | Integer PK | — |
-| `username` | String unique | Login da agência |
-| `agencia_nome` | String | `Tastur` ou `Kontrip` |
-| `hashed_password` | String | bcrypt hash |
-| `ativo` | Boolean | Habilita/desabilita acesso |
+| `agencia_nome` | String index | Nome fantasia (ex: Tastur / Kontrip) |
+| `razao_social` / `cnpj` | String | Dados legais |
+| `email` | String | E-mail de contato da agência |
+| `cep` / `logradouro` / `numero` / `bairro` / `municipio` / `uf` | String | Dados de Endereço |
+| `banco_nome` / `agencia_bancaria` / `conta_bancaria` | String | Dados Bancários |
+| `ativo` | Boolean | Habilita/desabilita envio de novos tokens |
 
 > **Migrações seguras:** O `app/main.py` roda `_migracoes_seguras()` no startup que executa `ALTER TABLE … ADD COLUMN IF NOT EXISTS` e `DROP CONSTRAINT IF EXISTS` — sem necessidade de Alembic.
 
@@ -595,7 +597,7 @@ Todos os portais usam **Vue.js 3 (CDN) + TailwindCSS (CDN)** — sem node_module
   - Token `VOUCHER`: exibe tela de upload de vouchers (1 PDF por tipo de serviço)
 - **Modo login** (quando VPN disponível): login com usuário/senha bcrypt, lista todas as solicitações da agência
 - Formulário de cotação por serviço (aéreo, hotel, rodoviário, carro)
-- Suporta 2 cotações simultâneas (Tastur + Kontrip)
+- Suporta múltiplas cotações simultâneas de qualquer agência cadastrada e ativa
 - Tela de loading e tela de erro para tokens inválidos/expirados
 
 ### Painel do Setor (`painel.html`)
@@ -606,7 +608,7 @@ Todos os portais usam **Vue.js 3 (CDN) + TailwindCSS (CDN)** — sem node_module
   - `AGUARDANDO_COTACAO` → Reenviar e-mail para agências
   - `PENDENTE_APROVACAO_SETOR_COTACAO` → Modal comparativo de cotações (escolher Tastur ou Kontrip)
 - **Modal de Detalhe:** dados completos + cotações lado a lado com highlight do vencedor
-- **Aba Indicadores:** 9 KPIs + gráfico de distribuição por status + volume mensal (últimos 6 meses)
+- **Aba Indicadores:** KPIs gerados dinamicamente para cada agência cadastrada + gráfico de distribuição por status + volume mensal (últimos 6 meses)
 
 ---
 
@@ -639,111 +641,14 @@ Todos os portais usam **Vue.js 3 (CDN) + TailwindCSS (CDN)** — sem node_module
 
 ## 📊 Estado Atual e Próximos Passos
 
-### ✅ Implementado e Funcional
+### ✅ Implementado (Fase 6)
+- **Portal do Desenvolvedor (`dev.html`):** Dashboard gerencial com métricas e painel de variáveis de ambiente.
+- **Redesign de Agências:** Agências agora usam um modelo unificado (CNPJ, endereço, banco) sem necessidade de login. O acesso é exclusivo via Token/GAS.
 
-**Infraestrutura**
-- [x] Clean Architecture completa (api / core / domain / infrastructure / services / repositories)
-- [x] PostgreSQL com SQLAlchemy ORM + migrações automáticas no startup
-- [x] Nginx servindo frontend estático + proxy reverso para a API
-- [x] Imagem de fundo servida localmente (sem dependência de CDN externo)
-
-**Autenticação**
-- [x] Login AD (ldap3) com verificação de grupo para perfil (setor / viajante)
-- [x] Login de agências via bcrypt + PostgreSQL (para uso com VPN)
-- [x] Acesso de agências via token no e-mail — sem login, sem VPN, sem intranet
-- [x] JWT HS256 com perfil embarcado no token
-- [x] Guards de rota no frontend por `localStorage.perfil`
-
-**Fluxo de Aprovação**
-- [x] Cadeia N1 → N2 → Setor → Agências → Decisão do setor → Vouchers → Concluído
-- [x] Tokens UUID de aprovação com expiração (N1: 4h/24h, N2: 8h)
-- [x] Portal de aprovação standalone (sem login) para gestores
-- [x] Detecção de viagem emergencial (< 15 dias)
-- [x] Detecção de N1 de férias via BigQuery → redireciona automaticamente ao N2
-
-**Agências por Link de E-mail (Fase 5A — tokens)**
-- [x] `tokens_agencia` — tabela no banco com finalidade `COTACAO` / `VOUCHER`
-- [x] Token criado ao pré-aprovar (COTACAO, TTL 7 dias) e ao escolher vencedora (VOUCHER, TTL 14 dias)
-- [x] E-mail para agências inclui botão com link único por agência/solicitação
-- [x] `agencia.html` detecta `?token=` → carrega solicitação sem login
-- [x] Rotas sem auth: `GET /agencia/token/{uuid}`, `POST /agencia/token/{uuid}/cotacao`, `POST /agencia/token/{uuid}/voucher`
-- [x] `BASE_URL_AGENCIA` configurável no `.env` — independente de `BASE_URL`
-
-**GAS Relay — Portal Público para Aprovadores e Agências (Fase 5D)**
-- [x] `gas/Code.gs`: Web App GAS com portal de aprovação (N1/N2) e portal de cotação (agências)
-- [x] `doGet ?token=UUID` → portal HTML de aprovação acessível de qualquer lugar
-- [x] `doGet ?agencia_token=UUID` → formulário de cotação HTML servido pelo GAS
-- [x] `submitDecision(token, decisao, obs)` → agrava decisão na planilha Google Sheets
-- [x] `submitCotacao(agencia_token, dados)` → grava cotação na planilha Google Sheets
-- [x] `google_relay_service.py`: métodos `registrar_aprovacao`, `registrar_agencia`, `poll_decisoes`, `poll_cotacoes`, `marcar_processado`, `marcar_cotacao_processada`, `link_aprovacao`, `link_agencia`
-- [x] `aprovacao_relay_scheduler.py`: polling duplo — aprovações (N1/N2) + cotações de agências
-- [x] `setor_service._pre_aprovar()`: registra tokens Tastur e Kontrip no GAS após criar
-- [x] `email_service`: usa `link_agencia()` do relay quando disponível (fallback intranet)
-- [x] Deploy v4: `https://script.google.com/macros/s/AKfycbykFk0vwKSe2tRcdcFY5Tm8Gt7udb_bcued1qwAQl4XOSpqjJySiga6lTRZ8NKrbT1xKQ/exec`
-
-**Vouchers**
-- [x] `VoucherModel` + tabela `vouchers` no banco
-- [x] `voucher_service.py`: upload PDF/JPG/PNG (máx 20 MB) por tipo de serviço
-- [x] `_verificar_conclusao_vouchers()`: quando todos os tipos foram entregues → `CONCLUIDA` + e-mail ao viajante
-- [x] `POST /api/v1/vouchers/{id}/upload` (autenticado) + `POST /agencia/token/{uuid}/voucher` (por token)
-- [x] `agencia.html` exibe tela de upload por serviço quando `APROVADA_AGUARDANDO_VOUCHER`
-
-**Cotação Dupla**
-- [x] Duas agências cotam a mesma solicitação independentemente
-- [x] Setor vê comparativo lado a lado e escolhe a vencedora
-- [x] Upsert de cotação por `(solicitacao_id, agencia_nome)`
-
-**E-mails**
-- [x] 12+ templates HTML responsivos via SMTP relay corporativo
-- [x] Links para agências usam `BASE_URL_AGENCIA` (configurável)
-- [x] Token UUID embutido no link do e-mail — sem necessidade de login
-
-**Frontend**
-- [x] Portal do Viajante completo (login → formulário → histórico)
-- [x] Portal de Aprovação (link por e-mail, sem login)
-- [x] Portal da Agência: modo token (link por e-mail) + modo login (VPN)
-- [x] Painel do Setor (tabela + filtros + indicadores + KPIs + gráficos)
-
-**UX e Formulário (Fase 7)**
-- [x] Máscaras de data e telefone
-- [x] Cálculo automático de distância (Nominatim + Haversine) com sidebar de políticas
-- [x] Integração Duffel bidirecional: busca de ida e volta em chamadas separadas
-- [x] Datas independentes para locação de veículo (`carro_data_retirada` / `carro_data_devolucao`)
-- [x] Painel do setor exibe dados completos: colaborador, aprovadores N1/N2, preferências por serviço
-
----
-
-### 🔜 Próximos Passos
-
-#### Fase 5B — Motor SLA
-- [ ] `sla_scheduler.py`: thread daemon para lembretes de aprovação/cotação em atraso
-- [ ] Contadores `lembrete_n1_count` / `lembrete_cot_count` já existem no ORM
-
-#### Fase 5C — Casamento de viagens
-- [ ] Vincular/ignorar casamentos no painel do setor (colunas `status`, `operador_acao`, `grupo_viagem` já no ORM)
-
-#### Fase 5D — GAS Relay ✅ (concluído 22/05/2026)
-- [x] Portal público de aprovação via Google Apps Script
-- [x] Portal público de cotação de agências via Google Apps Script
-- [x] Scheduler de polling duplo (aprovações + cotações)
-
-#### Fase 6 — Portal do Viajante: Histórico completo
-- [ ] Página de detalhe com linha do tempo do fluxo de aprovação
-- [ ] Cancelamento de solicitação pelo viajante (status `AGUARDANDO_N1`)
-
-#### Fase 7 — GAS Relay para Vouchers
-- [ ] Estender `Code.gs` para portal de envio de vouchers (upload via Google Drive)
-- [ ] Ou manter fluxo de vouchers via intranet com VPN
-
-#### Fase 8 — Relatórios e Exportação
-- [ ] Exportação da lista de solicitações para CSV/Excel
-- [ ] Dashboard com gráfico de gastos por período
-- [ ] Relatório de viagens por colaborador / diretoria
-
-#### Fase 9 — Qualidade e Operação
-- [ ] Testes unitários com `pytest` para os services
-- [ ] Script de deploy / restart automático (Windows Task Scheduler ou NSSM)
-- [ ] Rotação de logs com `logging.handlers.RotatingFileHandler`
+### 🔜 Próximos Passos (Fase 7 e Estabilização)
+- **Correção Crítica (23/05):** Adaptar `dev.py` e `seed_agencia.py` à nova estrutura sem senhas.
+- **Solicitação para Terceiros:** Novo workflow substituindo a "Delegação". Usuário abre ticket anexando PDF de autorização para solicitar viagens em nome de outros (ex: diretores).
+- **Modernização UI/UX Premium:** Cotações do GAS em TailwindCSS + Glassmorphism (sem estrelas, com auto-complete do voo desejado pelo usuário). Grid responsivo no painel do setor.
 
 ---
 
@@ -942,4 +847,5 @@ Sempre fornecer o código completo do método/função alterado.
 
 ---
 
-*Última atualização: 22/05/2026 — Fase 5A concluída: acesso por token para agências externas (sem login/intranet/VPN), vouchers, APROVADA_AGUARDANDO_VOUCHER, e-mails vencedora/perdedora/viajante. Próximo: Fase 5B (SLA scheduler).*
+*Última atualização: 23/05/2026 — Estabilização geral e Dynamicização de Agências concluída: correção de ReferenceError do Vue 3 em fmtCnpj, bypass de tela preta na navegação de portais técnicos, KPI cards e filtros 100% dinâmicos por agência ativa, contagem inteligente de cotações para decisão e console terminal hacker de Logs do Sistema em tempo real.*
+

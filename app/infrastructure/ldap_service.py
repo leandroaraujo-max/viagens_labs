@@ -45,7 +45,7 @@ class ActiveDirectoryService:
                 conn.bind()
 
                 # Após autenticar, consultar os grupos (memberOf) do usuário
-                perfil = "viajante"
+                perfil = None
                 try:
                     conn.search(
                         search_base=settings.AD_BASE_DN,
@@ -75,14 +75,22 @@ class ActiveDirectoryService:
                                 f"[LDAP] '{username}' identificado como AGÊNCIA via AD "
                                 f"(membro de {settings.AD_GROUP_AGENCIAS})"
                             )
+                        elif any(settings.AD_GROUP_USERS.upper() in g for g in grupos):
+                            perfil = "viajante"
+                            logging.info(
+                                f"[LDAP] '{username}' autenticado como VIAJANTE "
+                                f"(membro de {settings.AD_GROUP_USERS})"
+                            )
                 except Exception as e_search:
-                    # Falha na busca de grupos não bloqueia o login — usa perfil padrão
                     logging.warning(
                         f"[LDAP] Não foi possível verificar grupos de '{username}': {e_search}. "
-                        "Perfil padrão: viajante."
+                        "Acesso bloqueado por segurança."
                     )
 
                 conn.unbind()
+                if perfil is None:
+                    logging.warning(f"[LDAP] '{username}' autenticado com sucesso no AD mas não pertence a nenhum grupo permitido.")
+                    return {"autenticado": False, "perfil": None, "sem_grupo": True}
                 return {"autenticado": True, "perfil": perfil}
 
             except LDAPException as e:
