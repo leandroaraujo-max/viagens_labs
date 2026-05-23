@@ -160,43 +160,64 @@ APROVADA_AGUARDANDO_VOUCHER
 ## 6. Estrutura dos Arquivos Principais
 
 ```
-app/
-├── main.py                              # Lifespan: migrações + schedulers (SLA + GAS relay)
-├── api/v1/endpoints/
-│   ├── auth.py                          # POST /auth/login (AD + agência bcrypt)
-│   ├── viagens.py                       # CRUD solicitações (viajante)
-│   ├── aprovacao.py                     # GET/POST por token (N1/N2, sem auth)
-│   ├── agencia.py                       # Login + token cotação/voucher (agências)
-│   ├── setor.py                         # Painel do setor (CRUD + ações)
-│   ├── duffel.py                        # Pesquisa de voos Duffel
-│   └── voucher.py                       # Upload de vouchers
-├── services/
-│   ├── viagens_service.py               # Criação de solicitações + registrar_cotacao_agencia
-│   ├── aprovacao_service.py             # N1/N2: iniciar + processar (inclui GAS relay)
-│   ├── setor_service.py                 # _pre_aprovar: cria tokens + registra no GAS
-│   ├── cotacao_service.py               # Registra cotação por token de agência
-│   └── voucher_service.py               # Upload + verificação de conclusão
-├── infrastructure/
-│   ├── google_relay_service.py          # Singleton: integra FastAPI ↔ GAS
-│   │   ├── registrar_aprovacao()        # N1/N2 → GAS
-│   │   ├── registrar_agencia()          # Token cotação → GAS
-│   │   ├── poll_decisoes()              # GAS → decisões de aprovação
-│   │   ├── poll_cotacoes()              # GAS → cotações de agências
-│   │   ├── marcar_processado()          # Marca decisão processada no GAS
-│   │   ├── marcar_cotacao_processada()  # Marca cotação processada no GAS
-│   │   ├── link_aprovacao()             # URL GAS ou fallback intranet
-│   │   └── link_agencia()              # URL GAS ou fallback intranet
-│   ├── aprovacao_relay_scheduler.py     # Thread daemon: poll GAS + processa
-│   │   ├── _processar_ciclo()           # Aprovações N1/N2
-│   │   └── _processar_ciclo_agencia()   # Cotações de agências
-│   ├── email_service.py                 # 12+ templates SMTP; usa link_agencia() quando GAS ativo
-│   ├── ldap_service.py                  # Autenticação AD
-│   ├── bigquery_service.py              # Hierarquia + situação do colaborador
-│   └── orm/models.py                    # Todos os modelos ORM
-gas/
-├── Code.gs                              # GAS Web App (aprovações + cotações agência)
-├── appsscript.json                      # Permissões e configurações do GAS
-└── .clasp.json                          # Script ID para clasp CLI
+viagens_labs/
+├── app/
+│   ├── main.py                         # Entrypoint FastAPI + migrações seguras e lifespan
+│   ├── api/
+│   │   ├── dependencies.py             # require_auth, require_setor, require_agencia, require_dev
+│   │   └── v1/
+│   │       ├── routers.py              # Registro de todos os routers da API
+│   │       └── endpoints/
+│   │           ├── auth.py             # POST /auth/login (AD)
+│   │           ├── viagens.py          # CRUD solicitações do viajante
+│   │           ├── aprovacao.py        # GET/POST aprovação por token N1/N2
+│   │           ├── agencia.py          # Acesso de agências por token ou credenciais
+│   │           ├── setor.py            # API do painel do setor (ações, listagem, agências)
+│   │           ├── duffel.py           # Integração de pesquisa de voos Duffel
+│   │           ├── dev.py              # API do Portal do Desenvolvedor (logs, QA, config)
+│   │           ├── terceiros.py        # [NOVO] Solicitações para Terceiros (termo em PDF)
+│   │           ├── hoteis.py           # [NOVO] Proxy seguro Google Places API para hotéis
+│   │           └── voucher.py          # Upload de vouchers por token
+│   ├── core/
+│   │   ├── config.py                   # Configurações Pydantic Settings
+│   │   └── security.py                 # JWT encode/decode, senhas hash bcrypt
+│   ├── domain/
+│   │   └── models/schemas.py           # Schemas Pydantic de requisição e resposta
+│   ├── infrastructure/
+│   │   ├── database.py                 # SQLAlchemy Engine e SessionLocal
+│   │   ├── orm/models.py               # Todos os modelos ORM (PostgreSQL)
+│   │   ├── ldap_service.py             # Autenticação AD + fallback mock
+│   │   ├── bigquery_service.py         # Busca de dados do viajante + fallback mock
+│   │   ├── email_service.py            # Envio SMTP relay (notificações do fluxo completo)
+│   │   ├── google_relay_service.py     # Singleton do Apps Script Relay
+│   │   └── aprovacao_relay_scheduler.py # Daemon polling: processa GAS ↔ DB
+│   └── services/
+│       ├── viagens_service.py          # Lógica de criação de solicitações
+│       ├── aprovacao_service.py        # Lógica de processamento de N1/N2
+│       ├── cotacao_service.py          # [ATUALIZADO] Contagem inteligente de cotações de agências ativas
+│       ├── setor_service.py            # [ATUALIZADO] Criação de tokens dinâmicos para agências ativas
+│       └── voucher_service.py          # Upload e conclusão com vouchers
+├── frontend/
+│   ├── index.html                      # Portal do Viajante (SPA em passos, Duffel e Terceiros)
+│   ├── portal_aprovacao.html           # Portal de Aprovação N1/N2 via token do e-mail
+│   ├── agencia.html                    # Portal da Agência (Cotações e Vouchers via token)
+│   ├── setor.html                      # [REESTRUTURADO] Painel do Setor com sidebar vertical e KPIs
+│   ├── dev.html                        # Portal do Desenvolvedor com console de logs ao vivo e QA
+│   ├── js/lib/                         # [NOVO] CDNs de Vue 3, Tailwind e Fontes salvos localmente (offline total)
+│   └── img/
+│       └── bg-aviao.jpg                # Imagem de fundo corporativa
+├── gas/
+│   ├── Code.gs                         # Apps Script Relay (Sheets Fila pública)
+│   ├── appsscript.json                 # Permissões do Google Script
+│   └── .clasp.json                     # clasp CLI settings
+├── service/                            # [NOVO] Wrapper para rodar como Serviço do Windows Server
+│   ├── viagenslabs_service.exe
+│   └── viagenslabs_service.xml
+├── scripts/                            # [NOVO] Scripts de suporte, carga e migrações
+│   ├── seed_agencia.py                 # Cadastra agências no DB
+│   └── migrate_add_carro_voo_volta.py  # Script pontual de DDL
+├── gerenciar_servidor.bat              # [NOVO] Script utilitário em lote de administração de serviços
+└── .env.example
 ```
 
 ---
@@ -209,21 +230,13 @@ Após o deploy v4, é necessário executar `setupAgencia()` no editor do Google 
 1. Acesse https://script.google.com/d/1VqosNh6_Sqv8vr_210MKHp0G5anbZJDmYtIAUw1WnfbPCVWOXtwMI8lY/edit
 2. Execute `setupAgencia()` no editor
 
-### ⚠️ Tokens presos (antigos, antes do GAS relay de agências)
-3 tokens em `tokens_agencia` com links intranet inacessíveis:
-- `6cb43680-e60f-4b3f-a630-6fb3fb09f6a8`
-- `2d0c8483-a18f-44dc-bd59-70033f130152`
-- `5b5a666b-93ed-4632-92d2-6f92075a74dc`
-
-Para recriar via `_pre_aprovar()` do setor (ação `PRE_APROVAR` na solicitação → novos tokens GAS são criados automaticamente), ou usar o endpoint de reenvio.
-
 ### Backlog Técnico
 | Fase | Item | Status |
 |---|---|---|
 | 5B | Motor SLA (lembretes de aprovação/cotação atrasados) | Pendente |
 | 6A | Portal do Desenvolvedor (`dev.html` e endpoints) | **Concluído e Homologado** |
 | 6B | Redesign de Agências (Sem login, acesso exclusivo GAS) | **Concluído e Homologado** |
-| 7A | Solicitação para Terceiros (Substituindo Delegação) | **Concluído e Homologado** |
+| 7A | Solicitação para Terceiros (Substituindo Delegação c/ PDF) | **Concluído e Homologado** |
 | 7B | UI/UX Premium (Painel Responsivo + Cotações Dinâmicas) | **Concluído e Homologado** |
 | 8 | Histórico com linha do tempo no portal do viajante | Pendente |
 | 9 | Exportação CSV/Excel + dashboard de gastos | Pendente |
@@ -231,12 +244,15 @@ Para recriar via `_pre_aprovar()` do setor (ação `PRE_APROVAR` na solicitaçã
 ### 🚨 ESTABILIZAÇÃO GERAL E CORREÇÃO DE BUGS (23/05/2026) — 100% RESOLVIDA
 Todas as instabilidades recentes e pendências críticas foram resolvidas com absoluto sucesso:
 1. **Fim da Tela Preta:** A transição do avião foi mantida nos portais de ponta (viajante e setor), mas os portais técnicos (Dev e Agência) agora navegam de forma limpa via `target="_blank"`, evitando o travamento da tela preta.
-2. **Correção de ReferenceError do Vue 3:** Identificamos e renomeamos as propriedades reativas que iniciavam com `_` (como `_toISO`, `_parseDateBR` e `_fmtCnpj`), que violavam as restrições de nomes do Vue 3 e quebravam o template. Agora o Portal do Setor e o Viajante carregam de forma instantânea e sem erros de console.
+2. **Correção de ReferenceError do Vue 3:** Identificamos e renomeamos as propriedades reativas que iniciavam com `_` (como `_toISO`, `_parseDateBR`, `_isoToDisplay` e `_fmtCnpj`), que violavam as restrições de nomes do Vue 3 e quebravam o template. Agora o Portal do Setor e o Viajante carregam de forma instantânea e sem erros de console.
 3. **Dynamicização Completa das Agências de Viagem:** Removemos qualquer referência hardcoded a Tastur e Kontrip. O sistema agora lê a lista de agências ativas diretamente do banco. O dashboard do setor exibe KPIs reativos e cores automáticas para cada agência ativa, e os botões de ação e escolha no detalhe da viagem são renderizados dinamicamente sob demanda.
 4. **Acoplamento de Status Inteligente:** No backend (`cotacao_service.py`), a transição para aprovação do setor agora aguarda a resposta exata de todas as agências registradas com o flag `ativo = True` (ou fallback padrão de 2 se o banco de dados de agências estiver limpo).
 5. **Logs do Sistema (Console Hacker):** Desenvolvemos um console estilo terminal hacker premium escuro com atualização em tempo real de 3s para monitoramento de logs de FastAPI e Nginx.
-6. **Mocks de BigQuery:** O sistema agora cai automaticamente em mocks robustos offline caso o BigQuery ou gcloud ADC local falhem, permitindo desenvolvimento contínuo e estável.
-7. **Database Migrations em PostgreSQL:** Corrigimos os erros de sintaxe SQLite no script de migração segura (`app/main.py`), permitindo a compatibilidade fluida com PostgreSQL em produção.
+6. **Mocks de BigQuery & LDAP:** O sistema agora cai automaticamente em mocks robustos offline caso o BigQuery ou o LDAP (gcloud ADC local ou rede intranet) falhem, permitindo desenvolvimento contínuo e estável sem conectividade com a rede corporativa.
+7. **Database Migrations em PostgreSQL:** Corrigimos os erros de sintaxe SQLite no script de migração segura (`app/main.py`), permitindo a compatibilidade fluida com PostgreSQL em produção (criação agnóstica via SQLAlchemy `create_all()`).
+8. **Segurança Aprimorada (Hotéis):** A chave do Google Places API foi retirada do front-end e isolada no backend (`/api/v1/hoteis/sugestoes`), consultando via proxy seguro de forma transparente.
+9. **Independência de Rede (CDNs Offline):** Vue 3 CDN, TailwindCSS CDN e fontes Inter foram empacotadas no diretório local `frontend/js/lib/` para permitir que o sistema funcione de forma 100% offline em redes de intranet fechadas.
+10. **Windows Service & gerenciar_servidor.bat:** Embalagem e scripts bat utilitários para instalar e gerenciar o FastAPI como serviço estável de segundo plano no Windows Server.
 
 ---
 
@@ -247,7 +263,7 @@ Todas as instabilidades recentes e pendências críticas foram resolvidas com ab
 | Idioma do código | Inglês (variáveis, funções, classes) |
 | Idioma dos comentários | Português |
 | Regra de geração IA | **NUNCA** use `...`, `# ...` ou `#existing code` — sempre código completo |
-| Migrations | `ALTER TABLE … ADD COLUMN IF NOT EXISTS` em `app/main.py` |
+| Migrations | `ALTER TABLE … ADD COLUMN IF NOT EXISTS` ou `create_all()` no startup |
 | Imports circulares | Resolvidos com lazy import dentro das funções quando necessário |
 | Error handling | Log + continuação (não deixar scheduler morrer por 1 falha) |
 
@@ -263,7 +279,10 @@ Todas as instabilidades recentes e pendências críticas foram resolvidas com ab
 | `4e303a6` | clasp push + deploy v3 |
 | `88c8a61` | Frontend: seção voo de volta + hint botão Avançar |
 | `139b9b9` | Fluxo aprovação: N2 apenas como escalação |
-| *(atual)* | Dynamicização completa de agências, correção de tela preta, logs hacker, mocks BigQuery e correções Vue 3 |
+| `d778e77` | CRUD de agências no painel do setor + sidebar nav vertical |
+| `90d232a` | feat: dynamicizacao de agencias, telemetria de logs, mocks BigQuery e correcoes Vue 3 |
+| `15cabd1` | Merge branch 'main' de viagens_labs (integração remota) |
+| *(atual)* | Atualização geral de documentação técnica (HANDOFF e README) e publicação final |
 
 ---
 

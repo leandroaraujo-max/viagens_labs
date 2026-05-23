@@ -641,14 +641,23 @@ Todos os portais usam **Vue.js 3 (CDN) + TailwindCSS (CDN)** — sem node_module
 
 ## 📊 Estado Atual e Próximos Passos
 
-### ✅ Implementado (Fase 6)
-- **Portal do Desenvolvedor (`dev.html`):** Dashboard gerencial com métricas e painel de variáveis de ambiente.
+### ✅ Implementado (Fase 6 & Fase 7)
+- **Portal do Desenvolvedor (`dev.html`):** Dashboard gerencial completo com métricas de telemetria, painel de variáveis de ambiente do `.env` sanitizadas e console terminal hacker escuro para acompanhamento de logs em tempo real (FastAPI, Nginx, wrapper do Windows Service) com atualização automática a cada 3 segundos.
+- **Gestão de QA & Mocks Locais:** Área de gerenciamento no portal do desenvolvedor com o CRUD de usuários testadores de QA (`UsuarioQATesteModel`). O fluxo de e-mails de viagens criadas por esses usuários é automaticamente desviado para eles mesmos, evitando span em gerentes e diretores reais. Além disso, fallbacks robustos offline do BigQuery e LDAP foram introduzidos para viabilizar desenvolvimento e testes sem conectividade de rede corporativa Magalu.
+- **Exclusão Avançada de Solicitações:** Botão administrativo para excluir fisicamente uma solicitação de ponta a ponta no banco, executando uma cascata manual completa (logs, casamentos, vouchers, tokens de agência/aprovação, cotações).
 - **Redesign de Agências:** Agências agora usam um modelo unificado (CNPJ, endereço, banco) sem necessidade de login. O acesso é exclusivo via Token/GAS.
+- **Dynamicização Completa de Agências:** Acoplamento inteligente baseado no flag `ativo = True` das agências no banco relacional. O backend (`cotacao_service.py`) conta de forma flexível as agências ativas e espera a resposta exata de todas para alterar o status do fluxo. No painel do setor (`setor.html`), KPIs reativos, cores exclusivas e botões de ação comparativa lado a lado funcionam de forma totalmente responsiva e dinâmica.
+- **Solicitação para Terceiros:** Novo workflow completo substituindo a delegação legada. O viajante pode anexar termos em PDF (até 10MB) solicitando autorização permanente para realizar viagens em nome de gerentes/diretores. O setor avalia e aprova/reprova o ticket de autorização na interface.
+- **Segurança da Google Places API (Hotéis):** A chave do Places API foi removida inteiramente do código front-end exposto e isolada no backend através de um proxy seguro e transparente em `/api/v1/hoteis/sugestoes`.
+- **Independência de Rede (CDNs Offline):** Os pacotes browser-ready do Vue.js 3 e TailwindCSS foram baixados no repositório (`frontend/js/lib/`) eliminando a dependência de conexões de internet externa na intranet.
+- **FastAPI Windows Service Wrapper:** Configuração completa com arquivos executável wrapper e XML configurável para rodar a aplicação em segundo plano nativamente no Windows Server via script `gerenciar_servidor.bat`.
+- **Bypass de Tela Preta:** Melhoria de acessibilidade navegando de forma limpa via `target="_blank"` em links de portais de suporte técnico para evitar bloqueios de transição.
 
-### 🔜 Próximos Passos (Fase 7 e Estabilização)
-- **Correção Crítica (23/05):** Adaptar `dev.py` e `seed_agencia.py` à nova estrutura sem senhas.
-- **Solicitação para Terceiros:** Novo workflow substituindo a "Delegação". Usuário abre ticket anexando PDF de autorização para solicitar viagens em nome de outros (ex: diretores).
-- **Modernização UI/UX Premium:** Cotações do GAS em TailwindCSS + Glassmorphism (sem estrelas, com auto-complete do voo desejado pelo usuário). Grid responsivo no painel do setor.
+### 🔜 Próximos Passos (Fases Futuras)
+- **Fase 5B: Motor SLA** (lembretes de aprovação/cotação atrasados com daemon).
+- **Fase 5C: Casamento completo** (vincular/ignorar no painel do setor em interface visual).
+- **Fase 6: Histórico com linha do tempo** no portal do viajante.
+- **Fase 7: GAS relay para vouchers** (upload via Google Drive) OU VPN para agências.
 
 ---
 
@@ -725,25 +734,30 @@ Repo: https://github.com/leandroaraujo-max/viagens_labs
 Branch: main | Workspace local: C:\Projetos\viagens_labs\
 
 Stack: Python 3.14, FastAPI, SQLAlchemy ORM, PostgreSQL :5433, ldap3 (AD), JWT HS256,
-       Vue.js 3 CDN, TailwindCSS CDN, Nginx (Windows)
+       Vue.js 3 CDN (ou lib offline), TailwindCSS (ou lib offline), Nginx (Windows)
 
 Como rodar o backend:
   cd C:\Projetos\viagens_labs
   $env:PYTHONPATH="."; .\venv\Scripts\uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
+Como gerenciar como serviço Windows Server:
+  gerenciar_servidor.bat (opções de instalar, iniciar, parar, remover serviço)
+
 Banco de Dados:
   PostgreSQL porta 5433, DB: solicitacao_viagens
   URL: postgresql://postgres:Magazine%40123@127.0.0.1:5433/solicitacao_viagens?client_encoding=utf8
-  Migrações: automáticas no startup via _migracoes_seguras() em app/main.py
+  Migrações: automáticas no startup via create_all() em app/main.py
 
 Arquitetura: Clean Architecture
-  app/api/v1/endpoints/  → auth, viagens, aprovacao, agencia, setor, duffel, voucher
+  app/api/v1/endpoints/  → auth, viagens, aprovacao, agencia, setor, duffel, dev, terceiros, hoteis, voucher
   app/services/          → viagens, aprovacao, cotacao, casamento, setor, voucher
   app/infrastructure/    → database, ldap_service, bigquery_service, email_service,
                            duffel_service, google_relay_service, aprovacao_relay_scheduler
   app/domain/models/     → schemas.py (Pydantic)
-  frontend/              → index.html, portal_aprovacao.html, agencia.html, painel.html
+  frontend/              → index.html, portal_aprovacao.html, agencia.html, setor.html, dev.html
+  frontend/js/lib/       → libs locais do Vue 3 e Tailwind (suporte 100% offline)
   gas/                   → Code.gs (relay GAS), appsscript.json, .clasp.json
+  service/               → viagenslabs_service.exe e XML do serviço Windows
 
 GAS Relay (aprovações externas + cotações de agências):
   Script ID : 1VqosNh6_Sqv8vr_210MKHp0G5anbZJDmYtIAUw1WnfbPCVWOXtwMI8lY
@@ -754,7 +768,7 @@ GAS Relay (aprovações externas + cotações de agências):
   Setup GAS : executar setup() e setupAgencia() no editor do GAS (uma vez)
   clasp     : cd gas && clasp push --force && clasp deploy --description "..."
 
-Fluxo de status ATUAL (22/05/2026):
+Fluxo de status ATUAL (23/05/2026):
   AGUARDANDO_N1
     ├─ N1 férias (BQ SITUACAO contém substring 'ferias') → AGUARDANDO_N2
     ├─ N1 aprova → PENDENTE_PRE_APROVACAO_SETOR  (N2 apenas se N1 de férias)
@@ -764,20 +778,20 @@ Fluxo de status ATUAL (22/05/2026):
     └─ N2 reprova → REPROVADA
   PENDENTE_PRE_APROVACAO_SETOR
     ├─ Setor pré-aprova → AGUARDANDO_COTACAO
-    |   + cria TokenAgenciaModel(finalidade=COTACAO, TTL=7d) para Tastur e Kontrip
+    |   + busca agências ativas (ativo=True no DB), cria TokenAgenciaModel(COTACAO, TTL=7d) para cada uma
     |   + registra tokens no GAS relay (portal de cotação público)
     |   + e-mail com link GAS?agencia_token=UUID (um por agência)
     └─ Setor pré-reprova → REPROVADA
   AGUARDANDO_COTACAO
-    ├─ 1 agência cota → COTACAO_ENVIADA
-    └─ 2 agências cotam → PENDENTE_APROVACAO_SETOR_COTACAO
+    ├─ Agências cotam via link token (sem login)
+    └─ Cotações recebidas >= Qtd de agências ativas no banco (ou fallback de 2) → PENDENTE_APROVACAO_SETOR_COTACAO
   PENDENTE_APROVACAO_SETOR_COTACAO
-    ├─ Setor aprova Tastur/Kontrip → APROVADA_AGUARDANDO_VOUCHER
+    ├─ Setor escolhe cotação vencedora (ação APROVAR_<NOME_AGENCIA>) → APROVADA_AGUARDANDO_VOUCHER
     |   + cria TokenAgenciaModel(finalidade=VOUCHER, TTL=14d) para vencedora
-    |   + e-mail vencedora (link voucher), perdedora, viajante
+    |   + e-mail vencedora (link voucher), perdedoras (notifica todas), viajante
     └─ Setor reprova → REPROVADA
   APROVADA_AGUARDANDO_VOUCHER
-    └─ Todos vouchers entregues → CONCLUIDA + e-mail viajante
+    └─ Todos vouchers entregues → CONCLUIDA + e-mail viajante com vouchers anexados
 
 ACESSO DAS AGÊNCIAS (externas — via GAS relay, sem intranet/VPN):
   Agências recebem e-mail com link GAS_RELAY_URL?agencia_token=UUID
@@ -802,20 +816,22 @@ Variáveis de ambiente importantes (.env):
   QA_APROVADOR_EMAIL    = redireciona tokens de aprovação N1/N2 para testador
 
 Tabelas ORM (app/infrastructure/orm/models.py):
-  SolicitacaoModel       → solicitacoes
-  TokenAprovacaoModel    → tokens_aprovacao
-  TokenAgenciaModel      → tokens_agencia (finalidade: COTACAO/VOUCHER)
-  CotacaoModel           → cotacoes
-  VoucherModel           → vouchers
-  CasamentoModel         → casamentos
-  UsuarioAgenciaModel    → usuarios_agencia
-  UserProfileModel       → user_profiles
+  SolicitacaoModel           → solicitacoes
+  TokenAprovacaoModel        → tokens_aprovacao
+  TokenAgenciaModel          → tokens_agencia (finalidade: COTACAO/VOUCHER)
+  CotacaoModel               → cotacoes
+  VoucherModel               → vouchers
+  CasamentoModel             → casamentos
+  AgenciaModel               → usuarios_agencia (CRUD completo no painel do setor)
+  UserProfileModel           → user_profiles
+  AutorizacaoTerceiroModel   → autorizacoes_terceiros (Solicitação para Terceiros c/ PDF)
+  UsuarioQATesteModel        → usuarios_qa_teste (Controle de desvio de e-mails para QA)
 
 setor.py — padrão atual:
   _build_setor_response() usa model_validate via sol.__table__.columns
   Novos campos são incluídos automaticamente — sem mapeamento manual
 
-painel.html — modal de detalhe exibe 6 seções:
+setor.html (Painel) — modal de detalhe exibe 6 seções:
   1. Dados do Colaborador (viajante_*)
   2. Cadeia de Aprovação (aprovador_n1/n2_*)
   3. Preferências Aéreas (trecho, período, bagagem, assento, voo ida/volta Duffel)
@@ -828,18 +844,13 @@ N1 em Férias:
   aprovacao_service._aprovador_esta_de_ferias() → substring 'ferias' (sem acento)
 
 AD Groups:
-  G_ACCESS_VIAGENSLABS_ADMINS   → perfil "setor"    → /painel.html
+  G_ACCESS_VIAGENSLABS_ADMINS   → perfil "setor"    → /setor.html
   G_ACCESS_VIAGENSLABS_USERS    → perfil "viajante" → /index.html
   G_ACCESS_VIAGENSLABS_AGENCIAS → perfil "agencia_ad" (reservado para VPN futura)
+  G_ACCESS_VIAGENSLABS_DEV      → perfil "dev"      → /dev.html (Acesso irrestrito)
 
 SMTP: smtpml.magazineluiza.intranet:25 | De: viagenslabs@luizalabs.com
 BQ: maga-bigdata.kirk.assignee + maga-bigdata.mlpap.mag_v_funcionarios_ativos
-
-PRÓXIMOS PASSOS:
-  Fase 5B: Motor SLA (sla_scheduler.py — lembretes N1/cotacao)
-  Fase 5C: Casamento completo (vincular/ignorar no painel do setor)
-  Fase 6: Histórico com linha do tempo no portal do viajante
-  Fase 7: GAS relay para vouchers (upload via Google Drive) OU VPN para agências
 
 Regra crítica ao gerar código: NUNCA use '...', '# ...' ou '#existing code'.
 Sempre fornecer o código completo do método/função alterado.
