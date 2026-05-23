@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portal Dev — ViagensLabs</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
+          colors: {
+            dev: {
+              bg:      '#0a0f1e',
+              panel:   '#0f172a',
+              card:    '#1e293b',
+              border:  '#334155',
+              accent:  '#6366f1',
+              green:   '#22c55e',
+              yellow:  '#f59e0b',
+              red:     '#ef4444',
+              cyan:    '#06b6d4',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    [v-cloak] { display: none !important; }
+    body { background: #0a0f1e; font-family: 'Inter', sans-serif; }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    .glow { box-shadow: 0 0 20px rgba(99,102,241,0.3); }
+    .glow-green { box-shadow: 0 0 12px rgba(34,197,94,0.25); }
+    .badge-status { @apply text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide; }
+  </style>
+</head>
+<body class="font-sans antialiased text-slate-300">
+<div id="app" v-cloak class="min-h-screen">
+
+  <!-- ══════════════════════ LOGIN ══════════════════════════════════════════ -->
+  <div v-if="tela === 'login'" class="min-h-screen flex items-center justify-center p-4"
+       style="background: radial-gradient(ellipse at 60% 20%, rgba(99,102,241,0.15) 0%, transparent 60%), #0a0f1e;">
+    <div class="w-full max-w-sm">
+      <!-- Logo / título -->
+      <div class="text-center mb-8">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 mb-4 glow">
+          <svg class="w-8 h-8 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+          </svg>
+        </div>
+        <h1 class="text-2xl font-bold text-white tracking-tight">Portal do Desenvolvedor</h1>
+        <p class="text-slate-500 text-xs mt-1 font-mono">G_ACCESS_VIAGENSLABS_DEV</p>
+      </div>
+
+      <div class="bg-dev-card border border-dev-border rounded-2xl p-6">
+        <div v-if="loginErro" class="mb-4 p-3 bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-lg">
+          {{ loginErro }}
+        </div>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">Usuário AD</label>
+            <input v-model="loginForm.username" @keyup.enter="realizarLogin" type="text" autocomplete="username"
+                   placeholder="username"
+                   class="w-full bg-dev-panel border border-dev-border text-slate-200 rounded-lg px-3 py-2.5 text-sm font-mono focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 placeholder-slate-600">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">Senha</label>
+            <input v-model="loginForm.password" @keyup.enter="realizarLogin" type="password" autocomplete="current-password"
+                   placeholder="••••••••"
+                   class="w-full bg-dev-panel border border-dev-border text-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 placeholder-slate-600">
+          </div>
+          <button @click="realizarLogin" :disabled="loginCarregando"
+                  class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-lg text-sm transition disabled:opacity-60 flex items-center justify-center gap-2">
+            <svg v-if="loginCarregando" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+            </svg>
+            {{ loginCarregando ? 'Autenticando…' : 'Entrar' }}
+          </button>
+        </div>
+        <p class="text-center text-slate-600 text-xs mt-4">Acesso restrito — grupo AD obrigatório</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ PORTAL PRINCIPAL ═══════════════════════════════ -->
+  <div v-else-if="tela === 'portal'" class="min-h-screen flex flex-col">
+
+    <!-- Topbar -->
+    <header class="bg-dev-panel border-b border-dev-border px-6 py-3 flex items-center gap-4 sticky top-0 z-40">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-indigo-600/20 border border-indigo-500/40 flex items-center justify-center">
+          <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+          </svg>
+        </div>
+        <div>
+          <span class="text-white font-bold text-sm">ViagensLabs</span>
+          <span class="text-indigo-400 text-xs font-mono ml-1.5">/ dev</span>
+        </div>
+      </div>
+
+      <!-- Tabs de navegação -->
+      <nav class="flex gap-1 ml-6 flex-1">
+        <button v-for="tab in tabs" :key="tab.id" @click="abaAtiva = tab.id"
+                :class="abaAtiva === tab.id ? 'bg-indigo-600/20 text-indigo-300 border-indigo-500/40' : 'text-slate-400 hover:text-slate-200 border-transparent hover:border-dev-border'"
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition">
+          <span>{{ tab.icon }}</span> {{ tab.label }}
+        </button>
+      </nav>
+
+      <div class="flex items-center gap-3 shrink-0">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+          <span class="text-xs font-mono text-slate-400">{{ nomeUsuario }}</span>
+        </div>
+        <button @click="logout" class="text-slate-500 hover:text-red-400 transition text-xs font-semibold px-2 py-1 rounded border border-dev-border hover:border-red-500/40">
+          Sair
+        </button>
+      </div>
+    </header>
+
+    <!-- Conteúdo -->
+    <main class="flex-1 p-6 overflow-auto">
+
+      <!-- ── ABA: Dashboard ──────────────────────────────────────────────── -->
+      <div v-if="abaAtiva === 'dashboard'">
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h2 class="text-xl font-bold text-white">Dashboard</h2>
+            <p class="text-slate-500 text-xs mt-0.5">Visão geral da plataforma em tempo real</p>
+          </div>
+          <button @click="carregarStats" :disabled="statsCarregando"
+                  class="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-dev-card border border-dev-border rounded-lg text-slate-400 hover:text-slate-200 transition">
+            <svg :class="statsCarregando ? 'animate-spin' : ''" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            Atualizar
+          </button>
+        </div>
+
+        <!-- Métricas -->
+        <div v-if="stats" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div class="bg-dev-card border border-dev-border rounded-xl p-4">
+            <p class="text-xs text-slate-500 uppercase tracking-wide font-semibold">Total Solicitações</p>
+            <p class="text-3xl font-bold text-white mt-1">{{ stats.total_solicitacoes }}</p>
+          </div>
+          <div class="bg-dev-card border border-dev-border rounded-xl p-4">
+            <p class="text-xs text-slate-500 uppercase tracking-wide font-semibold">Agências Ativas</p>
+            <p class="text-3xl font-bold text-dev-cyan mt-1">{{ stats.total_agencias }}</p>
+          </div>
+          <div class="bg-dev-card border border-dev-border rounded-xl p-4">
+            <p class="text-xs text-slate-500 uppercase tracking-wide font-semibold">Cotações</p>
+            <p class="text-3xl font-bold text-dev-yellow mt-1">{{ stats.total_cotacoes }}</p>
+          </div>
+          <div class="bg-dev-card border border-dev-border rounded-xl p-4">
+            <p class="text-xs text-slate-500 uppercase tracking-wide font-semibold">Vouchers</p>
+            <p class="text-3xl font-bold text-dev-green mt-1">{{ stats.total_vouchers }}</p>
+          </div>
+        </div>
+
+        <!-- Status breakdown -->
+        <div v-if="stats" class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+          <div class="bg-dev-card border border-dev-border rounded-xl p-4">
+            <h3 class="text-sm font-semibold text-slate-300 mb-3">Distribuição por Status</h3>
+            <div class="space-y-2">
+              <div v-for="(count, status) in stats.por_status" :key="status" class="flex items-center gap-3">
+                <span :class="corStatus(status)" class="badge-status w-44 text-center">{{ status.replace(/_/g,' ') }}</span>
+                <div class="flex-1 bg-dev-panel rounded-full h-1.5 overflow-hidden">
+                  <div class="h-full rounded-full transition-all duration-500"
+                       :class="corBarraStatus(status)"
+                       :style="{ width: Math.round((count / stats.total_solicitacoes) * 100) + '%' }"></div>
+                </div>
+                <span class="text-xs font-mono text-slate-400 w-8 text-right">{{ count }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Atividade recente -->
+          <div class="bg-dev-card border border-dev-border rounded-xl p-4">
+            <h3 class="text-sm font-semibold text-slate-300 mb-3">Atividade Recente</h3>
+            <div v-if="atividadeCarregando" class="flex justify-center py-4">
+              <div class="animate-spin w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full"></div>
+            </div>
+            <div v-else class="space-y-2 max-h-64 overflow-y-auto pr-1">
+              <div v-for="a in atividade" :key="a.protocolo + a.atualizado_em"
+                   class="flex items-start justify-between gap-2 py-1.5 border-b border-dev-border/50 last:border-0">
+                <div class="min-w-0">
+                  <p class="text-xs font-mono text-indigo-300">{{ a.protocolo }}</p>
+                  <p class="text-[10px] text-slate-500 truncate">{{ a.viajante }} → {{ a.destino }}</p>
+                </div>
+                <div class="shrink-0 text-right">
+                  <span :class="corStatus(a.status)" class="badge-status">{{ a.status.replace(/_/g,' ').slice(0,12) }}</span>
+                  <p class="text-[10px] text-slate-600 mt-0.5">{{ formatarTempo(a.atualizado_em) }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Acesso rápido aos portais -->
+        <div>
+          <h3 class="text-sm font-semibold text-slate-300 mb-3">Portais da Plataforma</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <a v-for="p in portais" :key="p.url" :href="p.url" target="_blank"
+               class="bg-dev-card border border-dev-border hover:border-indigo-500/50 rounded-xl p-4 transition group cursor-pointer block">
+              <div class="text-3xl mb-2">{{ p.icon }}</div>
+              <p class="text-sm font-semibold text-slate-200 group-hover:text-white transition">{{ p.nome }}</p>
+              <p class="text-xs text-slate-500 mt-0.5">{{ p.desc }}</p>
+              <p class="text-[10px] font-mono text-indigo-400/60 mt-2">{{ p.grupo }}</p>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ABA: Solicitações ───────────────────────────────────────────── -->
+      <div v-if="abaAtiva === 'solicitacoes'">
+        <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
+          <h2 class="text-xl font-bold text-white">Solicitações</h2>
+          <div class="flex gap-2 flex-wrap">
+            <input v-model="solFiltro.busca" @input="carregarSolicitacoes(true)"
+                   placeholder="Protocolo, usuário, destino…"
+                   class="bg-dev-card border border-dev-border text-sm text-slate-200 px-3 py-1.5 rounded-lg focus:outline-none focus:border-indigo-500 placeholder-slate-600 w-56 font-mono">
+            <select v-model="solFiltro.status" @change="carregarSolicitacoes(true)"
+                    class="bg-dev-card border border-dev-border text-sm text-slate-300 px-3 py-1.5 rounded-lg focus:outline-none focus:border-indigo-500">
+              <option value="">Todos os status</option>
+              <option v-for="s in statusOpcoes" :key="s" :value="s">{{ s }}</option>
+            </select>
+            <button @click="carregarSolicitacoes(true)"
+                    class="px-3 py-1.5 bg-indigo-600/20 border border-indigo-500/40 text-indigo-300 rounded-lg text-sm hover:bg-indigo-600/30 transition">
+              Filtrar
+            </button>
+          </div>
+        </div>
+        <div class="bg-dev-card border border-dev-border rounded-xl overflow-hidden">
+          <div v-if="solCarregando" class="flex justify-center py-10">
+            <div class="animate-spin w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full"></div>
+          </div>
+          <div v-else-if="!solicitacoes.length" class="text-center py-10 text-slate-500 text-sm">
+            Nenhuma solicitação encontrada.
+          </div>
+          <div v-else class="overflow-x-auto">
+            <table class="w-full text-xs">
+              <thead class="border-b border-dev-border">
+                <tr class="text-slate-500 uppercase tracking-wide text-[10px]">
+                  <th class="px-4 py-3 text-left font-semibold">Protocolo</th>
+                  <th class="px-4 py-3 text-left font-semibold">Viajante</th>
+                  <th class="px-4 py-3 text-left font-semibold hidden md:table-cell">Destino</th>
+                  <th class="px-4 py-3 text-left font-semibold hidden lg:table-cell">Serviço</th>
+                  <th class="px-4 py-3 text-left font-semibold">Status</th>
+                  <th class="px-4 py-3 text-left font-semibold hidden lg:table-cell">Criado</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-dev-border/50">
+                <tr v-for="s in solicitacoes" :key="s.id" class="hover:bg-dev-panel/50 transition">
+                  <td class="px-4 py-3 font-mono text-indigo-300">{{ s.protocolo }}</td>
+                  <td class="px-4 py-3">
+                    <p class="text-slate-200 font-semibold">{{ s.viajante_nome || s.solicitante }}</p>
+                    <p class="text-slate-500 font-mono text-[10px]">{{ s.solicitante }}</p>
+                  </td>
+                  <td class="px-4 py-3 text-slate-400 hidden md:table-cell">{{ s.destino }}</td>
+                  <td class="px-4 py-3 text-slate-400 hidden lg:table-cell">{{ s.tipo_servico }}</td>
+                  <td class="px-4 py-3">
+                    <span :class="corStatus(s.status)" class="badge-status">{{ s.status.replace(/_/g,' ') }}</span>
+                  </td>
+                  <td class="px-4 py-3 text-slate-500 font-mono hidden lg:table-cell">{{ formatarData(s.data_criacao) }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="flex items-center justify-between px-4 py-3 border-t border-dev-border">
+              <span class="text-xs text-slate-500">{{ solTotal }} solicitações no total</span>
+              <div class="flex gap-2">
+                <button @click="solOffset = Math.max(0, solOffset-50); carregarSolicitacoes()" :disabled="solOffset === 0"
+                        class="px-3 py-1 text-xs bg-dev-panel border border-dev-border text-slate-400 rounded-lg disabled:opacity-40">← Anterior</button>
+                <button @click="solOffset += 50; carregarSolicitacoes()" :disabled="solOffset + 50 >= solTotal"
+                        class="px-3 py-1 text-xs bg-dev-panel border border-dev-border text-slate-400 rounded-lg disabled:opacity-40">Próxima →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ABA: Agências ───────────────────────────────────────────────── -->
+      <div v-if="abaAtiva === 'agencias'">
+        <div class="flex items-center justify-between mb-5">
+          <h2 class="text-xl font-bold text-white">Agências</h2>
+          <button @click="carregarAgencias" class="text-xs px-3 py-1.5 bg-dev-card border border-dev-border text-slate-400 hover:text-slate-200 rounded-lg transition">
+            Recarregar
+          </button>
+        </div>
+        <div v-if="agenciasCarregando" class="flex justify-center py-10">
+          <div class="animate-spin w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full"></div>
+        </div>
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <div v-for="ag in agencias" :key="ag.id" class="bg-dev-card border border-dev-border rounded-xl p-4">
+            <div class="flex items-start justify-between mb-3">
+              <div>
+                <p class="font-bold text-slate-100">{{ ag.nome_fantasia }}</p>
+                <p class="text-xs text-slate-500 mt-0.5 font-mono">{{ ag.cnpj }}</p>
+              </div>
+              <span :class="ag.ativa ? 'bg-green-500/10 text-green-400 border-green-500/30' : 'bg-red-500/10 text-red-400 border-red-500/30'"
+                    class="text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase">
+                {{ ag.ativa ? 'ATIVA' : 'INATIVA' }}
+              </span>
+            </div>
+            <p class="text-xs text-slate-400 mb-3">{{ ag.email_contato }}</p>
+            <div class="flex gap-2">
+              <button @click="toggleAgencia(ag)"
+                      class="flex-1 py-1.5 text-xs font-semibold rounded-lg border transition"
+                      :class="ag.ativa ? 'border-red-500/40 text-red-400 hover:bg-red-500/10' : 'border-green-500/40 text-green-400 hover:bg-green-500/10'">
+                {{ ag.ativa ? 'Desativar' : 'Ativar' }}
+              </button>
+              <button @click="abrirResetSenha(ag)"
+                      class="flex-1 py-1.5 text-xs font-semibold rounded-lg border border-dev-border text-slate-400 hover:text-slate-200 hover:border-indigo-500/40 transition">
+                Reset Senha
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal reset senha -->
+        <div v-if="resetSenhaModal.aberto" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div class="bg-dev-card border border-dev-border rounded-2xl p-6 w-full max-w-sm">
+            <h3 class="text-sm font-bold text-white mb-1">Resetar senha</h3>
+            <p class="text-xs text-slate-500 mb-4">{{ resetSenhaModal.agencia?.nome_fantasia }}</p>
+            <input v-model="resetSenhaModal.novaSenha" type="password" placeholder="Nova senha (mínimo 8 caracteres)"
+                   class="w-full bg-dev-panel border border-dev-border text-slate-200 rounded-lg px-3 py-2.5 text-sm font-mono focus:outline-none focus:border-indigo-500 mb-3 placeholder-slate-600">
+            <div v-if="resetSenhaModal.erro" class="text-xs text-red-400 mb-3">{{ resetSenhaModal.erro }}</div>
+            <div v-if="resetSenhaModal.ok" class="text-xs text-green-400 mb-3">✓ Senha atualizada com sucesso!</div>
+            <div class="flex gap-2">
+              <button @click="confirmarResetSenha"
+                      :disabled="resetSenhaModal.carregando"
+                      class="flex-1 py-2 text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition disabled:opacity-60">
+                {{ resetSenhaModal.carregando ? 'Salvando…' : 'Confirmar' }}
+              </button>
+              <button @click="resetSenhaModal.aberto = false"
+                      class="flex-1 py-2 text-xs font-semibold border border-dev-border text-slate-400 rounded-lg hover:border-slate-500 transition">
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ABA: Configuração ───────────────────────────────────────────── -->
+      <div v-if="abaAtiva === 'config'">
+        <div class="flex items-center justify-between mb-5">
+          <h2 class="text-xl font-bold text-white">Configuração do Sistema</h2>
+          <button @click="carregarConfig" class="text-xs px-3 py-1.5 bg-dev-card border border-dev-border text-slate-400 hover:text-slate-200 rounded-lg transition">
+            Recarregar
+          </button>
+        </div>
+        <div v-if="configCarregando" class="flex justify-center py-10">
+          <div class="animate-spin w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full"></div>
+        </div>
+        <div v-else-if="config" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div v-for="grupo in configGrupos" :key="grupo.titulo" class="bg-dev-card border border-dev-border rounded-xl p-4">
+            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">{{ grupo.titulo }}</h3>
+            <div class="space-y-2">
+              <div v-for="campo in grupo.campos" :key="campo.key" class="flex items-center justify-between gap-2 py-1.5 border-b border-dev-border/40 last:border-0">
+                <span class="text-xs text-slate-500 font-mono flex-1">{{ campo.key }}</span>
+                <span class="text-xs font-mono"
+                      :class="config[campo.key] === '(não configurado)' || config[campo.key] === '(desativado)' ? 'text-slate-600' :
+                              config[campo.key] === true ? 'text-green-400' :
+                              config[campo.key] === false ? 'text-red-400' : 'text-slate-200'">
+                  {{ config[campo.key] === true ? '✓ OK' : config[campo.key] === false ? '✗ NÃO' : config[campo.key] }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ABA: Plataforma ─────────────────────────────────────────────── -->
+      <div v-if="abaAtiva === 'plataforma'">
+        <h2 class="text-xl font-bold text-white mb-6">Plataforma & Portais</h2>
+
+        <!-- Portais -->
+        <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Portais de Acesso</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div v-for="p in portais" :key="p.url" class="bg-dev-card border border-dev-border rounded-xl p-5 hover:border-indigo-500/50 transition">
+            <div class="text-4xl mb-3">{{ p.icon }}</div>
+            <p class="font-bold text-white text-sm mb-1">{{ p.nome }}</p>
+            <p class="text-xs text-slate-500 mb-3">{{ p.desc }}</p>
+            <div class="text-[10px] font-mono text-slate-600 mb-3">Grupo: {{ p.grupo }}</div>
+            <a :href="p.url" target="_blank"
+               class="flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 font-semibold transition">
+              Abrir portal →
+            </a>
+          </div>
+        </div>
+
+        <!-- Endpoints da API -->
+        <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Endpoints Principais da API</h3>
+        <div class="bg-dev-card border border-dev-border rounded-xl overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs">
+              <thead class="border-b border-dev-border bg-dev-panel">
+                <tr class="text-slate-500 uppercase text-[10px] tracking-wide">
+                  <th class="px-4 py-3 text-left">Método</th>
+                  <th class="px-4 py-3 text-left">Endpoint</th>
+                  <th class="px-4 py-3 text-left">Perfil</th>
+                  <th class="px-4 py-3 text-left">Descrição</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-dev-border/40">
+                <tr v-for="ep in endpoints" :key="ep.path" class="hover:bg-dev-panel/30">
+                  <td class="px-4 py-2.5">
+                    <span :class="ep.method === 'GET' ? 'text-green-400' : ep.method === 'POST' ? 'text-yellow-400' : ep.method === 'PATCH' ? 'text-blue-400' : 'text-red-400'"
+                          class="font-mono font-bold text-[11px]">{{ ep.method }}</span>
+                  </td>
+                  <td class="px-4 py-2.5 font-mono text-indigo-300 text-[11px]">{{ ep.path }}</td>
+                  <td class="px-4 py-2.5">
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-700 text-slate-300 border border-dev-border">{{ ep.perfil }}</span>
+                  </td>
+                  <td class="px-4 py-2.5 text-slate-400">{{ ep.desc }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+</div>
+
+<script>
+const { createApp, ref, reactive, computed, onMounted } = Vue;
+
+const API = '/api/v1';
+
+createApp({
+  setup() {
+    const tela        = ref('login');
+    const token       = ref(localStorage.getItem('dev_token') || '');
+    const nomeUsuario = ref(localStorage.getItem('dev_nome') || '');
+    const loginForm   = reactive({ username: '', password: '' });
+    const loginErro   = ref('');
+    const loginCarregando = ref(false);
+    const abaAtiva    = ref('dashboard');
+
+    const tabs = [
+      { id: 'dashboard',    icon: '◈', label: 'Dashboard' },
+      { id: 'solicitacoes', icon: '⊞', label: 'Solicitações' },
+      { id: 'agencias',     icon: '🏢', label: 'Agências' },
+      { id: 'config',       icon: '⚙', label: 'Configuração' },
+      { id: 'plataforma',   icon: '⬡', label: 'Plataforma' },
+    ];
+
+    const portais = [
+      { icon: '✈', nome: 'Portal do Viajante', desc: 'Solicitação de viagens', grupo: 'G_ACCESS_VIAGENSLABS_USERS', url: '/index.html' },
+      { icon: '🏢', nome: 'Portal do Setor', desc: 'Pré-aprovação e gestão', grupo: 'G_ACCESS_VIAGENSLABS_ADMINS', url: '/painel.html' },
+      { icon: '🧳', nome: 'Portal da Agência', desc: 'Cotação e vouchers (token)', grupo: 'Link por e-mail', url: '/agencia.html' },
+      { icon: '💻', nome: 'Portal Dev', desc: 'Gestão irrestrita', grupo: 'G_ACCESS_VIAGENSLABS_DEV', url: '/dev.html' },
+    ];
+
+    const endpoints = [
+      { method: 'POST', path: '/auth/login',                           perfil: 'todos',    desc: 'Autenticação via AD' },
+      { method: 'POST', path: '/viagens/solicitar',                    perfil: 'viajante', desc: 'Criar solicitação' },
+      { method: 'GET',  path: '/viagens/minhas',                       perfil: 'viajante', desc: 'Histórico do viajante' },
+      { method: 'GET',  path: '/setor/solicitacoes',                   perfil: 'setor',    desc: 'Listar solicitações pendentes' },
+      { method: 'POST', path: '/setor/solicitacoes/{id}/pre-aprovar',  perfil: 'setor',    desc: 'Pré-aprovar solicitação' },
+      { method: 'POST', path: '/setor/solicitacoes/{id}/negar',        perfil: 'setor',    desc: 'Negar solicitação' },
+      { method: 'GET',  path: '/agencia/solicitacoes',                 perfil: 'agencia',  desc: 'Listar para cotação' },
+      { method: 'POST', path: '/agencia/solicitacoes/{id}/cotacao',    perfil: 'agencia',  desc: 'Enviar cotação' },
+      { method: 'GET',  path: '/aprovacao/{uuid}',                     perfil: 'token',    desc: 'Consultar token de aprovação' },
+      { method: 'POST', path: '/aprovacao/{uuid}/decidir',             perfil: 'token',    desc: 'Aprovar/Reprovar via e-mail' },
+      { method: 'GET',  path: '/dev/stats',                            perfil: 'dev',      desc: 'Métricas globais' },
+      { method: 'GET',  path: '/dev/solicitacoes',                     perfil: 'dev',      desc: 'Todas as solicitações' },
+      { method: 'GET',  path: '/dev/agencias',                         perfil: 'dev',      desc: 'Listar agências' },
+      { method: 'GET',  path: '/dev/config',                           perfil: 'dev',      desc: 'Configuração ativa' },
+      { method: 'GET',  path: '/dev/atividade',                        perfil: 'dev',      desc: 'Feed de atividade recente' },
+    ];
+
+    const statusOpcoes = [
+      'AGUARDANDO_N1','AGUARDANDO_N2','PENDENTE_PRE_APROVACAO_SETOR',
+      'AGUARDANDO_COTACAO','EM_COTACAO','COTACAO_RECEBIDA',
+      'APROVADO','REPROVADO','CANCELADO',
+    ];
+
+    function authHeaders() {
+      return { Authorization: `Bearer ${token.value}`, 'Content-Type': 'application/json' };
+    }
+
+    // ── Login ──────────────────────────────────────────────────────────
+    async function realizarLogin() {
+      if (!loginForm.username || !loginForm.password) {
+        loginErro.value = 'Preencha usuário e senha.'; return;
+      }
+      loginCarregando.value = true; loginErro.value = '';
+      try {
+        const res = await fetch(`${API}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: loginForm.username, password: loginForm.password }),
+        });
+        const dados = await res.json();
+        if (!res.ok) { loginErro.value = dados.detail || 'Erro ao autenticar.'; return; }
+        if (dados.perfil !== 'dev') {
+          loginErro.value = `Acesso negado. Seu perfil é "${dados.perfil}". Necessário: G_ACCESS_VIAGENSLABS_DEV.`;
+          return;
+        }
+        token.value = dados.access_token;
+        nomeUsuario.value = dados.nome_usuario || loginForm.username;
+        localStorage.setItem('dev_token', token.value);
+        localStorage.setItem('dev_nome', nomeUsuario.value);
+        tela.value = 'portal';
+        await Promise.all([carregarStats(), carregarAtividade()]);
+      } catch (e) {
+        loginErro.value = 'Falha de comunicação com a API.';
+      } finally {
+        loginCarregando.value = false;
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('dev_token');
+      localStorage.removeItem('dev_nome');
+      token.value = ''; nomeUsuario.value = '';
+      tela.value = 'login';
+    }
+
+    // ── Stats ──────────────────────────────────────────────────────────
+    const stats = ref(null);
+    const statsCarregando = ref(false);
+    const atividade = ref([]);
+    const atividadeCarregando = ref(false);
+
+    async function carregarStats() {
+      statsCarregando.value = true;
+      try {
+        const res = await fetch(`${API}/dev/stats`, { headers: authHeaders() });
+        if (res.status === 401 || res.status === 403) { logout(); return; }
+        stats.value = await res.json();
+      } finally { statsCarregando.value = false; }
+    }
+
+    async function carregarAtividade() {
+      atividadeCarregando.value = true;
+      try {
+        const res = await fetch(`${API}/dev/atividade?limit=20`, { headers: authHeaders() });
+        if (!res.ok) return;
+        atividade.value = await res.json();
+      } finally { atividadeCarregando.value = false; }
+    }
+
+    // ── Solicitações ───────────────────────────────────────────────────
+    const solicitacoes = ref([]);
+    const solCarregando = ref(false);
+    const solTotal = ref(0);
+    const solOffset = ref(0);
+    const solFiltro = reactive({ busca: '', status: '' });
+
+    async function carregarSolicitacoes(reset = false) {
+      if (reset) solOffset.value = 0;
+      solCarregando.value = true;
+      try {
+        const params = new URLSearchParams({ limit: 50, offset: solOffset.value });
+        if (solFiltro.status) params.append('status', solFiltro.status);
+        if (solFiltro.busca)  params.append('busca', solFiltro.busca);
+        const res = await fetch(`${API}/dev/solicitacoes?${params}`, { headers: authHeaders() });
+        if (!res.ok) return;
+        const dados = await res.json();
+        solicitacoes.value = dados.itens;
+        solTotal.value = dados.total;
+      } finally { solCarregando.value = false; }
+    }
+
+    // ── Agências ───────────────────────────────────────────────────────
+    const agencias = ref([]);
+    const agenciasCarregando = ref(false);
+    const resetSenhaModal = reactive({ aberto: false, agencia: null, novaSenha: '', erro: '', ok: false, carregando: false });
+
+    async function carregarAgencias() {
+      agenciasCarregando.value = true;
+      try {
+        const res = await fetch(`${API}/dev/agencias`, { headers: authHeaders() });
+        if (!res.ok) return;
+        agencias.value = await res.json();
+      } finally { agenciasCarregando.value = false; }
+    }
+
+    async function toggleAgencia(ag) {
+      const res = await fetch(`${API}/dev/agencias/${ag.id}/toggle-ativa`, { method: 'PATCH', headers: authHeaders() });
+      if (res.ok) { const d = await res.json(); ag.ativa = d.ativa; }
+    }
+
+    function abrirResetSenha(ag) {
+      Object.assign(resetSenhaModal, { aberto: true, agencia: ag, novaSenha: '', erro: '', ok: false, carregando: false });
+    }
+
+    async function confirmarResetSenha() {
+      if (resetSenhaModal.novaSenha.length < 8) { resetSenhaModal.erro = 'Mínimo 8 caracteres.'; return; }
+      resetSenhaModal.carregando = true; resetSenhaModal.erro = '';
+      try {
+        const res = await fetch(`${API}/dev/agencias/${resetSenhaModal.agencia.id}/reset-senha`, {
+          method: 'POST', headers: authHeaders(),
+          body: JSON.stringify({ nova_senha: resetSenhaModal.novaSenha }),
+        });
+        const d = await res.json();
+        if (!res.ok) { resetSenhaModal.erro = d.detail || 'Erro ao resetar.'; return; }
+        resetSenhaModal.ok = true;
+        setTimeout(() => { resetSenhaModal.aberto = false; }, 1500);
+      } finally { resetSenhaModal.carregando = false; }
+    }
+
+    // ── Configuração ───────────────────────────────────────────────────
+    const config = ref(null);
+    const configCarregando = ref(false);
+    const configGrupos = [
+      { titulo: 'URLs & Domínios', campos: [
+          { key: 'base_url' }, { key: 'base_url_agencia' }, { key: 'base_url_aprovacao' },
+      ]},
+      { titulo: 'SMTP', campos: [
+          { key: 'smtp_host' }, { key: 'smtp_port' }, { key: 'smtp_from' },
+      ]},
+      { titulo: 'Integrações', campos: [
+          { key: 'gas_relay_url' }, { key: 'gas_secret_ok' }, { key: 'duffel_token_ok' }, { key: 'google_places_key_ok' },
+      ]},
+      { titulo: 'Active Directory', campos: [
+          { key: 'ad_base_dn' }, { key: 'ad_group_admins' }, { key: 'ad_group_dev' }, { key: 'ad_group_agencias' },
+      ]},
+      { titulo: 'E-mails Operacionais', campos: [
+          { key: 'setor_email' }, { key: 'agencia_tastur_email' }, { key: 'agencia_kontrip_email' }, { key: 'qa_aprovador_email' },
+      ]},
+      { titulo: 'Banco de Dados', campos: [
+          { key: 'database_url' },
+      ]},
+    ];
+
+    async function carregarConfig() {
+      configCarregando.value = true;
+      try {
+        const res = await fetch(`${API}/dev/config`, { headers: authHeaders() });
+        if (!res.ok) return;
+        config.value = await res.json();
+      } finally { configCarregando.value = false; }
+    }
+
+    // ── Helpers visuais ────────────────────────────────────────────────
+    function corStatus(status) {
+      const mapa = {
+        AGUARDANDO_N1: 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/30',
+        AGUARDANDO_N2: 'bg-orange-500/10 text-orange-400 border border-orange-500/30',
+        PENDENTE_PRE_APROVACAO_SETOR: 'bg-purple-500/10 text-purple-400 border border-purple-500/30',
+        AGUARDANDO_COTACAO: 'bg-blue-500/10 text-blue-400 border border-blue-500/30',
+        EM_COTACAO: 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30',
+        COTACAO_RECEBIDA: 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/30',
+        APROVADO: 'bg-green-500/10 text-green-400 border border-green-500/30',
+        REPROVADO: 'bg-red-500/10 text-red-400 border border-red-500/30',
+        CANCELADO: 'bg-slate-500/10 text-slate-400 border border-slate-500/30',
+      };
+      return mapa[status] || 'bg-slate-500/10 text-slate-400 border border-slate-500/30';
+    }
+
+    function corBarraStatus(status) {
+      const mapa = {
+        AGUARDANDO_N1: 'bg-yellow-400', AGUARDANDO_N2: 'bg-orange-400',
+        PENDENTE_PRE_APROVACAO_SETOR: 'bg-purple-400', AGUARDANDO_COTACAO: 'bg-blue-400',
+        EM_COTACAO: 'bg-cyan-400', COTACAO_RECEBIDA: 'bg-indigo-400',
+        APROVADO: 'bg-green-400', REPROVADO: 'bg-red-400', CANCELADO: 'bg-slate-500',
+      };
+      return mapa[status] || 'bg-slate-500';
+    }
+
+    function formatarData(dt) {
+      if (!dt) return '—';
+      return new Date(dt).toLocaleDateString('pt-BR');
+    }
+
+    function formatarTempo(dt) {
+      if (!dt) return '—';
+      const diff = Date.now() - new Date(dt).getTime();
+      const min = Math.floor(diff / 60000);
+      if (min < 60) return `${min}m atrás`;
+      const h = Math.floor(min / 60);
+      if (h < 24) return `${h}h atrás`;
+      return `${Math.floor(h/24)}d atrás`;
+    }
+
+    // ── Init ───────────────────────────────────────────────────────────
+    onMounted(async () => {
+      if (token.value) {
+        // Validar token existente
+        try {
+          const res = await fetch(`${API}/dev/stats`, { headers: authHeaders() });
+          if (res.ok) {
+            tela.value = 'portal';
+            stats.value = await res.json();
+            await carregarAtividade();
+          } else {
+            logout();
+          }
+        } catch { logout(); }
+      }
+    });
+
+    // Carregar dados ao trocar aba
+    Vue.watch(abaAtiva, (aba) => {
+      if (aba === 'solicitacoes' && !solicitacoes.value.length) carregarSolicitacoes();
+      if (aba === 'agencias' && !agencias.value.length) carregarAgencias();
+      if (aba === 'config' && !config.value) carregarConfig();
+    });
+
+    return {
+      tela, token, nomeUsuario, loginForm, loginErro, loginCarregando,
+      abaAtiva, tabs, portais, endpoints, statusOpcoes,
+      realizarLogin, logout,
+      stats, statsCarregando, atividade, atividadeCarregando, carregarStats,
+      solicitacoes, solCarregando, solTotal, solOffset, solFiltro, carregarSolicitacoes,
+      agencias, agenciasCarregando, carregarAgencias, toggleAgencia,
+      resetSenhaModal, abrirResetSenha, confirmarResetSenha,
+      config, configCarregando, configGrupos, carregarConfig,
+      corStatus, corBarraStatus, formatarData, formatarTempo,
+    };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>

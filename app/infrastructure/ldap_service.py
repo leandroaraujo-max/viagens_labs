@@ -56,7 +56,13 @@ class ActiveDirectoryService:
                     if conn.entries:
                         raw_grupos = conn.entries[0].memberOf.values if conn.entries[0].memberOf else []
                         grupos = [str(g).upper() for g in raw_grupos]
-                        if any(settings.AD_GROUP_ADMINS.upper() in g for g in grupos):
+                        if any(settings.AD_GROUP_DEV.upper() in g for g in grupos):
+                            perfil = "dev"
+                            logging.info(
+                                f"[LDAP] '{username}' autenticado como DEV "
+                                f"(membro de {settings.AD_GROUP_DEV})"
+                            )
+                        elif any(settings.AD_GROUP_ADMINS.upper() in g for g in grupos):
                             perfil = "setor"
                             logging.info(
                                 f"[LDAP] '{username}' autenticado como SETOR "

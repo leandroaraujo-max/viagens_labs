@@ -179,8 +179,7 @@
     <!-- ─────────────────────── ABA SOLICITAÇÕES ─────────────────────── -->
     <template v-if="aba === 'solicitacoes'">
 
-      <!-- Filtros -->
-      <div class="glass-panel card-accent-blue p-5 mb-5">
+        <div class="glass-panel card-accent-blue p-5 mb-5">
         <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Filtros</p>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
@@ -219,11 +218,18 @@
           </div>
           <div>
             <label class="block text-xs font-semibold text-gray-600 mb-1.5">Busca</label>
-            <div class="relative">
-              <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
-              <input v-model="filtros.busca" @input="debounceCarregar"
-                type="text" placeholder="Protocolo, viajante, destino…"
-                class="w-full text-sm border border-labs-border rounded-lg pl-9 pr-3 py-2.5 focus:ring-2 focus:ring-labs-blue focus:border-labs-blue focus:outline-none shadow-sm transition" />
+            <div class="flex gap-2">
+              <div class="relative flex-1">
+                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
+                <input v-model="filtros.busca" @input="debounceCarregar"
+                  type="text" placeholder="Protocolo, viajante…"
+                  class="w-full text-sm border border-labs-border rounded-lg pl-9 pr-3 py-2.5 focus:ring-2 focus:ring-labs-blue focus:border-labs-blue focus:outline-none shadow-sm transition" />
+              </div>
+              <!-- Botão Atualizar -->
+              <button @click="carregarSolicitacoes" :disabled="carregando" title="Atualizar solicitações"
+                class="flex items-center justify-center w-10 h-10 border border-labs-border rounded-lg bg-white hover:bg-labs-gray text-gray-500 hover:text-labs-blue transition disabled:opacity-50">
+                <svg class="w-4 h-4" :class="{' animate-spin': carregando}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+              </button>
             </div>
           </div>
         </div>
@@ -241,65 +247,71 @@
       <!-- Tabela -->
       <div v-else-if="solicitacoes.length" class="glass-panel card-accent-blue overflow-hidden">
         <div class="overflow-x-auto">
-          <table class="w-full text-sm min-w-[700px]">
+          <!-- table: remove min-w to avoid horizontal scroll on small screens -->
+          <table class="w-full text-sm">
             <thead>
               <tr class="bg-labs-gray border-b border-labs-border">
-                <th class="text-left px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Protocolo</th>
-                <th class="text-left px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Viajante</th>
-                <th class="text-left px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Destino</th>
-                <th class="text-left px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Ida</th>
-                <th class="text-left px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Tipo</th>
-                <th class="text-left px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Status</th>
-                <th class="text-right px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Ações</th>
+                <th class="text-left px-4 py-3 font-semibold text-gray-500 text-xs uppercase tracking-wide">Protocolo</th>
+                <th class="text-left px-4 py-3 font-semibold text-gray-500 text-xs uppercase tracking-wide">Viajante</th>
+                <th class="text-left px-4 py-3 font-semibold text-gray-500 text-xs uppercase tracking-wide hidden md:table-cell">Destino</th>
+                <th class="text-left px-4 py-3 font-semibold text-gray-500 text-xs uppercase tracking-wide hidden lg:table-cell">Ida</th>
+                <th class="text-left px-4 py-3 font-semibold text-gray-500 text-xs uppercase tracking-wide hidden lg:table-cell">Tipo</th>
+                <th class="text-left px-4 py-3 font-semibold text-gray-500 text-xs uppercase tracking-wide">Status</th>
+                <th class="text-right px-4 py-3 font-semibold text-gray-500 text-xs uppercase tracking-wide">Ações</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
               <tr v-for="s in solicitacoes" :key="s.id" class="row-hover">
-                <td class="px-5 py-3.5">
+                <td class="px-4 py-3">
                   <button @click="abrirDetalhe(s)"
                     class="font-mono font-bold text-labs-blue hover:text-labs-dark hover:underline text-xs tracking-tight">
                     {{ s.protocolo }}
                   </button>
                 </td>
-                <td class="px-5 py-3.5 text-gray-700 text-xs font-medium">{{ s.solicitante_username }}</td>
-                <td class="px-5 py-3.5 text-gray-700 text-xs">{{ s.destino_cidade }}<span class="text-gray-400">/{{ s.destino_estado }}</span></td>
-                <td class="px-5 py-3.5 text-gray-500 text-xs whitespace-nowrap">{{ fmtData(s.data_ida) }}</td>
-                <td class="px-5 py-3.5">
+                <td class="px-4 py-3 text-gray-700 text-xs font-medium">{{ s.solicitante_username }}</td>
+                <td class="px-4 py-3 text-gray-700 text-xs hidden md:table-cell">{{ s.destino_cidade }}<span class="text-gray-400">/{{ s.destino_estado }}</span></td>
+                <td class="px-4 py-3 text-gray-500 text-xs whitespace-nowrap hidden lg:table-cell">{{ fmtData(s.data_ida) }}</td>
+                <td class="px-4 py-3 hidden lg:table-cell">
                   <span class="text-xs bg-blue-50 text-labs-blue border border-blue-100 rounded-md px-2 py-0.5 font-medium whitespace-nowrap">
                     {{ s.tipo_servico.replace(/,/g,' · ') }}
                   </span>
                 </td>
-                <td class="px-5 py-3.5">
-                  <span :class="['text-xs font-semibold rounded-full px-3 py-1 whitespace-nowrap border', statusCor(s.status)]">
+                <td class="px-4 py-3">
+                  <span :class="['text-[10px] font-semibold rounded-full px-2 py-0.5 whitespace-nowrap border', statusCor(s.status)]">
                     {{ statusLabel(s.status) }}
                   </span>
                 </td>
-                <td class="px-5 py-3.5 text-right">
-                  <div class="flex items-center justify-end gap-1.5 flex-wrap">
+                <td class="px-4 py-3 text-right">
+                  <div class="flex items-center justify-end gap-1">
                     <template v-if="s.status === 'PENDENTE_PRE_APROVACAO_SETOR'">
-                      <button @click="confirmarAcao(s, 'PRE_APROVAR')"
-                        class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg px-3 py-1.5 font-semibold transition-all shadow-sm">
-                        ✓ Pré-Aprovar
+                      <button @click="confirmarAcao(s, 'PRE_APROVAR')" title="Pré-Aprovar"
+                        class="inline-flex items-center gap-1 text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white rounded px-2 py-1 font-semibold transition shadow-sm">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                        Aprovar
                       </button>
-                      <button @click="confirmarAcao(s, 'PRE_REPROVAR')"
-                        class="text-xs bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg px-3 py-1.5 font-semibold transition-all">
-                        ✕ Reprovar
+                      <button @click="confirmarAcao(s, 'PRE_REPROVAR')" title="Reprovar"
+                        class="inline-flex items-center gap-1 text-[11px] bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded px-2 py-1 font-semibold transition">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                        Negar
                       </button>
                     </template>
                     <template v-else-if="s.status === 'AGUARDANDO_COTACAO' || s.status === 'COTACAO_ENVIADA'">
-                      <button @click="confirmarAcao(s, 'REENVIAR_AGENCIAS')"
-                        class="text-xs bg-blue-50 hover:bg-blue-100 text-labs-blue border border-blue-200 rounded-lg px-3 py-1.5 font-semibold transition-all">
-                        ↺ Reenviar
+                      <button @click="confirmarAcao(s, 'REENVIAR_AGENCIAS')" title="Reenviar e-mails"
+                        class="inline-flex items-center gap-1 text-[11px] bg-blue-50 hover:bg-blue-100 text-labs-blue border border-blue-200 rounded px-2 py-1 font-semibold transition">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                        Reenviar
                       </button>
                     </template>
                     <template v-else-if="s.status === 'PENDENTE_APROVACAO_SETOR_COTACAO'">
-                      <button @click="abrirDetalhe(s)"
-                        class="text-xs bg-purple-600 hover:bg-purple-700 text-white rounded-lg px-3 py-1.5 font-semibold transition-all shadow-sm">
-                        ⚖️ Ver Cotações
+                      <button @click="abrirDetalhe(s)" title="Ver cotações"
+                        class="inline-flex items-center gap-1 text-[11px] bg-purple-600 hover:bg-purple-700 text-white rounded px-2 py-1 font-semibold transition shadow-sm">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/></svg>
+                        Cotações
                       </button>
                     </template>
-                    <button @click="abrirDetalhe(s)"
-                      class="text-xs bg-labs-gray hover:bg-gray-200 text-gray-500 border border-labs-border rounded-lg px-2.5 py-1.5 transition-all">
+                    <button @click="abrirDetalhe(s)" title="Ver detalhes"
+                      class="inline-flex items-center gap-1 text-[11px] bg-labs-gray hover:bg-gray-200 text-gray-600 border border-labs-border rounded px-2 py-1 transition">
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                       Detalhes
                     </button>
                   </div>
@@ -464,7 +476,11 @@
                 </span>
                 <span class="text-xs text-gray-400">{{ c.destino }}</span>
               </div>
-              <div class="flex gap-2">
+              <div class="flex gap-2 flex-wrap">
+                <button @click="abrirDetalhe({id: c.solicitacao_a_id}); agirCasamentoVer = c" title="Ver detalhes do casamento"
+                  class="px-3 py-1.5 text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg font-semibold transition">
+                  🔍 Detalhes
+                </button>
                 <button @click="agirCasamento(c.id, 'vincular')"
                   class="px-4 py-1.5 text-xs bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition">
                   🔗 Vincular
@@ -499,7 +515,7 @@
         <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
           <div>
             <h2 class="text-base font-bold text-gray-800 mb-0.5">Agências de Viagens</h2>
-            <p class="text-xs text-gray-400">Gerencie os acessos das agências ao portal de cotação.</p>
+            <p class="text-xs text-gray-400">Agências participam do fluxo via e-mail e portal GAS — sem login.</p>
           </div>
           <button @click="abrirModalAgencia(null)"
             class="flex items-center gap-2 px-4 py-2 bg-labs-blue hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition shadow-sm">
@@ -512,61 +528,61 @@
         <div v-if="agenciaMsgErr" class="mb-4 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">{{ agenciaMsgErr }}</div>
 
         <div v-if="agencias.length === 0" class="text-center py-16 text-gray-400 text-sm">
-          Nenhuma agência cadastrada.
+          Nenhuma agência cadastrada. Clique em "Nova Agência" para começar.
         </div>
 
-        <div v-else class="overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead>
-              <tr class="border-b border-gray-100 text-left text-xs text-gray-400 uppercase tracking-wide">
-                <th class="pb-3 pr-4 font-semibold">Agência</th>
-                <th class="pb-3 pr-4 font-semibold">Login</th>
-                <th class="pb-3 pr-4 font-semibold">Responsável</th>
-                <th class="pb-3 pr-4 font-semibold">E-mail</th>
-                <th class="pb-3 pr-4 font-semibold">Status</th>
-                <th class="pb-3 pr-4 font-semibold">Cadastro</th>
-                <th class="pb-3 font-semibold text-right">Ações</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-50">
-              <tr v-for="ag in agencias" :key="ag.id" class="hover:bg-gray-50/60 transition">
-                <td class="py-3 pr-4 font-semibold text-gray-800">{{ ag.agencia_nome }}</td>
-                <td class="py-3 pr-4 font-mono text-gray-600 text-xs">{{ ag.username }}</td>
-                <td class="py-3 pr-4 text-gray-600">{{ ag.nome || '—' }}</td>
-                <td class="py-3 pr-4 text-gray-500 text-xs">{{ ag.email || '—' }}</td>
-                <td class="py-3 pr-4">
-                  <span :class="ag.ativo
-                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                    : 'bg-red-50 text-red-600 border border-red-200'"
-                    class="text-xs font-semibold px-2.5 py-0.5 rounded-full">
-                    {{ ag.ativo ? 'Ativa' : 'Inativa' }}
-                  </span>
-                </td>
-                <td class="py-3 pr-4 text-gray-400 text-xs">{{ ag.data_criacao ? fmtData(ag.data_criacao) : '—' }}</td>
-                <td class="py-3 text-right">
-                  <div class="flex items-center justify-end gap-2">
-                    <button @click="abrirModalAgencia(ag)"
-                      title="Editar"
-                      class="p-1.5 text-gray-400 hover:text-labs-blue hover:bg-blue-50 rounded-lg transition">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                    </button>
-                    <button @click="toggleAgencia(ag)"
-                      :title="ag.ativo ? 'Desativar' : 'Ativar'"
-                      :class="ag.ativo ? 'text-yellow-500 hover:bg-yellow-50' : 'text-emerald-600 hover:bg-emerald-50'"
-                      class="p-1.5 hover:text-current rounded-lg transition">
-                      <svg v-if="ag.ativo" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
-                      <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    </button>
-                    <button @click="confirmarExcluirAgencia(ag)"
-                      title="Excluir"
-                      class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <!-- Cards responsivos das agências -->
+        <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div v-for="ag in agencias" :key="ag.id"
+            class="border rounded-xl p-5 bg-white hover:shadow-md transition"
+            :class="ag.ativo ? 'border-gray-200' : 'border-red-100 bg-red-50/30'">
+            <!-- Cabeçalho do card -->
+            <div class="flex items-start justify-between gap-3 mb-3">
+              <div>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="font-bold text-gray-900 text-sm">{{ ag.agencia_nome }}</span>
+                  <span :class="ag.ativo ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-600 border-red-200'"
+                    class="text-[10px] font-bold px-2 py-0.5 rounded-full border">{{ ag.ativo ? 'Ativa' : 'Inativa' }}</span>
+                </div>
+                <p class="text-xs text-gray-500 mt-0.5">{{ ag.razao_social || '—' }}</p>
+                <p class="text-xs text-gray-400 font-mono">{{ ag.cnpj ? _fmtCnpj(ag.cnpj) : 'CNPJ não informado' }}</p>
+              </div>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <button @click="abrirModalAgencia(ag)" title="Editar"
+                  class="p-1.5 text-gray-400 hover:text-labs-blue hover:bg-blue-50 rounded-lg transition">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                </button>
+                <button @click="toggleAgencia(ag)" :title="ag.ativo ? 'Desativar' : 'Ativar'"
+                  :class="ag.ativo ? 'text-yellow-500 hover:bg-yellow-50' : 'text-emerald-600 hover:bg-emerald-50'"
+                  class="p-1.5 rounded-lg transition">
+                  <svg v-if="ag.ativo" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                  <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </button>
+                <button @click="confirmarExcluirAgencia(ag)" title="Excluir"
+                  class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+              </div>
+            </div>
+            <!-- Detalhes do card -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-xs">
+              <div v-if="ag.email" class="flex items-center gap-1.5 text-gray-600">
+                <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                {{ ag.email }}
+              </div>
+              <div v-if="ag.municipio" class="flex items-center gap-1.5 text-gray-600">
+                <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                {{ ag.municipio }}/{{ ag.uf }}
+              </div>
+              <div v-if="ag.banco_nome" class="flex items-center gap-1.5 text-gray-600">
+                <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                {{ ag.banco_nome }} · Ag {{ ag.agencia_bancaria }} · CC {{ ag.conta_bancaria }}
+              </div>
+              <div v-if="ag.data_criacao" class="text-gray-400">
+                Cadastro: {{ fmtData(ag.data_criacao) }}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </template>
@@ -576,55 +592,161 @@
 
   <!-- ═══════════════════════ MODAL AGÊNCIA ═══════════════════════ -->
   <div v-if="modalAgenciaAberto"
-    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-labs-dark/70 backdrop-blur-sm"
+    class="fixed inset-0 z-50 overflow-y-auto bg-labs-dark/70 backdrop-blur-sm flex items-start justify-center p-4 pt-6"
     @click.self="fecharModalAgencia">
-    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-white/20">
+    <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden border border-white/20 mb-8">
+      <!-- Header -->
       <div class="bg-labs-blue px-6 py-4 flex items-center justify-between">
-        <h3 class="text-white font-bold text-sm">
-          {{ agenciaEditando ? 'Editar Agência' : 'Nova Agência' }}
-        </h3>
+        <h3 class="text-white font-bold text-sm">{{ agenciaEditando ? 'Editar Agência' : 'Cadastrar Agência de Viagens' }}</h3>
         <button @click="fecharModalAgencia" class="text-white/70 hover:text-white transition">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
       </div>
-      <div class="p-6 space-y-4">
-        <div v-if="!agenciaEditando">
-          <label class="block text-xs font-semibold text-gray-600 mb-1">Nome da Agência *</label>
-          <input v-model="agenciaForm.agencia_nome" type="text" placeholder="ex: Tastur"
-            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-labs-blue/30" />
-        </div>
-        <div v-if="!agenciaEditando">
-          <label class="block text-xs font-semibold text-gray-600 mb-1">Login (username) *</label>
-          <input v-model="agenciaForm.username" type="text" placeholder="ex: tastur"
-            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-labs-blue/30" />
-        </div>
+      <div class="p-6 space-y-6">
+
+        <!-- ── Dados Gerais ── -->
         <div>
-          <label class="block text-xs font-semibold text-gray-600 mb-1">Responsável</label>
-          <input v-model="agenciaForm.nome" type="text" placeholder="Nome do responsável"
-            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-labs-blue/30" />
+          <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Dados Gerais</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- CNPJ com busca automática -->
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-semibold text-gray-600 mb-1">CNPJ *</label>
+              <div class="flex gap-2">
+                <input v-model="agenciaForm.cnpj" @input="mascararCnpj" type="text" placeholder="00.000.000/0000-00" maxlength="18"
+                  class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-labs-blue/30 font-mono" />
+                <button @click="buscarCnpj" :disabled="cnpjBuscando"
+                  class="px-4 py-2 text-xs font-semibold bg-labs-blue hover:bg-blue-700 text-white rounded-lg transition disabled:opacity-50 whitespace-nowrap">
+                  {{ cnpjBuscando ? 'Buscando…' : 'Consultar' }}
+                </button>
+              </div>
+              <p v-if="cnpjErro" class="text-red-500 text-xs mt-1">{{ cnpjErro }}</p>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Nome Fantasia *</label>
+              <input v-model="agenciaForm.agencia_nome" type="text" placeholder="ex: Tastur"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-labs-blue/30" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Razão Social</label>
+              <input v-model="agenciaForm.razao_social" type="text"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-labs-blue/30" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Inscrição Estadual</label>
+              <input v-model="agenciaForm.inscricao_estadual" type="text"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-labs-blue/30" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">E-mail de Contato *</label>
+              <input v-model="agenciaForm.email" type="email" placeholder="cotacoes@agencia.com.br"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-labs-blue/30" />
+            </div>
+          </div>
         </div>
+
+        <!-- ── Endereço ── -->
         <div>
-          <label class="block text-xs font-semibold text-gray-600 mb-1">E-mail de contato</label>
-          <input v-model="agenciaForm.email" type="email" placeholder="agencia@email.com"
-            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-labs-blue/30" />
+          <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Endereço</p>
+          <div class="grid grid-cols-1 sm:grid-cols-6 gap-4">
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-semibold text-gray-600 mb-1">CEP</label>
+              <input v-model="agenciaForm.cep" @blur="buscarCep" type="text" placeholder="00000-000" maxlength="9"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-labs-blue/30 font-mono" />
+            </div>
+            <div class="sm:col-span-4">
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Logradouro</label>
+              <input v-model="agenciaForm.logradouro" type="text"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-labs-blue/30" />
+            </div>
+            <div class="sm:col-span-1">
+              <label class="block text-xs font-semibold text-gray-600 mb-1">N°</label>
+              <input v-model="agenciaForm.numero" type="text"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-labs-blue/30" />
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Complemento</label>
+              <input v-model="agenciaForm.complemento" type="text"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-labs-blue/30" />
+            </div>
+            <div class="sm:col-span-3">
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Bairro</label>
+              <input v-model="agenciaForm.bairro" type="text"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-labs-blue/30" />
+            </div>
+            <div class="sm:col-span-4">
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Cidade</label>
+              <input v-model="agenciaForm.municipio" type="text"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-labs-blue/30" />
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-semibold text-gray-600 mb-1">UF</label>
+              <input v-model="agenciaForm.uf" type="text" maxlength="2" placeholder="SP"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-labs-blue/30 uppercase" />
+            </div>
+          </div>
         </div>
+
+        <!-- ── Dados Bancários ── -->
         <div>
-          <label class="block text-xs font-semibold text-gray-600 mb-1">
-            {{ agenciaEditando ? 'Nova senha (deixe em branco para manter)' : 'Senha *' }}
-          </label>
-          <input v-model="agenciaForm.senha" type="password" placeholder="••••••••"
-            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-labs-blue/30" />
+          <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Dados Bancários</p>
+          <div class="grid grid-cols-1 sm:grid-cols-6 gap-4">
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Código do Banco</label>
+              <div class="flex gap-2">
+                <input v-model="agenciaForm.banco_codigo" @input="agenciaForm.banco_codigo = agenciaForm.banco_codigo.replace(/\D/g,'').slice(0,3)" type="text" placeholder="341" maxlength="3"
+                  class="flex-1 min-w-0 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-labs-blue/30 font-mono" />
+                <button @click="buscarBanco" :disabled="bancoBuscando"
+                  class="shrink-0 px-3 py-2 text-xs font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition disabled:opacity-50 whitespace-nowrap">
+                  {{ bancoBuscando ? '…' : 'Buscar' }}
+                </button>
+              </div>
+            </div>
+            <div class="sm:col-span-4">
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Nome do Banco</label>
+              <input v-model="agenciaForm.banco_nome" type="text" placeholder="Ex: Banco do Brasil"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-labs-blue/30" />
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Agência (com dígito)</label>
+              <input v-model="agenciaForm.agencia_bancaria" type="text" placeholder="0001-5"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-labs-blue/30 font-mono" />
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Conta (com dígito)</label>
+              <input v-model="agenciaForm.conta_bancaria" type="text" placeholder="12345-6"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-labs-blue/30 font-mono" />
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Tipo de Conta</label>
+              <select v-model="agenciaForm.tipo_conta"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-labs-blue/30 bg-white">
+                <option value="CC">Conta Corrente</option>
+                <option value="CP">Conta Poupança</option>
+              </select>
+            </div>
+            <div class="sm:col-span-3">
+              <label class="block text-xs font-semibold text-gray-600 mb-1">CNPJ do Titular</label>
+              <input v-model="agenciaForm.titularidade_cnpj" type="text" placeholder="Mesma do cadastro"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-labs-blue/30 font-mono" />
+            </div>
+            <div class="sm:col-span-3">
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Razão Social do Titular</label>
+              <input v-model="agenciaForm.titularidade_razao_social" type="text"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-labs-blue/30" />
+            </div>
+          </div>
         </div>
-        <div v-if="agenciaFormErr" class="bg-red-50 border border-red-200 text-red-700 rounded-lg px-3 py-2 text-xs">{{ agenciaFormErr }}</div>
+
+        <div v-if="agenciaFormErr" class="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">{{ agenciaFormErr }}</div>
       </div>
-      <div class="px-6 pb-6 flex gap-3 justify-end">
+      <div class="px-6 pb-6 flex gap-3 justify-end border-t border-gray-100 pt-4">
         <button @click="fecharModalAgencia"
           class="px-4 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition">
           Cancelar
         </button>
         <button @click="salvarAgencia" :disabled="agenciaFormLoading"
-          class="px-5 py-2 text-sm font-semibold bg-labs-blue hover:bg-blue-700 text-white rounded-lg transition disabled:opacity-50">
-          {{ agenciaFormLoading ? 'Salvando…' : (agenciaEditando ? 'Salvar' : 'Cadastrar') }}
+          class="px-6 py-2 text-sm font-semibold bg-labs-blue hover:bg-blue-700 text-white rounded-lg transition disabled:opacity-50">
+          {{ agenciaFormLoading ? 'Salvando…' : (agenciaEditando ? 'Salvar Alterações' : 'Cadastrar Agência') }}
         </button>
       </div>
     </div>
@@ -1385,10 +1507,85 @@ createApp({
     const agenciaMsgOk       = ref('');
     const agenciaMsgErr      = ref('');
     const modalAgenciaAberto = ref(false);
-    const agenciaEditando    = ref(null);  // null = novo, object = editar
+    const agenciaEditando    = ref(null);
     const agenciaFormLoading = ref(false);
     const agenciaFormErr     = ref('');
-    const agenciaForm        = ref({ agencia_nome: '', username: '', nome: '', email: '', senha: '' });
+    const cnpjBuscando       = ref(false);
+    const cnpjErro           = ref('');
+    const bancoBuscando      = ref(false);
+
+    const _emptyAgenciaForm = () => ({
+      agencia_nome:'', razao_social:'', cnpj:'', inscricao_estadual:'', email:'',
+      cep:'', logradouro:'', numero:'', complemento:'', bairro:'', municipio:'', uf:'',
+      banco_nome:'', banco_codigo:'', agencia_bancaria:'', conta_bancaria:'',
+      tipo_conta:'CC', titularidade_cnpj:'', titularidade_razao_social:'',
+    });
+    const agenciaForm = ref(_emptyAgenciaForm());
+
+    const _fmtCnpj = (v) => {
+      const s = (v || '').replace(/\D/g,'').padStart(14,'0');
+      return s.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
+    };
+
+    const mascararCnpj = () => {
+      let v = agenciaForm.value.cnpj.replace(/\D/g,'').slice(0,14);
+      if (v.length > 12) v = v.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{0,2})$/,'$1.$2.$3/$4-$5');
+      else if (v.length > 8) v = v.replace(/^(\d{2})(\d{3})(\d{3})(\d{0,4})$/,'$1.$2.$3/$4');
+      else if (v.length > 5) v = v.replace(/^(\d{2})(\d{3})(\d{0,3})$/,'$1.$2.$3');
+      else if (v.length > 2) v = v.replace(/^(\d{2})(\d{0,3})$/,'$1.$2');
+      agenciaForm.value.cnpj = v;
+    };
+
+    const buscarCnpj = async () => {
+      const cnpj = agenciaForm.value.cnpj.replace(/\D/g,'');
+      if (cnpj.length !== 14) { cnpjErro.value = 'CNPJ deve ter 14 dígitos.'; return; }
+      cnpjErro.value = '';
+      cnpjBuscando.value = true;
+      try {
+        const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`);
+        if (!res.ok) { cnpjErro.value = 'CNPJ não encontrado na Receita Federal.'; return; }
+        const d = await res.json();
+        agenciaForm.value.razao_social       = d.razao_social || '';
+        agenciaForm.value.agencia_nome       = agenciaForm.value.agencia_nome || (d.nome_fantasia || d.razao_social || '');
+        agenciaForm.value.inscricao_estadual = d.descricao_situacao_cadastral || '';
+        agenciaForm.value.logradouro         = d.logradouro || '';
+        agenciaForm.value.numero             = d.numero || '';
+        agenciaForm.value.complemento        = d.complemento || '';
+        agenciaForm.value.bairro             = d.bairro || '';
+        agenciaForm.value.municipio          = d.municipio || '';
+        agenciaForm.value.uf                 = d.uf || '';
+        agenciaForm.value.cep                = (d.cep || '').replace(/\D/g,'').replace(/^(\d{5})(\d{3})$/,'$1-$2');
+        agenciaForm.value.titularidade_cnpj  = agenciaForm.value.titularidade_cnpj || agenciaForm.value.cnpj;
+        agenciaForm.value.titularidade_razao_social = agenciaForm.value.titularidade_razao_social || d.razao_social || '';
+      } catch (e) { cnpjErro.value = 'Erro ao consultar BrasilAPI.'; }
+      finally     { cnpjBuscando.value = false; }
+    };
+
+    const buscarCep = async () => {
+      const cep = agenciaForm.value.cep.replace(/\D/g,'');
+      if (cep.length !== 8) return;
+      try {
+        const res = await fetch(`https://brasilapi.com.br/api/cep/v1/${cep}`);
+        if (!res.ok) return;
+        const d = await res.json();
+        if (d.street)        agenciaForm.value.logradouro = d.street;
+        if (d.neighborhood)  agenciaForm.value.bairro     = d.neighborhood;
+        if (d.city)          agenciaForm.value.municipio  = d.city;
+        if (d.state)         agenciaForm.value.uf         = d.state;
+      } catch {}
+    };
+
+    const buscarBanco = async () => {
+      const cod = (agenciaForm.value.banco_codigo || '').replace(/\D/g,'');
+      if (!cod) return;
+      bancoBuscando.value = true;
+      try {
+        const res = await fetch(`https://brasilapi.com.br/api/banks/v1/${cod}`);
+        if (!res.ok) return;
+        const d = await res.json();
+        agenciaForm.value.banco_nome = d.name || d.fullName || agenciaForm.value.banco_nome;
+      } catch {} finally { bancoBuscando.value = false; }
+    };
 
     const carregarAgencias = async () => {
       agencias.value = [];
@@ -1406,9 +1603,10 @@ createApp({
     const abrirModalAgencia = (ag) => {
       agenciaEditando.value = ag;
       agenciaFormErr.value  = '';
+      cnpjErro.value        = '';
       agenciaForm.value = ag
-        ? { agencia_nome: ag.agencia_nome, username: ag.username, nome: ag.nome || '', email: ag.email || '', senha: '' }
-        : { agencia_nome: '', username: '', nome: '', email: '', senha: '' };
+        ? { ...ag, cnpj: _fmtCnpj(ag.cnpj) }
+        : _emptyAgenciaForm();
       modalAgenciaAberto.value = true;
     };
 
@@ -1421,31 +1619,24 @@ createApp({
       agenciaFormErr.value     = '';
       agenciaFormLoading.value = true;
       try {
+        const payload = {
+          ...agenciaForm.value,
+          cnpj: agenciaForm.value.cnpj.replace(/\D/g,''),
+          uf:   agenciaForm.value.uf.toUpperCase(),
+        };
         const ed = agenciaEditando.value;
-        if (ed) {
-          // Edição
-          const body = { nome: agenciaForm.value.nome, email: agenciaForm.value.email };
-          if (agenciaForm.value.senha) body.senha = agenciaForm.value.senha;
-          const res = await fetch(`/api/v1/setor/agencias/${ed.id}`, {
-            method: 'PUT',
-            headers: { Authorization: `Bearer ${token.value}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
-          });
-          if (!res.ok) { const d = await res.json(); agenciaFormErr.value = d.detail || 'Erro ao salvar.'; return; }
-          agenciaMsgOk.value = '✔ Agência atualizada com sucesso.';
-        } else {
-          // Cadastro
-          if (!agenciaForm.value.agencia_nome.trim()) { agenciaFormErr.value = 'Informe o nome da agência.'; return; }
-          if (!agenciaForm.value.username.trim())     { agenciaFormErr.value = 'Informe o username.'; return; }
-          if (!agenciaForm.value.senha.trim())        { agenciaFormErr.value = 'Informe a senha.'; return; }
-          const res = await fetch('/api/v1/setor/agencias', {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${token.value}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify(agenciaForm.value),
-          });
-          if (!res.ok) { const d = await res.json(); agenciaFormErr.value = d.detail || 'Erro ao cadastrar.'; return; }
-          agenciaMsgOk.value = '✔ Agência cadastrada com sucesso.';
-        }
+        if (!payload.agencia_nome?.trim()) { agenciaFormErr.value = 'Informe o nome fantasia.'; return; }
+        if (!ed && !payload.email?.trim()) { agenciaFormErr.value = 'Informe o e-mail de contato.'; return; }
+
+        const url    = ed ? `/api/v1/setor/agencias/${ed.id}` : '/api/v1/setor/agencias';
+        const method = ed ? 'PUT' : 'POST';
+        const res = await fetch(url, {
+          method,
+          headers: { Authorization: `Bearer ${token.value}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) { const d = await res.json(); agenciaFormErr.value = d.detail || 'Erro ao salvar.'; return; }
+        agenciaMsgOk.value = ed ? '✔ Agência atualizada.' : '✔ Agência cadastrada com sucesso.';
         fecharModalAgencia();
         await carregarAgencias();
       } catch (e) { agenciaFormErr.value = 'Erro de conexão.'; }
@@ -1468,7 +1659,7 @@ createApp({
     };
 
     const confirmarExcluirAgencia = async (ag) => {
-      if (!confirm(`Excluir permanentemente a agência "${ag.agencia_nome}" (${ag.username})?\n\nEsta ação não pode ser desfeita.`)) return;
+      if (!confirm(`Excluir permanentemente a agência "${ag.agencia_nome}"?\n\nEsta ação não pode ser desfeita.`)) return;
       agenciaMsgOk.value  = '';
       agenciaMsgErr.value = '';
       try {
@@ -1497,8 +1688,10 @@ createApp({
       carregarCasamentos, agirCasamento, tipoCasamentoCor,
       agencias, agenciaMsgOk, agenciaMsgErr,
       modalAgenciaAberto, agenciaEditando, agenciaForm, agenciaFormLoading, agenciaFormErr,
+      cnpjBuscando, cnpjErro, bancoBuscando,
       carregarAgencias, abrirModalAgencia, fecharModalAgencia, salvarAgencia,
       toggleAgencia, confirmarExcluirAgencia,
+      mascararCnpj, buscarCnpj, buscarCep, buscarBanco, _fmtCnpj,
       sair, fmtData, fmtValor, statusLabel, statusCor, acaoLabel,
       // Navegacao com transicao
       vlNavigate: (url) => (window.vlNavigate || (u => { window.location.href = u; }))(url),

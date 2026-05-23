@@ -33,6 +33,8 @@ class SolicitacaoCreate(BaseModel):
     # Passo 3 - Preferências Hospedagem
     preferencia_hotel_nome: str = ''
     quarto_excecao_saude: bool = False
+    hosp_data_checkin:  str = ''   # DD/MM/AAAA — obrigatório quando hospedagem sem aéreo
+    hosp_data_checkout: str = ''   # DD/MM/AAAA — obrigatório quando hospedagem sem aéreo
 
     # Passo 3 - Preferências Carro
     carro_data_retirada:   str = ''
@@ -308,30 +310,77 @@ class SolicitacaoSetorResponse(BaseModel):
 # --- SCHEMAS DE AGÊNCIAS (gestão pelo setor) ---
 
 class AgenciaCreate(BaseModel):
-    """Dados para cadastrar nova agência de viagens."""
-    agencia_nome: str
-    username:     str
-    nome:         str = ''
-    email:        str = ''
-    senha:        str
+    """Cadastro completo de agência — sem usuário/senha (acesso via e-mail/GAS)."""
+    agencia_nome:              str               # Nome fantasia (ex: Tastur)
+    razao_social:              str = ''
+    cnpj:                      str = ''
+    inscricao_estadual:        str = ''
+    email:                     str = ''
+    # Endereço
+    cep:                       str = ''
+    logradouro:                str = ''
+    numero:                    str = ''
+    complemento:               str = ''
+    bairro:                    str = ''
+    municipio:                 str = ''
+    uf:                        str = ''
+    # Dados bancários
+    banco_nome:                str = ''
+    banco_codigo:              str = ''
+    agencia_bancaria:          str = ''
+    conta_bancaria:            str = ''
+    tipo_conta:                str = 'CC'
+    titularidade_cnpj:         str = ''
+    titularidade_razao_social: str = ''
 
 
 class AgenciaUpdate(BaseModel):
-    """Atualização parcial de agência (todos opcionais)."""
-    nome:         Optional[str] = None
-    email:        Optional[str] = None
-    ativo:        Optional[bool] = None
-    senha:        Optional[str] = None
+    """Atualização parcial de agência (todos os campos opcionais)."""
+    agencia_nome:              Optional[str]  = None
+    razao_social:              Optional[str]  = None
+    cnpj:                      Optional[str]  = None
+    inscricao_estadual:        Optional[str]  = None
+    email:                     Optional[str]  = None
+    cep:                       Optional[str]  = None
+    logradouro:                Optional[str]  = None
+    numero:                    Optional[str]  = None
+    complemento:               Optional[str]  = None
+    bairro:                    Optional[str]  = None
+    municipio:                 Optional[str]  = None
+    uf:                        Optional[str]  = None
+    banco_nome:                Optional[str]  = None
+    banco_codigo:              Optional[str]  = None
+    agencia_bancaria:          Optional[str]  = None
+    conta_bancaria:            Optional[str]  = None
+    tipo_conta:                Optional[str]  = None
+    titularidade_cnpj:         Optional[str]  = None
+    titularidade_razao_social: Optional[str]  = None
+    ativo:                     Optional[bool] = None
 
 
 class AgenciaResponse(BaseModel):
-    """Visão da agência retornada ao painel do setor."""
-    id:           int
-    agencia_nome: str
-    username:     str
-    nome:         str = ''
-    email:        str = ''
-    ativo:        bool
-    data_criacao: Optional[str] = None
+    """Visão completa da agência para o painel do setor."""
+    id:                        int
+    agencia_nome:              str
+    razao_social:              str = ''
+    cnpj:                      str = ''
+    inscricao_estadual:        str = ''
+    email:                     str = ''
+    cep:                       str = ''
+    logradouro:                str = ''
+    numero:                    str = ''
+    complemento:               str = ''
+    bairro:                    str = ''
+    municipio:                 str = ''
+    uf:                        str = ''
+    banco_nome:                str = ''
+    banco_codigo:              str = ''
+    agencia_bancaria:          str = ''
+    conta_bancaria:            str = ''
+    tipo_conta:                str = 'CC'
+    titularidade_cnpj:         str = ''
+    titularidade_razao_social: str = ''
+    ativo:                     bool
+    data_criacao:              Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)

@@ -51,8 +51,32 @@ def _migracoes_seguras():
             data_criacao   TIMESTAMPTZ  DEFAULT NOW()
         );""",
         "CREATE INDEX IF NOT EXISTS ix_tokens_agencia_uuid ON tokens_agencia(uuid);",
-        # Fase 6 — campo de e-mail para usuários de agência (adicionado via migração segura)
+        # Fase 6 — campo de e-mail para usuários de agência
         "ALTER TABLE usuarios_agencia ADD COLUMN IF NOT EXISTS email VARCHAR(200) DEFAULT '';",
+        # Fase 6B — redesign da tabela de agências (sem login, com CNPJ/endereço/bancário)
+        "ALTER TABLE usuarios_agencia DROP COLUMN IF EXISTS username;",
+        "ALTER TABLE usuarios_agencia DROP COLUMN IF EXISTS senha_hash;",
+        "ALTER TABLE usuarios_agencia DROP COLUMN IF EXISTS nome;",
+        "ALTER TABLE usuarios_agencia ADD COLUMN IF NOT EXISTS razao_social           VARCHAR(200) DEFAULT '';",
+        "ALTER TABLE usuarios_agencia ADD COLUMN IF NOT EXISTS cnpj                  VARCHAR(20)  DEFAULT '';",
+        "ALTER TABLE usuarios_agencia ADD COLUMN IF NOT EXISTS inscricao_estadual     VARCHAR(50)  DEFAULT '';",
+        "ALTER TABLE usuarios_agencia ADD COLUMN IF NOT EXISTS cep                   VARCHAR(10)  DEFAULT '';",
+        "ALTER TABLE usuarios_agencia ADD COLUMN IF NOT EXISTS logradouro            VARCHAR(200) DEFAULT '';",
+        "ALTER TABLE usuarios_agencia ADD COLUMN IF NOT EXISTS numero                VARCHAR(20)  DEFAULT '';",
+        "ALTER TABLE usuarios_agencia ADD COLUMN IF NOT EXISTS complemento           VARCHAR(100) DEFAULT '';",
+        "ALTER TABLE usuarios_agencia ADD COLUMN IF NOT EXISTS bairro                VARCHAR(100) DEFAULT '';",
+        "ALTER TABLE usuarios_agencia ADD COLUMN IF NOT EXISTS municipio             VARCHAR(100) DEFAULT '';",
+        "ALTER TABLE usuarios_agencia ADD COLUMN IF NOT EXISTS uf                    VARCHAR(2)   DEFAULT '';",
+        "ALTER TABLE usuarios_agencia ADD COLUMN IF NOT EXISTS banco_nome            VARCHAR(100) DEFAULT '';",
+        "ALTER TABLE usuarios_agencia ADD COLUMN IF NOT EXISTS banco_codigo          VARCHAR(10)  DEFAULT '';",
+        "ALTER TABLE usuarios_agencia ADD COLUMN IF NOT EXISTS agencia_bancaria      VARCHAR(20)  DEFAULT '';",
+        "ALTER TABLE usuarios_agencia ADD COLUMN IF NOT EXISTS conta_bancaria        VARCHAR(20)  DEFAULT '';",
+        "ALTER TABLE usuarios_agencia ADD COLUMN IF NOT EXISTS tipo_conta            VARCHAR(5)   DEFAULT 'CC';",
+        "ALTER TABLE usuarios_agencia ADD COLUMN IF NOT EXISTS titularidade_cnpj     VARCHAR(20)  DEFAULT '';",
+        "ALTER TABLE usuarios_agencia ADD COLUMN IF NOT EXISTS titularidade_razao_social VARCHAR(200) DEFAULT '';",
+        # Fase 6B — datas independentes para hospedagem sem aéreo
+        "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS hosp_data_checkin  VARCHAR(20) DEFAULT '';",
+        "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS hosp_data_checkout VARCHAR(20) DEFAULT '';",
     ]
     with engine.connect() as conn:
         for sql in sqls:

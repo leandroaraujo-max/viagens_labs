@@ -121,6 +121,13 @@
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
                                 Painel do Setor
                             </a>
+                            <!-- Política de Viagens -->
+                            <a href="https://drive.google.com/file/d/1SFxzQXkTSr36KR4xJLNwp6vNMCa9_Rrg/view?usp=drive_link" target="_blank" rel="noopener noreferrer"
+                               class="flex items-center gap-1.5 text-xs font-semibold text-gray-600 hover:text-labs-blue border border-gray-200 hover:border-labs-blue bg-white hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-all duration-200"
+                               title="Políticas Gerais de Viagens Magalu">
+                               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                               <span class="hidden sm:inline">Políticas de Viagens</span>
+                            </a>
                             <div v-if="perfilUsuario === 'setor'" class="h-6 w-px bg-gray-300 mx-1"></div>
                             <button @click="logout" class="text-gray-500 hover:text-red-600 transition-colors duration-200" title="Sair do Sistema">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
@@ -182,7 +189,10 @@
                                                 </label>
                                                 <label class="flex items-center p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer transition">
                                                     <input type="radio" name="tipo_solicitacao" value="delegado" v-model="tipo_solicitacao" class="text-labs-blue focus:ring-labs-blue h-4 w-4">
-                                                    <span class="ml-3 text-sm font-medium text-gray-700">Delegação (Outro)</span>
+                                                    <div class="ml-3">
+                                                        <span class="text-sm font-medium text-gray-700 block">Solicitar para Outro</span>
+                                                        <span class="text-[10px] text-gray-400">Em nome de outro colaborador</span>
+                                                    </div>
                                                 </label>
                                             </div>
                                         </div>
@@ -357,18 +367,30 @@
                                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div>
                                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Data de Ida <span class="text-red-500">*</span></label>
-                                                <input :value="formViagem.data_ida" @input="mascaraDataIda" type="text" placeholder="DD/MM/AAAA" maxlength="10"
-                                                    class="w-full px-4 py-2.5 rounded-lg border focus:border-labs-blue focus:ring-1 focus:ring-labs-blue text-sm"
-                                                    :class="formViagem.data_ida.length === 10 ? 'border-green-400' : 'border-gray-300'">
+                                                <div class="flex gap-2">
+                                                    <input :value="formViagem.data_ida" @input="mascaraDataIda" type="text" placeholder="DD/MM/AAAA" maxlength="10"
+                                                        class="flex-1 px-4 py-2.5 rounded-lg border focus:border-labs-blue focus:ring-1 focus:ring-labs-blue text-sm"
+                                                        :class="formViagem.data_ida.length === 10 ? 'border-green-400' : 'border-gray-300'">
+                                                    <label title="Abrir calendário" class="flex items-center justify-center w-10 border border-gray-300 hover:border-labs-blue rounded-lg cursor-pointer hover:bg-blue-50 transition shrink-0">
+                                                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                                        <input type="date" class="sr-only" @change="e => pickerFormViagem(e, 'data_ida')">
+                                                    </label>
+                                                </div>
                                             </div>
                                             <div>
                                                 <label class="block text-sm font-semibold text-gray-700 mb-2">
                                                     Data de Volta
                                                     <span v-if="formViagem.tipo_servico.includes('Aereo') && formPreferencias.aereo_tipo_trecho === 'ambos'" class="text-red-500">*</span>
                                                 </label>
-                                                <input :value="formViagem.data_volta" @input="mascaraDataVolta" type="text" placeholder="DD/MM/AAAA" maxlength="10"
-                                                    class="w-full px-4 py-2.5 rounded-lg border focus:border-labs-blue focus:ring-1 focus:ring-labs-blue text-sm"
-                                                    :class="formViagem.data_volta && formViagem.data_volta.length === 10 ? 'border-green-400' : 'border-gray-300'">
+                                                <div class="flex gap-2">
+                                                    <input :value="formViagem.data_volta" @input="mascaraDataVolta" type="text" placeholder="DD/MM/AAAA" maxlength="10"
+                                                        class="flex-1 px-4 py-2.5 rounded-lg border focus:border-labs-blue focus:ring-1 focus:ring-labs-blue text-sm"
+                                                        :class="formViagem.data_volta && formViagem.data_volta.length === 10 ? 'border-green-400' : 'border-gray-300'">
+                                                    <label title="Abrir calendário" class="flex items-center justify-center w-10 border border-gray-300 hover:border-labs-blue rounded-lg cursor-pointer hover:bg-blue-50 transition shrink-0">
+                                                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                                        <input type="date" class="sr-only" @change="e => pickerFormViagem(e, 'data_volta')">
+                                                    </label>
+                                                </div>
                                             </div>
                                         </div>
 
@@ -622,7 +644,7 @@
                                                         <option value="">Qualquer</option>
                                                         <option value="convencional">Convencional</option>
                                                         <option value="executivo">Executivo</option>
-                                                        <option value="leito">Leito</option>
+                                                        <option value="leito cama">Leito Cama</option>
                                                     </select>
                                                 </div>
                                                 <div>
@@ -643,14 +665,76 @@
                                                 <h4 class="font-bold text-violet-800 text-sm">Preferências de Hospedagem</h4>
                                                 <span v-if="viajanteDados && viajanteDados.categoria_hospedagem" class="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full uppercase bg-violet-100 text-violet-700">{{ viajanteDados.categoria_hospedagem }}</span>
                                             </div>
-                                            <div>
+                                            <!-- Datas de check-in/checkout — obrigatório quando hospedagem é o único serviço ou sem aéreo -->
+                                            <div v-if="!formViagem.tipo_servico.includes('Aereo')" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                <div>
+                                                    <label class="block text-xs font-semibold text-gray-600 mb-1.5">Check-in <span class="text-red-500">*</span></label>
+                                                    <div class="flex gap-2">
+                                                        <input :value="formPreferencias.hosp_data_checkin" @input="e => mascaraDataGeneric(e, 'hosp_data_checkin')"
+                                                               type="text" placeholder="DD/MM/AAAA" maxlength="10"
+                                                               class="flex-1 px-3 py-2.5 rounded-lg border focus:border-labs-blue text-sm"
+                                                               :class="formPreferencias.hosp_data_checkin.length === 10 ? 'border-green-400' : 'border-gray-300'">
+                                                        <label title="Calendário" class="flex items-center justify-center w-10 border border-gray-300 hover:border-labs-blue rounded-lg cursor-pointer hover:bg-blue-50 transition shrink-0">
+                                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                                            <input type="date" class="sr-only" @change="e => pickerPreferencias(e, 'hosp_data_checkin')">
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label class="block text-xs font-semibold text-gray-600 mb-1.5">Check-out <span class="text-red-500">*</span></label>
+                                                    <div class="flex gap-2">
+                                                        <input :value="formPreferencias.hosp_data_checkout" @input="e => mascaraDataGeneric(e, 'hosp_data_checkout')"
+                                                               type="text" placeholder="DD/MM/AAAA" maxlength="10"
+                                                               class="flex-1 px-3 py-2.5 rounded-lg border focus:border-labs-blue text-sm"
+                                                               :class="formPreferencias.hosp_data_checkout.length === 10 ? 'border-green-400' : 'border-gray-300'">
+                                                        <label title="Calendário" class="flex items-center justify-center w-10 border border-gray-300 hover:border-labs-blue rounded-lg cursor-pointer hover:bg-blue-50 transition shrink-0">
+                                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                                            <input type="date" class="sr-only" @change="e => pickerPreferencias(e, 'hosp_data_checkout')">
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="relative">
                                                 <label class="block text-xs font-semibold text-gray-600 mb-1.5">Sugestão de Hotel (opcional)</label>
-                                                <input v-model="formPreferencias.preferencia_hotel_nome" type="text" placeholder="Nome do hotel preferido" class="w-full px-3 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue text-sm">
+                                                <div class="flex gap-2">
+                                                    <input v-model="formPreferencias.preferencia_hotel_nome"
+                                                           @focus="hoteisDropdown = hoteisGoogle.length > 0"
+                                                           @blur="setTimeout(() => hoteisDropdown = false, 200)"
+                                                           type="text" placeholder="Nome do hotel preferido"
+                                                           class="flex-1 min-w-0 px-3 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue text-sm">
+                                                    <button type="button" @click="buscarHoteisGoogle"
+                                                            :disabled="hoteisGoogleBuscando || !formViagem.destino_cidade.trim()"
+                                                            class="shrink-0 flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap">
+                                                        <svg v-if="hoteisGoogleBuscando" class="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                                                        <svg v-else class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z"/></svg>
+                                                        {{ hoteisGoogleBuscando ? 'Buscando…' : 'Sugerir' }}
+                                                    </button>
+                                                </div>
+                                                <!-- Dropdown de resultados -->
+                                                <ul v-if="hoteisDropdown && hoteisGoogle.length"
+                                                    class="absolute z-50 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl max-h-72 overflow-y-auto">
+                                                    <li v-for="h in hoteisGoogle" :key="h.id"
+                                                        @mousedown.prevent="selecionarHotelGoogle(h)"
+                                                        class="flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-blue-50 border-b border-gray-100 last:border-0">
+                                                        <div class="flex-1 min-w-0">
+                                                            <p class="text-sm font-semibold text-gray-800 truncate">{{ h.displayName?.text }}</p>
+                                                            <p class="text-xs text-gray-400 truncate mt-0.5">{{ h.formattedAddress }}</p>
+                                                        </div>
+                                                        <div v-if="h.rating" class="flex items-center gap-1 shrink-0">
+                                                            <span class="text-yellow-400 text-xs">★</span>
+                                                            <span class="text-xs font-bold text-gray-600">{{ h.rating }}</span>
+                                                        </div>
+                                                    </li>
+                                                </ul>
+                                                <p v-if="hoteisGoogleErro" class="text-xs text-red-500 mt-1">⚠ {{ hoteisGoogleErro }}</p>
                                             </div>
                                             <label class="flex items-center gap-3 cursor-pointer">
                                                 <input type="checkbox" v-model="formPreferencias.quarto_excecao_saude" class="w-4 h-4 text-labs-blue rounded focus:ring-labs-blue">
                                                 <span class="text-sm text-gray-700">Solicitar quarto individual por condição de saúde</span>
                                             </label>
+                                            <div v-if="formPreferencias.quarto_excecao_saude" class="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                                                <p class="text-xs font-semibold text-amber-700 mb-1.5">⚕ Justificativa obrigatória — descreva a condição e se há alinhamento com os times responsáveis.</p>
+                                            </div>
                                         </div>
 
                                         <!-- Seção Carro -->
@@ -663,16 +747,28 @@
                                                 <!-- Data de Retirada -->
                                                 <div>
                                                     <label class="block text-xs font-semibold text-gray-600 mb-1.5">Data de Retirada</label>
-                                                    <input :value="formPreferencias.carro_data_retirada" @input="mascaraDataCarroRet"
-                                                           type="text" placeholder="DD/MM/AAAA" maxlength="10"
-                                                           class="w-full px-3 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue text-sm">
+                                                    <div class="flex gap-2">
+                                                        <input :value="formPreferencias.carro_data_retirada" @input="mascaraDataCarroRet"
+                                                               type="text" placeholder="DD/MM/AAAA" maxlength="10"
+                                                               class="flex-1 px-3 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue text-sm">
+                                                        <label title="Calendário" class="flex items-center justify-center w-10 border border-gray-300 hover:border-labs-blue rounded-lg cursor-pointer hover:bg-blue-50 transition shrink-0">
+                                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                                            <input type="date" class="sr-only" @change="e => pickerPreferencias(e, 'carro_data_retirada')">
+                                                        </label>
+                                                    </div>
                                                 </div>
                                                 <!-- Data de Entrega -->
                                                 <div>
                                                     <label class="block text-xs font-semibold text-gray-600 mb-1.5">Data de Entrega</label>
-                                                    <input :value="formPreferencias.carro_data_devolucao" @input="mascaraDataCarroDev"
-                                                           type="text" placeholder="DD/MM/AAAA" maxlength="10"
-                                                           class="w-full px-3 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue text-sm">
+                                                    <div class="flex gap-2">
+                                                        <input :value="formPreferencias.carro_data_devolucao" @input="mascaraDataCarroDev"
+                                                               type="text" placeholder="DD/MM/AAAA" maxlength="10"
+                                                               class="flex-1 px-3 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue text-sm">
+                                                        <label title="Calendário" class="flex items-center justify-center w-10 border border-gray-300 hover:border-labs-blue rounded-lg cursor-pointer hover:bg-blue-50 transition shrink-0">
+                                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                                            <input type="date" class="sr-only" @change="e => pickerPreferencias(e, 'carro_data_devolucao')">
+                                                        </label>
+                                                    </div>
                                                 </div>
                                                 <!-- Cidade de Retirada -->
                                                 <div>
@@ -728,8 +824,15 @@
 
                                         <!-- Observações Gerais -->
                                         <div>
-                                            <label class="block text-sm font-semibold text-gray-700 mb-2">Observações adicionais</label>
-                                            <textarea v-model="formPreferencias.observacoes_viajante" rows="2" placeholder="Alguma informação importante para a agência..." class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue focus:ring-1 focus:ring-labs-blue text-sm resize-none"></textarea>
+                                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                                Observações adicionais
+                                                <span v-if="formPreferencias.quarto_excecao_saude" class="text-red-500"> *</span>
+                                            </label>
+                                            <textarea v-model="formPreferencias.observacoes_viajante" rows="2"
+                                                :placeholder="formPreferencias.quarto_excecao_saude ? 'Obrigatório: descreva a condição de saúde e o alinhamento com os times responsáveis...' : 'Alguma informação importante para a agência...'"
+                                                :class="formPreferencias.quarto_excecao_saude && !formPreferencias.observacoes_viajante.trim() ? 'border-red-300 focus:border-red-500 bg-red-50' : 'border-gray-300 focus:border-labs-blue'"
+                                                class="w-full px-4 py-2.5 rounded-lg border focus:ring-1 focus:ring-labs-blue text-sm resize-none"></textarea>
+                                            <p v-if="formPreferencias.quarto_excecao_saude && !formPreferencias.observacoes_viajante.trim()" class="text-xs text-red-500 mt-1">Justificativa obrigatória quando quarto individual por saúde é solicitado.</p>
                                         </div>
 
                                         <div v-if="erroEnvio" class="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded-md">
@@ -779,6 +882,11 @@
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                     <h4 class="font-bold">Política de Viagens</h4>
                                 </div>
+                                <a href="https://drive.google.com/file/d/1SFxzQXkTSr36KR4xJLNwp6vNMCa9_Rrg/view?usp=drive_link" target="_blank" rel="noopener noreferrer"
+                                   class="flex items-center gap-2 w-full mb-3 px-3 py-2 bg-labs-blue hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition">
+                                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                    Ver Políticas Completas
+                                </a>
                                 <ul class="text-sm text-gray-600 space-y-3 font-medium">
                                     <li class="flex items-start gap-2"><span class="text-labs-blue mt-0.5">•</span> Aéreo &lt; 15 dias exige aprovação de Diretoria.</li>
                                                     <li class="flex items-start gap-2">
@@ -791,11 +899,24 @@
                             <div class="bg-white rounded-2xl shadow-sm border border-gray-200">
                                 <div class="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
                                     <h3 class="font-bold text-labs-dark">Histórico Recente</h3>
-                                    <a href="#" class="text-xs font-semibold text-labs-blue hover:text-blue-800 transition-colors">Ver todas</a>
+                                    <a href="#" @click.prevent="carregarHistorico()"
+                                       class="text-xs font-semibold text-labs-blue hover:text-blue-800 transition-colors">Atualizar</a>
                                 </div>
-                                <div class="p-8 text-center text-sm text-gray-400 font-medium">
+                                <div v-if="historicoCarregando" class="p-8 text-center text-sm text-gray-400">Carregando…</div>
+                                <div v-else-if="historico.length === 0" class="p-8 text-center text-sm text-gray-400 font-medium">
                                     Nenhuma solicitação recente.
                                 </div>
+                                <ul v-else class="divide-y divide-gray-50">
+                                    <li v-for="s in historico.slice(0,5)" :key="s.id"
+                                        class="px-5 py-3 flex items-center justify-between gap-3 hover:bg-gray-50/60 transition text-sm">
+                                        <div class="flex-1 min-w-0">
+                                            <p class="font-mono font-bold text-labs-blue text-xs truncate">{{ s.protocolo }}</p>
+                                            <p class="text-gray-600 truncate text-xs">{{ s.destino_cidade }}/{{ s.destino_estado }} · {{ s.data_ida ? new Date(s.data_ida).toLocaleDateString('pt-BR') : '—' }}</p>
+                                        </div>
+                                        <span :class="statusCorMini(s.status)"
+                                            class="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0">{{ statusLabelMini(s.status) }}</span>
+                                    </li>
+                                </ul>
                             </div>
                         </div>
                     </div>
@@ -880,6 +1001,8 @@
                     rodov_tipo_onibus: '',
                     rodov_tipo_trecho: 'ambos',
                     preferencia_hotel_nome: '',
+                    hosp_data_checkin: '',
+                    hosp_data_checkout: '',
                     quarto_excecao_saude: false,
                     carro_data_retirada: '',
                     carro_hora_retirada: '',
@@ -889,6 +1012,38 @@
                     carro_cidade_devolucao: '',
                     observacoes_viajante: '',
                 });
+
+                // --- Histórico ---
+                const historico = ref([]);
+                const historicoCarregando = ref(false);
+
+                const statusLabelMini = (s) => ({
+                    pendente: 'Pendente', aprovada: 'Aprovada', reprovada: 'Reprovada',
+                    cotando: 'Em Cotação', cotacao_enviada: 'Cotação Enviada',
+                    cancelada: 'Cancelada', concluida: 'Concluída',
+                }[s] || s);
+
+                const statusCorMini = (s) => ({
+                    pendente: 'bg-amber-100 text-amber-700',
+                    aprovada: 'bg-green-100 text-green-700',
+                    reprovada: 'bg-red-100 text-red-700',
+                    cotando: 'bg-blue-100 text-blue-700',
+                    cotacao_enviada: 'bg-indigo-100 text-indigo-700',
+                    cancelada: 'bg-gray-200 text-gray-500',
+                    concluida: 'bg-teal-100 text-teal-700',
+                }[s] || 'bg-gray-100 text-gray-500');
+
+                const carregarHistorico = async () => {
+                    if (!token.value) return;
+                    historicoCarregando.value = true;
+                    try {
+                        const r = await fetch('/api/v1/viagens/minhas', {
+                            headers: { 'Authorization': 'Bearer ' + token.value }
+                        });
+                        if (r.ok) historico.value = await r.json();
+                    } catch (e) { /* silencioso */ }
+                    finally { historicoCarregando.value = false; }
+                };
 
                 // --- Envio ---
                 const enviandoSolicitacao = ref(false);
@@ -931,6 +1086,7 @@
                     if (token.value && tipo_solicitacao.value === 'proprio') {
                         buscarProprioUsuario();
                     }
+                    carregarHistorico();
                 });
 
                 // --- Autocomplete Cidades (API IBGE — gratuita, sem chave) ---
@@ -1205,8 +1361,85 @@
                     e.target.value = v;
                 };
 
-                const carregarPerfilViajante = async (username) => {
-                    if (!username) return;
+                const mascaraDataGeneric = (e, campo) => {
+                    const v = _mascaraDateStr(e.target.value);
+                    formPreferencias.value[campo] = v;
+                    e.target.value = v;
+                };
+
+                // Converte YYYY-MM-DD (input type=date) para DD/MM/AAAA
+                const _isoToDisplay = (iso) => {
+                    if (!iso) return '';
+                    const [y, m, d] = iso.split('-');
+                    return `${d}/${m}/${y}`;
+                };
+
+                    // ── Google Places API ─────────────────────────────────────────
+                    const GOOGLE_PLACES_KEY = '';
+                    const hoteisGoogle = ref([]);
+                    const hoteisGoogleBuscando = ref(false);
+                    const hoteisDropdown = ref(false);
+                    const hoteisGoogleErro = ref('');
+
+                    async function buscarHoteisGoogle() {
+                        const cidade = formViagem.value.destino_cidade.trim();
+                        const estado = formViagem.value.destino_estado?.trim() || '';
+                        if (!cidade) return;
+                        if (!GOOGLE_PLACES_KEY) {
+                            hoteisGoogleErro.value = 'Chave da API Google Places não configurada.';
+                            return;
+                        }
+                        hoteisGoogleBuscando.value = true;
+                        hoteisGoogleErro.value = '';
+                        hoteisDropdown.value = false;
+                        try {
+                            const query = `hotéis em ${cidade}${estado ? ' ' + estado : ''} Brasil`;
+                            const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-Goog-Api-Key': GOOGLE_PLACES_KEY,
+                                    'X-Goog-FieldMask': 'places.id,places.displayName,places.rating,places.userRatingCount,places.formattedAddress',
+                                },
+                                body: JSON.stringify({
+                                    textQuery: query,
+                                    languageCode: 'pt-BR',
+                                    maxResultCount: 10,
+                                    includedType: 'lodging',
+                                }),
+                            });
+                            const dados = await res.json();
+                            if (!res.ok) throw new Error(dados.error?.message || 'Erro na API');
+                            hoteisGoogle.value = dados.places || [];
+                            hoteisDropdown.value = hoteisGoogle.value.length > 0;
+                            if (!hoteisGoogle.value.length) hoteisGoogleErro.value = 'Nenhum hotel encontrado para esse destino.';
+                        } catch (e) {
+                            hoteisGoogleErro.value = 'Falha ao buscar hotéis: ' + e.message;
+                        } finally {
+                            hoteisGoogleBuscando.value = false;
+                        }
+                    }
+
+                    function selecionarHotelGoogle(hotel) {
+                        formPreferencias.value.preferencia_hotel_nome = hotel.displayName?.text || '';
+                        hoteisDropdown.value = false;
+                    }
+                };
+
+                const pickerPreferencias = (e, campo) => {
+                    const v = _isoToDisplay(e.target.value);
+                    if (!v) return;
+                    formPreferencias.value[campo] = v;
+                };
+
+                // Ônibus noturno (20h-06h) → sugerir leito cama automaticamente
+                watch(() => formPreferencias.value.rodov_periodo_preferido, (periodo) => {
+                    if (periodo === 'noite' && !formPreferencias.value.rodov_tipo_onibus) {
+                        formPreferencias.value.rodov_tipo_onibus = 'leito cama';
+                    }
+                });
+
+                const carregarPerfilViajante = async (username) => {                    if (!username) return;
                     try {
                         const resp = await fetch(`/api/v1/viagens/perfil/${username}`, {
                             headers: { 'Authorization': `Bearer ${token.value}` },
@@ -1273,6 +1506,11 @@
 
                 const enviarSolicitacao = async () => {
                     erroEnvio.value = '';
+                    // Validação: quarto individual por saúde exige observações
+                    if (formPreferencias.value.quarto_excecao_saude && !formPreferencias.value.observacoes_viajante.trim()) {
+                        erroEnvio.value = 'Por favor, preencha o campo Observações com a justificativa da condição de saúde para quarto individual.';
+                        return;
+                    }
                     enviandoSolicitacao.value = true;
                     const payload = {
                         ...formViagem.value,
@@ -1429,7 +1667,7 @@
                     duffelVoosVolta.value = [];
                     duffelVooSelecionadoVolta.value = null;
                     formViagem.value = { origem_cidade: '', origem_estado: '', destino_cidade: '', destino_estado: '', data_ida: '', data_volta: '', motivo_viagem: '', tipo_servico: [], preferencia_voo: null, preferencia_voo_volta: null };
-                    formPreferencias.value = { aereo_periodo_preferido: '', aereo_tipo_trecho: 'ambos', bagagem_extra: false, assento_especial: '', rodov_periodo_preferido: '', rodov_tipo_onibus: '', rodov_tipo_trecho: 'ambos', preferencia_hotel_nome: '', quarto_excecao_saude: false, carro_data_retirada: '', carro_hora_retirada: '', carro_cidade_retirada: '', carro_data_devolucao: '', carro_hora_devolucao: '', carro_cidade_devolucao: '', observacoes_viajante: '' };
+                    formPreferencias.value = { aereo_periodo_preferido: '', aereo_tipo_trecho: 'ambos', bagagem_extra: false, assento_especial: '', rodov_periodo_preferido: '', rodov_tipo_onibus: '', rodov_tipo_trecho: 'ambos', preferencia_hotel_nome: '', hosp_data_checkin: '', hosp_data_checkout: '', quarto_excecao_saude: false, carro_data_retirada: '', carro_hora_retirada: '', carro_cidade_retirada: '', carro_data_devolucao: '', carro_hora_devolucao: '', carro_cidade_devolucao: '', observacoes_viajante: '' };
                     protocoloGerado.value = null;
                     buscarProprioUsuario();
                 };
@@ -1448,12 +1686,18 @@
                     passoAtual,
                     tipo_solicitacao, cpfBusca, buscandoColaborador, viajanteDados, erroBusca, erroBuscaProprioUsuario, mostrarBuscaFallback, buscarColaboradorGCP,
                     celularViajante, dataNascimentoViajante, perfilSalvo,
-                    formatarCPF, mascaraData, mascaraDataIda, mascaraDataVolta, mascaraDataCarroRet, mascaraDataCarroDev, mascaraCelular, salvarPerfilViajante,
+                    formatarCPF, mascaraData, mascaraDataIda, mascaraDataVolta, mascaraDataCarroRet, mascaraDataCarroDev, mascaraDataGeneric, mascaraCelular, salvarPerfilViajante,
+                    pickerFormViagem, pickerPreferencias,
+                    // Google Places
+                    hoteisGoogle, hoteisGoogleBuscando, hoteisDropdown, hoteisGoogleErro,
+                    buscarHoteisGoogle, selecionarHotelGoogle,
                     distanciaViagem, distanciaCalculando,
                     formViagem, formPreferencias, servicosDisponiveis,
                     classificacaoAereo, passo2Valido,
                     enviandoSolicitacao, erroEnvio, protocoloGerado, classificacaoGerada,
                     enviarSolicitacao, novasolicitacao,
+                    // Histórico
+                    historico, historicoCarregando, carregarHistorico, statusLabelMini, statusCorMini,
                     // Duffel
                     duffelVoos, duffelVoosVolta, duffelBuscando, duffelErro,
                     duffelVooSelecionado, duffelVooSelecionadoVolta, podeBuscarVoos,

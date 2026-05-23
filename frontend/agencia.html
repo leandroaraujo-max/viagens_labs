@@ -225,6 +225,48 @@
         <div v-if="!solDetalhe" class="text-center py-16 text-gray-400 text-sm">Carregando…</div>
 
         <template v-else>
+          <!-- ── Dados completos do Viajante ── -->
+          <div v-if="solDetalhe.viajante_nome || solDetalhe.viajante_cpf" class="bg-sky-50 border border-sky-200 rounded-xl p-5 mb-5">
+            <h3 class="text-sm font-bold text-sky-700 mb-3 flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+              Dados do Viajante
+            </h3>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 text-xs">
+              <div v-if="solDetalhe.viajante_nome" class="col-span-2 md:col-span-1">
+                <span class="text-sky-500 block font-bold uppercase tracking-wide mb-0.5">Nome Completo</span>
+                <span class="font-semibold text-gray-800">{{ solDetalhe.viajante_nome }}</span>
+              </div>
+              <div v-if="solDetalhe.viajante_data_nascimento">
+                <span class="text-sky-500 block font-bold uppercase tracking-wide mb-0.5">Nascimento</span>
+                <span class="text-gray-700">{{ solDetalhe.viajante_data_nascimento }}</span>
+              </div>
+              <div v-if="solDetalhe.viajante_cpf">
+                <span class="text-sky-500 block font-bold uppercase tracking-wide mb-0.5">CPF</span>
+                <span class="font-mono text-gray-700">{{ solDetalhe.viajante_cpf }}</span>
+              </div>
+              <div v-if="solDetalhe.viajante_celular">
+                <span class="text-sky-500 block font-bold uppercase tracking-wide mb-0.5">Telefone</span>
+                <span class="text-gray-700">{{ solDetalhe.viajante_celular }}</span>
+              </div>
+              <div v-if="solDetalhe.viajante_matricula">
+                <span class="text-sky-500 block font-bold uppercase tracking-wide mb-0.5">Matrícula</span>
+                <span class="font-mono text-gray-700">{{ solDetalhe.viajante_matricula }}</span>
+              </div>
+              <div v-if="solDetalhe.viajante_cargo">
+                <span class="text-sky-500 block font-bold uppercase tracking-wide mb-0.5">Cargo</span>
+                <span class="text-gray-700">{{ solDetalhe.viajante_cargo }}</span>
+              </div>
+              <div v-if="solDetalhe.viajante_centro_custo" class="col-span-2 md:col-span-1">
+                <span class="text-sky-500 block font-bold uppercase tracking-wide mb-0.5">Centro de Custo</span>
+                <span class="text-gray-700">{{ solDetalhe.viajante_centro_custo }}<span v-if="solDetalhe.viajante_cod_centro_custo" class="text-gray-400 ml-1 font-mono">({{ solDetalhe.viajante_cod_centro_custo }})</span></span>
+              </div>
+              <div v-if="solDetalhe.viajante_email" class="col-span-2">
+                <span class="text-sky-500 block font-bold uppercase tracking-wide mb-0.5">E-mail</span>
+                <span class="text-gray-700">{{ solDetalhe.viajante_email }}</span>
+              </div>
+            </div>
+          </div>
+
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
 
             <!-- Cabeçalho -->
@@ -382,15 +424,9 @@
                       class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400" />
                   </div>
                   <div>
-                    <label class="text-xs text-gray-600 font-medium">Categoria</label>
-                    <select v-model="formCotacao.hotel_categoria"
-                      class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400">
-                      <option value="">Selecione…</option>
-                      <option>2 estrelas</option>
-                      <option>3 estrelas</option>
-                      <option>4 estrelas</option>
-                      <option>5 estrelas</option>
-                    </select>
+                    <label class="text-xs text-gray-600 font-medium">Padrão da Categoria</label>
+                    <input v-model="formCotacao.hotel_categoria" type="text" placeholder="Ex: Superior, Executive, Standard…"
+                      class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400" />
                   </div>
                   <div>
                     <label class="text-xs text-gray-600 font-medium">Valor da Diária (R$)</label>
@@ -730,10 +766,18 @@ createApp({
           return;
         }
         solDetalhe.value = dados;
-        // Pré-popular formulário se já existe cotação
+        // Limpar form
         Object.keys(formCotacao).forEach(k => { formCotacao[k] = null; });
         formCotacao.observacoes = '';
+        // Pré-popular com cotação existente
         if (dados.cotacao) popularFormCotacao(dados.cotacao);
+        // Auto-completar com preferências do viajante (editável)
+        if (!dados.cotacao) {
+          if (dados.aereo_periodo_preferido) formCotacao.aereo_horario_ida = dados.aereo_periodo_preferido;
+          if (dados.preferencia_voo)         formCotacao.aereo_numero_voo  = dados.preferencia_voo;
+          if (dados.preferencia_hotel_nome)  formCotacao.hotel_nome         = dados.preferencia_hotel_nome;
+          if (dados.rodov_tipo_onibus)        formCotacao.rodov_empresa      = dados.rodov_tipo_onibus;
+        }
       } catch (e) {
         console.error(e);
       }

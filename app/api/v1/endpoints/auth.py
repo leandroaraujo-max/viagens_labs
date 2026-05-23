@@ -6,8 +6,7 @@ from app.domain.models import schemas
 from app.api.dependencies import get_db_session
 from app.infrastructure.ldap_service import ActiveDirectoryService
 from app.infrastructure.bigquery_service import BigQueryService
-from app.infrastructure.orm.models import UsuarioAgenciaModel
-from app.core.security import create_access_token, verify_password
+from app.core.security import create_access_token
 
 router = APIRouter()
 
@@ -69,26 +68,8 @@ def login(
         )
 
     else:
-        # ── Login de agência (Tastur / Kontrip) ───────────────────────────
-        usuario = db.query(UsuarioAgenciaModel).filter(
-            UsuarioAgenciaModel.username == credentials.username,
-            UsuarioAgenciaModel.ativo == True,  # noqa: E712
-        ).first()
-
-        if not usuario or not verify_password(credentials.password, usuario.senha_hash):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Credenciais inválidas para acesso ao portal da agência.",
-            )
-
-        token_jwt = create_access_token(
-            subject=credentials.username,
-            perfil="agencia",
-            extra_claims={"agencia_nome": usuario.agencia_nome},
-        )
-        return schemas.TokenResponse(
-            access_token=token_jwt,
-            nome_usuario=usuario.nome or credentials.username,
-            username=credentials.username,
-            perfil="agencia",
+        # Agências não fazem login — acesso exclusivo via e-mail/GAS
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Agências acessam o sistema exclusivamente via link enviado por e-mail.",
         )

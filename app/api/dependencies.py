@@ -92,6 +92,23 @@ def require_setor(
     return payload.get("sub", "")
 
 
+def require_dev(
+    credentials: HTTPAuthorizationCredentials = Depends(_security_bearer),
+) -> str:
+    """
+    Garante que o token pertence a um usuário com perfil 'dev' (G_ACCESS_VIAGENSLABS_DEV).
+    Acesso irrestrito a toda a plataforma.
+    """
+    payload = _decode_payload(credentials)
+    perfil: str = payload.get("perfil", "")
+    if perfil != "dev":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acesso restrito ao Portal do Desenvolvedor (G_ACCESS_VIAGENSLABS_DEV).",
+        )
+    return payload.get("sub", "")
+
+
 def get_optional_username(
     credentials: HTTPAuthorizationCredentials = Depends(_security_bearer),
 ) -> str | None:

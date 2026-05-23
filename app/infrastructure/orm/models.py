@@ -42,6 +42,8 @@ class SolicitacaoModel(Base):
     # Passo 3 - Preferências Hospedagem
     preferencia_hotel_nome = Column(String(200), default='')
     quarto_excecao_saude = Column(Boolean, default=False)
+    hosp_data_checkin  = Column(String(20), default='')   # DD/MM/AAAA — quando sem aéreo
+    hosp_data_checkout = Column(String(20), default='')   # DD/MM/AAAA — quando sem aéreo
 
     # Passo 3 - Preferências Carro
     carro_data_retirada   = Column(String(20), default='')
@@ -178,18 +180,39 @@ class CasamentoModel(Base):
     data_acao      = Column(DateTime, nullable=True)
     grupo_viagem   = Column(String(20), nullable=True)        # código do grupo quando VINCULADO
 
-class UsuarioAgenciaModel(Base):
-    """Usuários externos das agências (Tastur/Kontrip) — autenticados por senha hash, não por AD."""
+class AgenciaModel(Base):
+    """Agências de viagens — participam do fluxo via e-mail/portal GAS, sem login."""
     __tablename__ = "usuarios_agencia"
 
-    id           = Column(Integer, primary_key=True, index=True)
-    username     = Column(String(100), unique=True, index=True, nullable=False)
-    nome         = Column(String(200), default='')
-    agencia_nome = Column(String(100), nullable=False)  # Tastur / Kontrip
-    email        = Column(String(200), default='')
-    senha_hash   = Column(String(200), nullable=False)
-    ativo        = Column(Boolean, default=True)
-    data_criacao = Column(DateTime(timezone=True), server_default=func.now())
+    id                        = Column(Integer, primary_key=True, index=True)
+    # Identificação
+    agencia_nome              = Column(String(100), nullable=False, index=True)   # nome fantasia — referência interna
+    razao_social              = Column(String(200), default='')
+    cnpj                      = Column(String(20),  default='', unique=True, index=True)
+    inscricao_estadual        = Column(String(50),  default='')
+    email                     = Column(String(200), default='')
+    # Endereço
+    cep                       = Column(String(10),  default='')
+    logradouro                = Column(String(200), default='')
+    numero                    = Column(String(20),  default='')
+    complemento               = Column(String(100), default='')
+    bairro                    = Column(String(100), default='')
+    municipio                 = Column(String(100), default='')
+    uf                        = Column(String(2),   default='')
+    # Dados bancários
+    banco_nome                = Column(String(100), default='')
+    banco_codigo              = Column(String(10),  default='')
+    agencia_bancaria          = Column(String(20),  default='')
+    conta_bancaria            = Column(String(20),  default='')
+    tipo_conta                = Column(String(5),   default='CC')  # CC ou CP
+    titularidade_cnpj         = Column(String(20),  default='')
+    titularidade_razao_social = Column(String(200), default='')
+    # Status
+    ativo                     = Column(Boolean, default=True)
+    data_criacao              = Column(DateTime(timezone=True), server_default=func.now())
+
+# Alias de compatibilidade — código legado que usa UsuarioAgenciaModel continua funcionando
+UsuarioAgenciaModel = AgenciaModel
 
 
 class UserProfileModel(Base):

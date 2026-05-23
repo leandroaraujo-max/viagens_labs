@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1.endpoints import viagens_router, auth_router, aprovacao_router, agencia_router, duffel_router, setor_router, voucher_router
+from app.api.v1.endpoints import viagens_router, auth_router, aprovacao_router, agencia_router, duffel_router, setor_router, voucher_router, dev_router
 
 api_router = APIRouter()
 
@@ -23,3 +23,6 @@ api_router.include_router(setor_router, prefix="/setor", tags=["Setor"])
 
 # Upload de vouchers pela agência vencedora
 api_router.include_router(voucher_router, prefix="/vouchers", tags=["Vouchers"])
+
+# Portal do Desenvolvedor (G_ACCESS_VIAGENSLABS_DEV — acesso irrestrito)
+api_router.include_router(dev_router, prefix="/dev", tags=["Dev"])

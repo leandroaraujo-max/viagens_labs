@@ -9,8 +9,7 @@ from app.domain.models.schemas import (
     AgenciaCreate, AgenciaUpdate, AgenciaResponse,
 )
 from app.services.setor_service import SetorService
-from app.core.security import get_password_hash
-from app.infrastructure.orm.models import UsuarioAgenciaModel
+from app.infrastructure.orm.models import AgenciaModel
 
 router = APIRouter()
 _setor_svc = SetorService()
@@ -153,13 +152,35 @@ def ignorar_casamento(
 
 # ── Agências ──────────────────────────────────────────────────────────────────
 
-def _agencia_to_response(ag: UsuarioAgenciaModel) -> AgenciaResponse:
+_AGENCIA_STR_FIELDS = [
+    'agencia_nome','razao_social','cnpj','inscricao_estadual','email',
+    'cep','logradouro','numero','complemento','bairro','municipio','uf',
+    'banco_nome','banco_codigo','agencia_bancaria','conta_bancaria',
+    'tipo_conta','titularidade_cnpj','titularidade_razao_social',
+]
+
+def _agencia_to_response(ag: AgenciaModel) -> AgenciaResponse:
     return AgenciaResponse(
         id=ag.id,
-        agencia_nome=ag.agencia_nome,
-        username=ag.username,
-        nome=ag.nome or '',
-        email=ag.email if hasattr(ag, 'email') and ag.email else '',
+        agencia_nome=ag.agencia_nome or '',
+        razao_social=ag.razao_social or '',
+        cnpj=ag.cnpj or '',
+        inscricao_estadual=ag.inscricao_estadual or '',
+        email=ag.email or '',
+        cep=ag.cep or '',
+        logradouro=ag.logradouro or '',
+        numero=ag.numero or '',
+        complemento=ag.complemento or '',
+        bairro=ag.bairro or '',
+        municipio=ag.municipio or '',
+        uf=ag.uf or '',
+        banco_nome=ag.banco_nome or '',
+        banco_codigo=ag.banco_codigo or '',
+        agencia_bancaria=ag.agencia_bancaria or '',
+        conta_bancaria=ag.conta_bancaria or '',
+        tipo_conta=ag.tipo_conta or 'CC',
+        titularidade_cnpj=ag.titularidade_cnpj or '',
+        titularidade_razao_social=ag.titularidade_razao_social or '',
         ativo=ag.ativo,
         data_criacao=ag.data_criacao.isoformat() if ag.data_criacao else None,
     )
@@ -170,10 +191,8 @@ def listar_agencias(
     db: Session = Depends(get_db_session),
     _: str = Depends(require_setor),
 ):
-    """Lista todos os usuários de agências cadastrados."""
-    agencias = db.query(UsuarioAgenciaModel).order_by(
-        UsuarioAgenciaModel.agencia_nome, UsuarioAgenciaModel.username
-    ).all()
+    """Lista todas as agências cadastradas."""
+    agencias = db.query(AgenciaModel).order_by(AgenciaModel.agencia_nome).all()
     return [_agencia_to_response(a) for a in agencias]
 
 
@@ -183,21 +202,33 @@ def cadastrar_agencia(
     db: Session = Depends(get_db_session),
     _: str = Depends(require_setor),
 ):
-    """Cadastra novo usuário de agência de viagens."""
-    username_normalizado = body.username.strip().lower()
-    if db.query(UsuarioAgenciaModel).filter(UsuarioAgenciaModel.username == username_normalizado).first():
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username já cadastrado.")
+    """Cadastra nova agência de viagens."""
+    cnpj_norm = (body.cnpj or '').strip().replace('.','').replace('/','').replace('-','')
+    if cnpj_norm and db.query(AgenciaModel).filter(AgenciaModel.cnpj == cnpj_norm).first():
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="CNPJ já cadastrado.")
 
-    nova = UsuarioAgenciaModel(
+    nova = AgenciaModel(
         agencia_nome=body.agencia_nome.strip(),
-        username=username_normalizado,
-        nome=body.nome.strip(),
-        senha_hash=get_password_hash(body.senha),
+        razao_social=body.razao_social.strip(),
+        cnpj=cnpj_norm,
+        inscricao_estadual=body.inscricao_estadual.strip(),
+        email=body.email.strip(),
+        cep=body.cep.strip(),
+        logradouro=body.logradouro.strip(),
+        numero=body.numero.strip(),
+        complemento=body.complemento.strip(),
+        bairro=body.bairro.strip(),
+        municipio=body.municipio.strip(),
+        uf=body.uf.strip().upper(),
+        banco_nome=body.banco_nome.strip(),
+        banco_codigo=body.banco_codigo.strip(),
+        agencia_bancaria=body.agencia_bancaria.strip(),
+        conta_bancaria=body.conta_bancaria.strip(),
+        tipo_conta=body.tipo_conta.strip().upper() or 'CC',
+        titularidade_cnpj=(body.titularidade_cnpj or '').strip(),
+        titularidade_razao_social=(body.titularidade_razao_social or '').strip(),
         ativo=True,
     )
-    if hasattr(nova, 'email'):
-        nova.email = body.email.strip()
-
     db.add(nova)
     db.commit()
     db.refresh(nova)
@@ -211,19 +242,17 @@ def atualizar_agencia(
     db: Session = Depends(get_db_session),
     _: str = Depends(require_setor),
 ):
-    """Atualiza dados, status ou senha de uma agência."""
-    ag = db.query(UsuarioAgenciaModel).filter(UsuarioAgenciaModel.id == agencia_id).first()
+    """Atualiza dados de uma agência."""
+    ag = db.query(AgenciaModel).filter(AgenciaModel.id == agencia_id).first()
     if not ag:
         raise HTTPException(status_code=404, detail="Agência não encontrada.")
 
-    if body.nome is not None:
-        ag.nome = body.nome.strip()
-    if body.email is not None and hasattr(ag, 'email'):
-        ag.email = body.email.strip()
+    for field in _AGENCIA_STR_FIELDS:
+        val = getattr(body, field, None)
+        if val is not None:
+            setattr(ag, field, val.strip() if isinstance(val, str) else val)
     if body.ativo is not None:
         ag.ativo = body.ativo
-    if body.senha is not None and body.senha.strip():
-        ag.senha_hash = get_password_hash(body.senha.strip())
 
     db.commit()
     db.refresh(ag)
@@ -237,7 +266,7 @@ def excluir_agencia(
     _: str = Depends(require_setor),
 ):
     """Remove permanentemente uma agência do sistema."""
-    ag = db.query(UsuarioAgenciaModel).filter(UsuarioAgenciaModel.id == agencia_id).first()
+    ag = db.query(AgenciaModel).filter(AgenciaModel.id == agencia_id).first()
     if not ag:
         raise HTTPException(status_code=404, detail="Agência não encontrada.")
     db.delete(ag)

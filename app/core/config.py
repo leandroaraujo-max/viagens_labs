@@ -45,6 +45,10 @@ class Settings(BaseSettings):
     AD_GROUP_ADMINS:   str = "G_ACCESS_VIAGENSLABS_ADMINS"    # acesso ao Portal do Setor
     AD_GROUP_USERS:    str = "G_ACCESS_VIAGENSLABS_USERS"     # acesso ao Portal do Viajante
     AD_GROUP_AGENCIAS: str = "G_ACCESS_VIAGENSLABS_AGENCIAS"  # acesso futuro das agências (VPN + AD)
+    AD_GROUP_DEV:      str = "G_ACCESS_VIAGENSLABS_DEV"       # acesso irrestrito ao Portal do Dev
+
+    # Google Maps Platform — Places API (restringir ao domínio intranet na GCP Console)
+    GOOGLE_PLACES_KEY: str = "AIzaSyCze8UFLGCYjjtKinRSiQ6ocjKZaNQSv9w"
 
     # Setor de Viagens — endereço que recebe notificações de pré-aprovação
     SETOR_EMAIL: str = "viagenslabs@luizalabs.com"

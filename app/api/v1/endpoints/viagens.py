@@ -112,3 +112,31 @@ def cancelar_solicitacao(
     db.commit()
     return {"protocolo": sol.protocolo, "status": sol.status, "mensagem": "Solicitação cancelada com sucesso."}
 
+
+@router.get("/minhas", status_code=200)
+def listar_minhas_solicitacoes(
+    db: Session = Depends(get_db_session),
+    username: str = Depends(get_current_username),
+):
+    """Retorna as últimas 20 solicitações do colaborador autenticado."""
+    from app.infrastructure.orm.models import SolicitacaoModel
+    solicitacoes = (
+        db.query(SolicitacaoModel)
+        .filter(SolicitacaoModel.solicitante_username == username)
+        .order_by(SolicitacaoModel.id.desc())
+        .limit(20)
+        .all()
+    )
+    return [
+        {
+            "id": s.id,
+            "protocolo": s.protocolo,
+            "destino_cidade": s.destino_cidade,
+            "destino_estado": s.destino_estado,
+            "data_ida": s.data_ida,
+            "status": s.status.lower() if s.status else "pendente",
+            "classificacao": s.classificacao,
+            "tipo_servico": s.tipo_servico,
+        }
+        for s in solicitacoes
+    ]
