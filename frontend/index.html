@@ -414,7 +414,7 @@
                                                 <span v-else>{{ distanciaViagem >= 400 ? '✈️' : '⚠️' }}</span>
                                                 <span v-if="distanciaCalculando">Calculando distância...</span>
                                                 <template v-else>
-                                                    <span><strong>{{ distanciaViagem }} km</strong> em linha reta</span>
+                                                    <span><strong>{{ distanciaViagem }} km</strong> por rodovia</span>
                                                     <span class="ml-auto text-xs px-2 py-0.5 rounded-full font-bold uppercase"
                                                         :class="distanciaViagem >= 400 ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'">
                                                         {{ distanciaViagem >= 400 ? 'Apto para voo' : 'Priorize terrestre' }}
@@ -1331,7 +1331,28 @@
                         const r2 = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(dest + ', Brasil')}&format=json&limit=1`, { headers: hdrs });
                         const d2 = await r2.json();
                         if (!d1[0] || !d2[0]) { distanciaViagem.value = null; return; }
-                        distanciaViagem.value = Math.round(_haversineKm(+d1[0].lat, +d1[0].lon, +d2[0].lat, +d2[0].lon));
+                        
+                        const lat1 = +d1[0].lat;
+                        const lon1 = +d1[0].lon;
+                        const lat2 = +d2[0].lat;
+                        const lon2 = +d2[0].lon;
+                        
+                        try {
+                            // Tenta obter a distância rodoviária real via OSRM (gratuito e preciso)
+                            const rRoute = await fetch(`https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}?overview=false`);
+                            const routeData = await rRoute.json();
+                            if (routeData.code === 'Ok' && routeData.routes && routeData.routes[0]) {
+                                distanciaViagem.value = Math.round(routeData.routes[0].distance / 1000);
+                                console.log('[distancia] rodoviária calculada:', distanciaViagem.value, 'km');
+                            } else {
+                                throw new Error('Retorno inválido do OSRM');
+                            }
+                        } catch (routeErr) {
+                            // Fallback seguro: Haversine geodésico multiplicado pelo fator médio de curvatura de estradas no Brasil (aprox. 1.25)
+                            const haversineVal = _haversineKm(lat1, lon1, lat2, lon2);
+                            distanciaViagem.value = Math.round(haversineVal * 1.25);
+                            console.warn('[distancia] usando fallback Haversine com fator de correção:', distanciaViagem.value, 'km (erro:', routeErr.message, ')');
+                        }
                     } catch (e) {
                         console.warn('[distancia]', e.message);
                         distanciaViagem.value = null;
