@@ -304,23 +304,34 @@
           <div class="animate-spin w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full"></div>
         </div>
         <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          <div v-for="ag in agencias" :key="ag.id" class="bg-dev-card border border-dev-border rounded-xl p-4">
-            <div class="flex items-start justify-between mb-3">
-              <div>
-                <p class="font-bold text-slate-100">{{ ag.nome_fantasia }}</p>
-                <p class="text-xs text-slate-500 mt-0.5 font-mono">{{ ag.cnpj }}</p>
+          <div v-for="ag in agencias" :key="ag.id" class="bg-dev-card border border-dev-border rounded-xl p-4 flex flex-col justify-between hover:border-indigo-500/30 transition-all duration-300">
+            <div>
+              <div class="flex items-start justify-between mb-3 gap-2">
+                <div class="min-w-0">
+                  <p class="font-bold text-slate-100 truncate text-sm" :title="ag.agencia_nome">{{ ag.agencia_nome || 'Sem Nome' }}</p>
+                  <p class="text-[10px] text-slate-500 italic truncate mt-0.5" :title="ag.razao_social">{{ ag.razao_social || 'Sem Razão Social' }}</p>
+                </div>
+                <span :class="ag.ativo ? 'bg-green-500/10 text-green-400 border-green-500/30' : 'bg-red-500/10 text-red-400 border-red-500/30'"
+                      class="text-[9px] font-bold px-2 py-0.5 rounded-full border uppercase shrink-0">
+                  {{ ag.ativo ? 'ATIVA' : 'INATIVA' }}
+                </span>
               </div>
-              <span :class="ag.ativa ? 'bg-green-500/10 text-green-400 border-green-500/30' : 'bg-red-500/10 text-red-400 border-red-500/30'"
-                    class="text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase">
-                {{ ag.ativa ? 'ATIVA' : 'INATIVA' }}
-              </span>
+              <div class="space-y-1.5 mb-4 text-xs">
+                <div class="flex items-center gap-1.5 text-slate-400">
+                  <span class="text-slate-600">CNPJ:</span>
+                  <span class="font-mono text-slate-300">{{ formatarCnpj(ag.cnpj) }}</span>
+                </div>
+                <div class="flex items-center gap-1.5 text-slate-400 truncate">
+                  <span class="text-slate-600">E-mail:</span>
+                  <span class="truncate font-mono text-slate-300" :title="ag.email">{{ ag.email || '—' }}</span>
+                </div>
+              </div>
             </div>
-            <p class="text-xs text-slate-400 mb-3">{{ ag.email_contato }}</p>
-            <div class="flex gap-2">
+            <div class="flex gap-2 mt-auto pt-2 border-t border-dev-border/40">
               <button @click="toggleAgencia(ag)"
                       class="flex-1 py-1.5 text-xs font-semibold rounded-lg border transition"
-                      :class="ag.ativa ? 'border-red-500/40 text-red-400 hover:bg-red-500/10' : 'border-green-500/40 text-green-400 hover:bg-green-500/10'">
-                {{ ag.ativa ? 'Desativar' : 'Ativar' }}
+                      :class="ag.ativo ? 'border-red-500/40 text-red-400 hover:bg-red-500/10' : 'border-green-500/40 text-green-400 hover:bg-green-500/10'">
+                {{ ag.ativo ? 'Desativar' : 'Ativar' }}
               </button>
               <button @click="abrirResetSenha(ag)"
                       class="flex-1 py-1.5 text-xs font-semibold rounded-lg border border-dev-border text-slate-400 hover:text-slate-200 hover:border-indigo-500/40 transition">
@@ -334,7 +345,7 @@
         <div v-if="resetSenhaModal.aberto" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div class="bg-dev-card border border-dev-border rounded-2xl p-6 w-full max-w-sm">
             <h3 class="text-sm font-bold text-white mb-1">Resetar senha</h3>
-            <p class="text-xs text-slate-500 mb-4">{{ resetSenhaModal.agencia?.nome_fantasia }}</p>
+            <p class="text-xs text-slate-500 mb-4">{{ resetSenhaModal.agencia?.agencia_nome }}</p>
             <input v-model="resetSenhaModal.novaSenha" type="password" placeholder="Nova senha (mínimo 8 caracteres)"
                    class="w-full bg-dev-panel border border-dev-border text-slate-200 rounded-lg px-3 py-2.5 text-sm font-mono focus:outline-none focus:border-indigo-500 mb-3 placeholder-slate-600">
             <div v-if="resetSenhaModal.erro" class="text-xs text-red-400 mb-3">{{ resetSenhaModal.erro }}</div>
@@ -736,11 +747,12 @@ createApp({
 
     async function toggleAgencia(ag) {
       const res = await fetch(`${API}/dev/agencias/${ag.id}/toggle-ativa`, { method: 'PATCH', headers: authHeaders() });
-      if (res.ok) { const d = await res.json(); ag.ativa = d.ativa; }
+      if (res.ok) { const d = await res.json(); ag.ativo = d.ativo; }
     }
 
     function abrirResetSenha(ag) {
-      Object.assign(resetSenhaModal, { aberto: true, agencia: ag, novaSenha: '', erro: '', ok: false, carregando: false });
+      Object.assign(resetSenhaModal, { aberto: true, agency: ag, novaSenha: '', erro: '', ok: false, carregando: false });
+      resetSenhaModal.agencia = ag;
     }
 
     async function confirmarResetSenha() {
@@ -815,6 +827,13 @@ createApp({
         APROVADO: 'bg-green-400', REPROVADO: 'bg-red-400', CANCELADO: 'bg-slate-500',
       };
       return mapa[status] || 'bg-slate-500';
+    }
+
+    function formatarCnpj(cnpj) {
+      if (!cnpj) return '—';
+      const limpo = cnpj.replace(/\D/g, '');
+      if (limpo.length !== 14) return cnpj;
+      return limpo.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
     }
 
     function formatarData(dt) {
@@ -969,7 +988,7 @@ createApp({
       agencias, agenciasCarregando, carregarAgencias, toggleAgencia,
       resetSenhaModal, abrirResetSenha, confirmarResetSenha,
       config, configCarregando, configGrupos, carregarConfig,
-      corStatus, corBarraStatus, formatarData, formatarTempo,
+      corStatus, corBarraStatus, formatarData, formatarTempo, formatarCnpj,
       qaTesters, qaTestersCarregando, qaForm, qaFormErro, qaFormOk, qaFormLoading, carregarQATesters, salvarQATester, removerQATester,
       logServico, logLinhas, logPausado, logConteudo, logCaminho, logCarregando, carregarLogs, limparLogsConsole,
       excluirModal, solicitarExcluir, confirmarExclusaoCascade,
