@@ -48,7 +48,7 @@ class Settings(BaseSettings):
     AD_GROUP_DEV:      str = "G_ACCESS_VIAGENSLABS_DEV"       # acesso irrestrito ao Portal do Dev
 
     # Google Maps Platform — Places API (restringir ao domínio intranet na GCP Console)
-    GOOGLE_PLACES_KEY: str = "AIzaSyCze8UFLGCYjjtKinRSiQ6ocjKZaNQSv9w"
+    GOOGLE_PLACES_KEY: str = "key da api do google"
 
     # Setor de Viagens — endereço que recebe notificações de pré-aprovação
     SETOR_EMAIL: str = "viagenslabs@luizalabs.com"
