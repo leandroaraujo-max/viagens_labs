@@ -27,18 +27,17 @@ STATUSES_SETOR = {
 ACOES_VALIDAS = {
     "PRE_APROVAR",
     "PRE_REPROVAR",
-    "APROVAR_TASTUR",
-    "APROVAR_KONTRIP",
     "REPROVAR",
     "REENVIAR_AGENCIAS",
+    # APROVAR_<AGENCIA> é dinâmica e validada separadamente por is_aprovar_dinamica
 }
 
-# Mapeamento status → ações permitidas
+# Mapeamento status → ações permitidas (APROVAR_<AGENCIA> é validada dinamicamente)
 ACOES_POR_STATUS = {
     "PENDENTE_PRE_APROVACAO_SETOR": {"PRE_APROVAR", "PRE_REPROVAR"},
     "AGUARDANDO_COTACAO":           {"REENVIAR_AGENCIAS"},
     "COTACAO_ENVIADA":              {"REENVIAR_AGENCIAS"},
-    "PENDENTE_APROVACAO_SETOR_COTACAO": {"APROVAR_TASTUR", "APROVAR_KONTRIP", "REPROVAR"},
+    "PENDENTE_APROVACAO_SETOR_COTACAO": {"REPROVAR"},  # APROVAR_<AGENCIA> é dinâmica
 }
 
 
@@ -75,7 +74,12 @@ class SetorService:
         return query.order_by(SolicitacaoModel.data_criacao.desc()).all()
 
     def get_solicitacao(self, db: Session, solicitacao_id: int):
-        """Retorna (solicitacao, cotacao_tastur, cotacao_kontrip, casamentos, todas_cotacoes)."""
+        """Retorna (solicitacao, cotacao_1a, cotacao_2a, casamentos, todas_cotacoes).
+        
+        Os dois primeiros slots de cotação (cot_tastur/cot_kontrip nos campos legados)
+        são preenchidos dinamicamente com as primeiras cotações encontradas,
+        sem dependência de nomes hardcoded.
+        """
         sol = db.query(SolicitacaoModel).filter(SolicitacaoModel.id == solicitacao_id).first()
         if not sol:
             return None, None, None, [], []
@@ -85,11 +89,12 @@ class SetorService:
             .filter(CotacaoModel.solicitacao_id == solicitacao_id)
             .all()
         )
-        cot_tastur  = next((c for c in cotacoes if c.agencia_nome == "Tastur"),  None)
-        cot_kontrip = next((c for c in cotacoes if c.agencia_nome == "Kontrip"), None)
+        # Preenche os slots legados dinâmicamente (sem hardcoding de nome de agência)
+        cot_1 = cotacoes[0] if len(cotacoes) > 0 else None
+        cot_2 = cotacoes[1] if len(cotacoes) > 1 else None
         casamentos  = _casamento_svc.listar_casamentos_da_solicitacao(db, solicitacao_id)
 
-        return sol, cot_tastur, cot_kontrip, casamentos, cotacoes
+        return sol, cot_1, cot_2, casamentos, cotacoes
 
     # ── Executar ação ─────────────────────────────────────────────────────────
 
@@ -185,7 +190,8 @@ class SetorService:
         from app.infrastructure.orm.models import AgenciaModel
         agencias = db.query(AgenciaModel).filter_by(ativo=True).all()
         if not agencias:
-            lista_agencias = ["Tastur", "Kontrip"]
+            logger.warning(f"[Setor] Nenhuma agência ativa no banco para {sol.protocolo}. Verifique o cadastro.")
+            lista_agencias = []
         else:
             lista_agencias = [a.agencia_nome for a in agencias]
 

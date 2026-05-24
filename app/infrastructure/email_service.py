@@ -201,7 +201,7 @@ class EmailService:
         except Exception as e:
             logger.warning(f"Erro ao buscar agências ativas no banco: {e}")
         
-        # Fallback para as agências padrão
+        # Fallback: tenta usar e-mails configurados no .env para agências legadas
         ret = []
         if getattr(settings, "AGENCIA_TASTUR_EMAIL", None):
             ret.append(("Tastur", settings.AGENCIA_TASTUR_EMAIL))
@@ -213,9 +213,14 @@ class EmailService:
         try:
             from app.infrastructure.database import SessionLocal
             from app.infrastructure.orm.models import AgenciaModel
+            from sqlalchemy import func
             db = SessionLocal()
             try:
-                agencia = db.query(AgenciaModel).filter_by(agencia_nome=agencia_nome, ativo=True).first()
+                # Busca case-insensitive para tolerar 'TASTUR', 'Tastur', 'tastur' etc.
+                agencia = db.query(AgenciaModel).filter(
+                    func.lower(AgenciaModel.agencia_nome) == agencia_nome.lower(),
+                    AgenciaModel.ativo == True
+                ).first()
                 if agencia and agencia.email:
                     return agencia.email
             finally:
@@ -223,10 +228,10 @@ class EmailService:
         except Exception as e:
             logger.warning(f"Erro ao buscar agência {agencia_nome} no banco: {e}")
         
-        # Fallback para as agências padrão
-        if agencia_nome == "Tastur":
+        # Fallback para agências legadas configuradas no .env
+        if agencia_nome.lower() == "tastur":
             return getattr(settings, "AGENCIA_TASTUR_EMAIL", None)
-        elif agencia_nome == "Kontrip":
+        elif agencia_nome.lower() == "kontrip":
             return getattr(settings, "AGENCIA_KONTRIP_EMAIL", None)
         return None
 

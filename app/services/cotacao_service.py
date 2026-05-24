@@ -61,6 +61,9 @@ class CotacaoService:
         cotacao.status             = "PENDENTE"
 
         # Avança o status da solicitação
+        # IMPORTANTE: db.flush() antes do count garante que a cotação recém-adicionada
+        # (ainda não commitada) seja incluída na contagem — necessário pois autoflush=False.
+        db.flush()
         cotacoes_existentes = db.query(CotacaoModel).filter(
             CotacaoModel.solicitacao_id == solicitacao_id
         ).count()
@@ -69,7 +72,7 @@ class CotacaoService:
         from app.infrastructure.orm.models import AgenciaModel
         qtd_agencias_ativas = db.query(AgenciaModel).filter_by(ativo=True).count()
         if qtd_agencias_ativas == 0:
-            qtd_agencias_ativas = 2  # Fallback padrão legado (Tastur + Kontrip)
+            qtd_agencias_ativas = 1  # Fallback seguro: ao menos 1 agência
 
         # Quando todas as agências ativas já cotaram → aguarda decisão do Setor
         if cotacoes_existentes >= qtd_agencias_ativas:

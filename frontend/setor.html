@@ -1338,7 +1338,8 @@ createApp({
       });
       
       if (listaAgencias.length === 0) {
-        listaAgencias.push('Tastur', 'Kontrip');
+        // Sem agências cadastradas e sem cotações — lista vazia, não usa fallback legado
+        return [];
       }
 
       return listaAgencias.map(agName => {
@@ -1652,11 +1653,10 @@ createApp({
     const ACAO_LABELS = {
       PRE_APROVAR:        'Pré-Aprovar',
       PRE_REPROVAR:       'Reprovar (pré-aprovação)',
-      APROVAR_TASTUR:     'Escolher Tastur como vencedora',
-      APROVAR_KONTRIP:    'Escolher Kontrip como vencedora',
       REPROVAR:           'Reprovar',
       REENVIAR_AGENCIAS:  'Reenviar E-mails às Agências',
     };
+    // Para ações dinâmicas APROVAR_<AGENCIA>, o label é gerado no botão ("Escolher {{ slot.agencia }}")
     const acaoLabel = (a) => ACAO_LABELS[a] || a;
 
     // ── Casamentos ─────────────────────────────────────────────────────────────
