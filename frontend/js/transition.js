@@ -102,8 +102,8 @@
   // ─── Dismiss do overlay: aguarda o app Vue sinalizar que montou ──────────────
   // O app chama window._vlReady() no onMounted. Se demorar mais de MAX_WAIT ms,
   // dispensa o overlay de qualquer forma (proteção contra CDN lento).
-  var MIN_DISPLAY = 900;  // ms mínimos que o overlay fica visível
-  var MAX_WAIT    = 5000; // ms máximos esperando o Vue montar (fallback)
+  var MIN_DISPLAY = 800;  // ms mínimos de exibição — tempo da animação do avião (CSS: 1.4s)
+  var MAX_WAIT    = 3000; // ms máximos aguardando Vue montar antes de forçar dismiss
 
   function dismissOverlay(ov) {
     if (!ov || !ov.parentNode) return;
@@ -116,33 +116,50 @@
 
   function onArrival() {
     sessionStorage.removeItem(KEY);
+
+    var vueMountedFlag = false; // Vue chamou _vlReady() antes do overlay existir?
+    var dismissed      = false;
+    var arrivalTs      = Date.now();
+
+    // Define _vlReady IMEDIATAMENTE — antes de DOMContentLoaded —
+    // para que Vue possa chamar mesmo antes de run() criar o overlay.
+    window._vlReady = function () {
+      vueMountedFlag = true;
+      // Se o overlay já existe, descarta agora
+      var ov = document.getElementById('vl-overlay');
+      if (ov && !dismissed) {
+        dismissed = true;
+        clearTimeout(window._vlFallback);
+        var elapsed = Date.now() - arrivalTs;
+        var delay   = Math.max(0, MIN_DISPLAY - elapsed);
+        setTimeout(function () { dismissOverlay(ov); }, delay);
+      }
+      // Se overlay ainda não existe (run() ainda não rodou),
+      // vueMountedFlag = true fará run() descartar imediatamente.
+    };
+
     function run() {
       var ov = makeOverlay();
       document.body.style.overflow = 'hidden';
       document.body.appendChild(ov);
-      // Remove o body::before agora que o overlay real cobre tudo
       var c = document.getElementById('vl-cover');
       if (c) c.remove();
 
-      var dismissed = false;
-      var arrivalTs = Date.now();
+      // Vue já chamou _vlReady() ANTES do overlay existir → descartar logo
+      if (vueMountedFlag && !dismissed) {
+        dismissed = true;
+        var elapsed = Date.now() - arrivalTs;
+        var delay   = Math.max(0, MIN_DISPLAY - elapsed);
+        setTimeout(function () { dismissOverlay(ov); }, delay);
+        return;
+      }
 
-      // Fallback: descarta overlay após MAX_WAIT mesmo sem sinal do Vue
-      var fallbackTimer = setTimeout(function () {
+      // Fallback: descarta após MAX_WAIT caso _vlReady nunca seja chamado
+      window._vlFallback = setTimeout(function () {
         if (!dismissed) { dismissed = true; dismissOverlay(ov); }
       }, MAX_WAIT);
-
-      // O app Vue chama window._vlReady() ao terminar onMounted
-      window._vlReady = function () {
-        if (dismissed) return;
-        dismissed = true;
-        clearTimeout(fallbackTimer);
-        // Garante MIN_DISPLAY ms de exibição para a animação do avião
-        var elapsed = Date.now() - arrivalTs;
-        var delay = Math.max(0, MIN_DISPLAY - elapsed);
-        setTimeout(function () { dismissOverlay(ov); }, delay);
-      };
     }
+
     if (document.body) { run(); }
     else { document.addEventListener('DOMContentLoaded', run, { once: true }); }
   }
