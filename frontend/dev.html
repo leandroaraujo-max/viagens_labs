@@ -489,6 +489,68 @@
         </div>
       </div>
 
+      <!-- ── ABA: Histórico de Acessos (Auditoria) ────────────────────────── -->
+      <div v-if="abaAtiva === 'logs_acesso'">
+        <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
+          <div>
+            <h2 class="text-xl font-bold text-white">Histórico de Acessos</h2>
+            <p class="text-slate-500 text-xs mt-0.5">Trilha de auditoria em tempo real de logins e conexões na ferramenta</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button @click="carregarLogsAcesso" :disabled="logsAcessoCarregando"
+                    class="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-dev-card border border-dev-border rounded-lg text-slate-400 hover:text-slate-200 transition">
+              <svg :class="logsAcessoCarregando ? 'animate-spin' : ''" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+              </svg>
+              Atualizar
+            </button>
+          </div>
+        </div>
+        <div class="bg-dev-card border border-dev-border rounded-xl overflow-hidden glow">
+          <div v-if="logsAcessoCarregando" class="flex justify-center py-10">
+            <div class="animate-spin w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full"></div>
+          </div>
+          <div v-else-if="!logsAcesso.length" class="text-center py-10 text-slate-500 text-sm">
+            Nenhum registro de acesso encontrado.
+          </div>
+          <div v-else class="overflow-x-auto">
+            <table class="w-full text-xs">
+              <thead class="border-b border-dev-border">
+                <tr class="text-slate-500 uppercase tracking-wide text-[10px]">
+                  <th class="px-4 py-3 text-left font-semibold">Data/Hora</th>
+                  <th class="px-4 py-3 text-left font-semibold">Usuário AD</th>
+                  <th class="px-4 py-3 text-left font-semibold">Nome Completo</th>
+                  <th class="px-4 py-3 text-left font-semibold">Perfil</th>
+                  <th class="px-4 py-3 text-left font-semibold">IP de Origem</th>
+                  <th class="px-4 py-3 text-left font-semibold">Status</th>
+                  <th class="px-4 py-3 text-left font-semibold">Detalhes</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-dev-border/50">
+                <tr v-for="l in logsAcesso" :key="l.id" class="hover:bg-dev-panel/50 transition">
+                  <td class="px-4 py-3 text-slate-400 font-mono">{{ formatarDataHora(l.data_criacao) }}</td>
+                  <td class="px-4 py-3 font-mono font-bold text-indigo-300">{{ l.username }}</td>
+                  <td class="px-4 py-3 text-slate-200">{{ l.nome || '—' }}</td>
+                  <td class="px-4 py-3">
+                    <span v-if="l.perfil === 'dev'" class="bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">Developer</span>
+                    <span v-else-if="l.perfil === 'setor'" class="bg-blue-500/10 text-blue-400 border border-blue-500/30 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">Setor Viagens</span>
+                    <span v-else-if="l.perfil === 'viajante'" class="bg-slate-500/10 text-slate-400 border border-slate-500/30 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">Viajante</span>
+                    <span v-else-if="l.perfil === 'agencia'" class="bg-amber-500/10 text-amber-400 border border-amber-500/30 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">Agência</span>
+                    <span v-else class="text-slate-500">—</span>
+                  </td>
+                  <td class="px-4 py-3 text-slate-400 font-mono">{{ l.ip_origem }}</td>
+                  <td class="px-4 py-3">
+                    <span v-if="l.status_acesso === 'SUCESSO'" class="bg-green-500/10 text-green-400 border border-green-500/30 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">Sucesso</span>
+                    <span v-else class="bg-red-500/10 text-red-400 border border-red-500/30 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">Bloqueado</span>
+                  </td>
+                  <td class="px-4 py-3 text-slate-400 truncate max-w-xs" :title="l.observacao">{{ l.observacao || '—' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       <!-- ── ABA: Logs do Sistema ─────────────────────────────────────────── -->
       <div v-if="abaAtiva === 'logs'">
         <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
@@ -592,6 +654,7 @@ createApp({
       { id: 'agencias',     icon: '🏢', label: 'Agências' },
       { id: 'qa_testers',   icon: '🧪', label: 'Testadores QA' },
       { id: 'logs',         icon: '⌨', label: 'Logs do Sistema' },
+      { id: 'logs_acesso',  icon: '🛡', label: 'Histórico de Acessos' },
       { id: 'config',       icon: '⚙', label: 'Configuração' },
       { id: 'plataforma',   icon: '⬡', label: 'Plataforma' },
     ];
@@ -897,6 +960,26 @@ createApp({
       logConteudo.value = '';
     }
 
+    // ── Logs de Acesso e Auditoria ────────────────────────────────────
+    const logsAcesso = ref([]);
+    const logsAcessoCarregando = ref(false);
+    const logsAcessoInterval = ref(null);
+
+    async function carregarLogsAcesso(showLoading = true) {
+      if (showLoading) logsAcessoCarregando.value = true;
+      try {
+        const res = await fetch(`${API}/dev/logs-acesso`, { headers: authHeaders() });
+        if (!res.ok) return;
+        logsAcesso.value = await res.json();
+      } finally { logsAcessoCarregando.value = false; }
+    }
+
+    function formatarDataHora(dt) {
+      if (!dt) return '—';
+      const d = new Date(dt);
+      return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    }
+
     // ── Exclusão Cascade ──────────────────────────────────────────────
     const excluirModal = reactive({ aberto: false, solicitacao: null, erro: '', carregando: false });
 
@@ -940,6 +1023,17 @@ createApp({
       } else {
         clearInterval(logInterval.value);
       }
+
+      // Controla polling de logs de acesso
+      if (aba === 'logs_acesso') {
+        carregarLogsAcesso();
+        clearInterval(logsAcessoInterval.value);
+        logsAcessoInterval.value = setInterval(() => {
+          carregarLogsAcesso(false);
+        }, 5000);
+      } else {
+        clearInterval(logsAcessoInterval.value);
+      }
     });
 
     return {
@@ -953,6 +1047,7 @@ createApp({
       corStatus, corBarraStatus, formatarData, formatarTempo, formatarCnpj,
       qaTesters, qaTestersCarregando, qaForm, qaFormErro, qaFormOk, qaFormLoading, carregarQATesters, salvarQATester, removerQATester,
       logServico, logLinhas, logPausado, logConteudo, logCaminho, logCarregando, carregarLogs, limparLogsConsole,
+      logsAcesso, logsAcessoCarregando, logsAcessoInterval, carregarLogsAcesso, formatarDataHora,
       excluirModal, solicitarExcluir, confirmarExclusaoCascade,
     };
   }

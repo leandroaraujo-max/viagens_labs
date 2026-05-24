@@ -126,8 +126,32 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    # Middleware Global de Auditoria de Navegação
+    @app.middleware("http")
+    async def auditoria_navegacao_middleware(request, call_next):
+        path = request.url.path
+        if path.startswith("/api/v1/"):
+            username = "anônimo"
+            perfil = "N/A"
+            auth_header = request.headers.get("Authorization")
+            if auth_header and auth_header.startswith("Bearer "):
+                try:
+                    token = auth_header.split(" ")[1]
+                    from jose import jwt
+                    from app.core.security import SECRET_KEY, ALGORITHM
+                    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+                    username = payload.get("sub", "anônimo")
+                    perfil = payload.get("perfil", "N/A")
+                except Exception:
+                    pass
+            print(f"[AUDITORIA - NAVEGAÇÃO] Usuário: {username} | Perfil: {perfil} | Método: {request.method} | Rota: {path}")
+        
+        response = await call_next(request)
+        return response
+
     # Registra o roteador principal da API
     app.include_router(api_router, prefix="/api/v1")
+
 
     # Rota raiz
     @app.get("/")

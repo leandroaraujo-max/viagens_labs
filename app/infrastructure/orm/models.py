@@ -303,3 +303,15 @@ class UsuarioQATesteModel(Base):
     data_criacao = Column(DateTime(timezone=True), server_default=func.now())
 
 
+class LogAcessoModel(Base):
+    """Logs de acessos e logins de usuários para monitoramento e auditoria da plataforma."""
+    __tablename__ = "log_acessos"
+
+    id             = Column(Integer, primary_key=True, index=True)
+    username       = Column(String(100), nullable=False, index=True)
+    nome           = Column(String(200), default='')
+    perfil         = Column(String(50), default='')
+    ip_origem      = Column(String(50), default='')
+    status_acesso  = Column(String(50), default='SUCESSO')  # SUCESSO | BLOQUEADO
+    observacao     = Column(Text, default='')
+    data_criacao   = Column(DateTime(timezone=True), server_default=func.now(), index=True)

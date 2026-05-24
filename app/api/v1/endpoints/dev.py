@@ -384,3 +384,29 @@ def ler_logs(
         "caminho": actual_path,
         "conteudo": tail_file(actual_path, linhas)
     }
+
+
+# ── Histórico de Acessos e Auditoria ─────────────────────────────────────────
+
+@router.get("/logs-acesso")
+def listar_logs_acesso(
+    db: Session = Depends(get_db_session),
+    _: str = Depends(require_dev),
+):
+    """Lista os últimos 100 registros de auditoria da tabela log_acessos."""
+    from app.infrastructure.orm.models import LogAcessoModel
+    logs = db.query(LogAcessoModel).order_by(desc(LogAcessoModel.data_criacao)).limit(100).all()
+    return [
+        {
+            "id": l.id,
+            "username": l.username,
+            "nome": l.nome or "",
+            "perfil": l.perfil or "",
+            "ip_origem": l.ip_origem or "",
+            "status_acesso": l.status_acesso or "SUCESSO",
+            "observacao": l.observacao or "",
+            "data_criacao": l.data_criacao.isoformat() if l.data_criacao else None
+        }
+        for l in logs
+    ]
+

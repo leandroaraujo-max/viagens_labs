@@ -272,3 +272,66 @@ def excluir_agencia(
         raise HTTPException(status_code=404, detail="Agência não encontrada.")
     db.delete(ag)
     db.commit()
+
+
+# ── Telemetria e Auditoria Operacional (Acessos/Onboarding) ───────────────────
+
+@router.get("/stats")
+def obter_stats_setor(
+    db: Session = Depends(get_db_session),
+    _: str = Depends(require_setor),
+):
+    """Retorna dados de telemetria adicionais para o setor (como viajantes ativos hoje)."""
+    from app.infrastructure.orm.models import LogAcessoModel
+    from sqlalchemy import func
+    from datetime import datetime, timedelta
+    
+    limite_tempo = datetime.now() - timedelta(hours=24)
+    
+    try:
+        ativos_hoje = (
+            db.query(func.count(func.distinct(LogAcessoModel.username)))
+            .filter(LogAcessoModel.status_acesso == "SUCESSO")
+            .filter(LogAcessoModel.data_criacao >= limite_tempo)
+            .scalar()
+        ) or 0
+    except Exception:
+        ativos_hoje = 0
+        
+    return {"ativos_hoje": ativos_hoje}
+
+
+@router.get("/alertas-acesso")
+def obter_alertas_acesso(
+    db: Session = Depends(get_db_session),
+    _: str = Depends(require_setor),
+):
+    """Lista as tentativas de login bloqueadas nas últimas 48 horas."""
+    from app.infrastructure.orm.models import LogAcessoModel
+    from sqlalchemy import desc
+    from datetime import datetime, timedelta
+    
+    limite_tempo = datetime.now() - timedelta(hours=48)
+    
+    try:
+        alertas = (
+            db.query(LogAcessoModel)
+            .filter(LogAcessoModel.status_acesso == "BLOQUEADO")
+            .filter(LogAcessoModel.data_criacao >= limite_tempo)
+            .order_by(desc(LogAcessoModel.data_criacao))
+            .all()
+        )
+    except Exception:
+        alertas = []
+        
+    return [
+        {
+            "id": a.id,
+            "username": a.username,
+            "ip_origem": a.ip_origem or "",
+            "observacao": a.observacao or "",
+            "data_criacao": a.data_criacao.isoformat() if a.data_criacao else None
+        }
+        for a in alertas
+    ]
+
