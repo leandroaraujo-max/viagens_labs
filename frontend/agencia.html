@@ -896,6 +896,9 @@ createApp({
     }
 
     onMounted(() => {
+      // Sinaliza ao sistema de transição que o Vue montou com sucesso
+      if (typeof window._vlReady === 'function') window._vlReady();
+
       const params = new URLSearchParams(window.location.search);
       const tokenParam = params.get('token');
       if (tokenParam) {

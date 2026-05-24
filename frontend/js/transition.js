@@ -63,11 +63,12 @@
   function makeOverlay() {
     injectCSS();
     var el = document.createElement('div');
+    el.id = 'vl-overlay';
     el.style.cssText = 'position:fixed;inset:0;z-index:99999'
       + ';background:linear-gradient(135deg,#0f172a 0%,#001e7a 100%)'
       + ';display:flex;align-items:center;justify-content:center'
       + ';overflow:hidden;pointer-events:all'
-      + ';opacity:1;transition:opacity .35s ease';
+      + ';opacity:1;transition:opacity .45s ease';
 
     var clouds = '<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice">'
       + '<ellipse cx="150" cy="120" rx="130" ry="40" fill="white" opacity="0.05"/>'
@@ -98,22 +99,49 @@
     return el;
   }
 
+  // ─── Dismiss do overlay: aguarda o app Vue sinalizar que montou ──────────────
+  // O app chama window._vlReady() no onMounted. Se demorar mais de MAX_WAIT ms,
+  // dispensa o overlay de qualquer forma (proteção contra CDN lento).
+  var MIN_DISPLAY = 900;  // ms mínimos que o overlay fica visível
+  var MAX_WAIT    = 5000; // ms máximos esperando o Vue montar (fallback)
+
+  function dismissOverlay(ov) {
+    if (!ov || !ov.parentNode) return;
+    ov.style.opacity = '0';
+    setTimeout(function () {
+      if (ov.parentNode) ov.remove();
+      document.body.style.overflow = '';
+    }, 500);
+  }
+
   function onArrival() {
     sessionStorage.removeItem(KEY);
     function run() {
-      var ov = makeOverlay(); // ja em opacity:1
+      var ov = makeOverlay();
       document.body.style.overflow = 'hidden';
       document.body.appendChild(ov);
       // Remove o body::before agora que o overlay real cobre tudo
       var c = document.getElementById('vl-cover');
       if (c) c.remove();
-      setTimeout(function () {
-        ov.style.opacity = '0';
-        setTimeout(function () {
-          if (ov.parentNode) ov.remove();
-          document.body.style.overflow = '';
-        }, 450);
-      }, 850);
+
+      var dismissed = false;
+      var arrivalTs = Date.now();
+
+      // Fallback: descarta overlay após MAX_WAIT mesmo sem sinal do Vue
+      var fallbackTimer = setTimeout(function () {
+        if (!dismissed) { dismissed = true; dismissOverlay(ov); }
+      }, MAX_WAIT);
+
+      // O app Vue chama window._vlReady() ao terminar onMounted
+      window._vlReady = function () {
+        if (dismissed) return;
+        dismissed = true;
+        clearTimeout(fallbackTimer);
+        // Garante MIN_DISPLAY ms de exibição para a animação do avião
+        var elapsed = Date.now() - arrivalTs;
+        var delay = Math.max(0, MIN_DISPLAY - elapsed);
+        setTimeout(function () { dismissOverlay(ov); }, delay);
+      };
     }
     if (document.body) { run(); }
     else { document.addEventListener('DOMContentLoaded', run, { once: true }); }
@@ -122,15 +150,25 @@
   // ─── Proteção anti-tela-preta ──────────────────────────────────────────────
   // Se já chegou na página mas o onArrival não rodou (erro de JS anterior),
   // o KEY fica "sujo" na sessionStorage e trava em preto na próxima visita.
-  // Gravamos o timestamp da partida e descartamos se > 8s (algo deu errado).
+  // Gravamos o timestamp da partida e descartamos se > 5s (algo deu errado).
   var TIMESTAMP_KEY = 'vl_pg_ts';
   var storedTs = parseInt(sessionStorage.getItem(TIMESTAMP_KEY) || '0', 10);
-  if (sessionStorage.getItem(KEY) && Date.now() - storedTs > 8000) {
+  if (sessionStorage.getItem(KEY) && Date.now() - storedTs > 5000) {
     sessionStorage.removeItem(KEY);
     sessionStorage.removeItem(TIMESTAMP_KEY);
   }
 
   if (sessionStorage.getItem(KEY)) { onArrival(); }
+
+  // ─── Proteção contra bfcache (Back-Forward Cache) ─────────────────────────
+  // O Chrome/Firefox restauram páginas do cache sem re-executar scripts.
+  // Isso faz o Vue não remontar e a tela ficar preta. Forçamos reload completo.
+  window.addEventListener('pageshow', function (ev) {
+    if (ev.persisted) {
+      // Página restaurada do bfcache — força reload limpo
+      window.location.reload();
+    }
+  });
 
 
   window.vlNavigate = function (url) {

@@ -46,7 +46,7 @@
         [v-cloak] { display: none !important; }
         body { background: #0f172a; }
     </style>
-    <script src="/js/transition.js?v=6"></script>
+    <script src="/js/transition.js?v=7"></script>
 </head>
 <body class="font-sans antialiased text-gray-800 selection:bg-labs-blue selection:text-white">
 
@@ -1346,6 +1346,9 @@
 
                 // --- Lifecycle ---
                 onMounted(() => {
+                    // Sinaliza ao sistema de transição que o Vue montou com sucesso
+                    if (typeof window._vlReady === 'function') window._vlReady();
+
                     token.value = localStorage.getItem('token');
                     nomeUsuario.value = localStorage.getItem('nome_usuario') || 'Usuário';
                     perfilUsuario.value = localStorage.getItem('perfil') || 'viajante';
