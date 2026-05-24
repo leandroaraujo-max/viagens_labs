@@ -117,9 +117,22 @@ python -m venv venv
 pip install -r requirements.txt
 ```
 
-### 2. Configurar o arquivo `.env`
+### 2. Configurar o Banco de Dados PostgreSQL
 
-Crie um arquivo `.env` na raiz do projeto (nunca commitar) baseado no `.env.example`:
+Antes de iniciar a aplicação pela primeira vez, é necessário criar fisicamente a base de dados no seu servidor PostgreSQL local ou homologação:
+
+1. Acesse o seu gerenciador do PostgreSQL (pgAdmin, DBeaver ou via terminal `psql`).
+2. Conecte-se ao seu servidor de banco de dados (padrão porta `5433` conforme mapeado no `.env`).
+3. Execute o seguinte comando SQL para criar a base de dados do projeto:
+   ```sql
+   CREATE DATABASE solicitacao_viagens;
+   ```
+4. **Provisionamento de Tabelas:** O FastAPI foi arquitetado para criar de forma 100% autônoma e transparente todas as tabelas, índices e chaves estrangeiras durante o startup inicial da aplicação via SQLAlchemy (`Base.metadata.create_all`).
+5. **Evolução Segura do Schema (DDL):** Para adicionar colunas e evoluir tabelas em produção sem destruir dados existentes, o startup roda a rotina automatizada `_migracoes_seguras()` em `app/main.py`, que executa comandos SQL `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`.
+
+### 3. Configurar o arquivo `.env`
+
+Crie um arquivo `.env` na raiz do projeto (nunca commitar no Git) baseado no `.env.example`:
 
 ```dotenv
 # ── Banco de Dados ─────────────────────────────────────────────────────────

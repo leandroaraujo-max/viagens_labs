@@ -22,6 +22,13 @@
 ## 2. Como rodar
 
 ```powershell
+# Banco de Dados (PostgreSQL na porta 5433)
+# Criar fisicamente o banco executando o comando SQL no pgAdmin/psql:
+#   CREATE DATABASE solicitacao_viagens;
+
+# Carga de Dados Inicial de Agências (obrigatório na primeira vez)
+.\venv\Scripts\python seed_agencia.py
+
 # Backend (em C:\Projetos\viagens_labs)
 $env:PYTHONPATH="."; .\venv\Scripts\uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
@@ -60,6 +67,25 @@ GAS_POLL_INTERVALO=60
 # QA
 QA_APROVADOR_EMAIL=leandro.araujo@luizalabs.com
 ```
+
+---
+
+## 3.1. Configuração e Inicialização do Banco de Dados PostgreSQL
+
+O banco de dados é um servidor PostgreSQL rodando localmente ou em produção (padrão porta `5433`). 
+
+### Passos para Provisionamento:
+1. **Criação da Database:** É obrigatório executar a instrução SQL abaixo na sua instância ativa antes de subir a aplicação:
+   ```sql
+   CREATE DATABASE solicitacao_viagens;
+   ```
+2. **Provisionamento de Schema e DDL:** 
+   * As tabelas, índices e restrições são gerados automaticamente no startup do FastAPI via SQLAlchemy (`Base.metadata.create_all`).
+   * Para adição de novas colunas ou alterações incrementais nas tabelas existentes sem risco de perda de dados, a função `_migracoes_seguras()` em `app/main.py` roda comandos SQL de DDL do tipo `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` automaticamente em cada startup.
+3. **Carga Inicial de Agências:** O sistema necessita de agências ativas e configuradas no banco para operar o fluxo de cotações de e-mail. Rode o script utilitário logo após a primeira inicialização:
+   ```powershell
+   .\venv\Scripts\python seed_agencia.py
+   ```
 
 ---
 
