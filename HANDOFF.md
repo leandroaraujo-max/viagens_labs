@@ -240,6 +240,8 @@ Após o deploy v4, é necessário executar `setupAgencia()` no editor do Google 
 | 7B | UI/UX Premium (Painel Responsivo + Cotações Dinâmicas) | **Concluído e Homologado** |
 | 8 | Histórico com linha do tempo no portal do viajante | Pendente |
 | 9 | Exportação CSV/Excel + dashboard de gastos | Pendente |
+| 10 | Sistema de Auditoria de Acessos & Telemetria do AD | **Concluído e Homologado** |
+| 11 | Redesenho Visual Unificado "SaaS Corporativo Premium" | *Planejado (Aprovado)* |
 
 ### 🚨 ESTABILIZAÇÃO GERAL E CORREÇÃO DE BUGS (23/05/2026) — 100% RESOLVIDA
 Todas as instabilidades recentes e pendências críticas foram resolvidas com absoluto sucesso:
@@ -282,7 +284,8 @@ Todas as instabilidades recentes e pendências críticas foram resolvidas com ab
 | `d778e77` | CRUD de agências no painel do setor + sidebar nav vertical |
 | `90d232a` | feat: dynamicizacao de agencias, telemetria de logs, mocks BigQuery e correcoes Vue 3 |
 | `15cabd1` | Merge branch 'main' de viagens_labs (integração remota) |
-| *(atual)* | Atualização geral de documentação técnica (HANDOFF e README) e publicação final |
+| `28c393c` | feat: implementado monitoramento unificado, middleware e telemetria operacional |
+| *(atual)* | Redesenho visual unificado SaaS premium e consolidação de layouts |
 
 ---
 
@@ -293,3 +296,25 @@ Todas as instabilidades recentes e pendências críticas foram resolvidas com ab
 | Dev & Arquitetura | Leandro Araújo | leandro.araujo@luizalabs.com |
 | Setor de Viagens | Rubia Paim | rubia.paim@luizalabs.com |
 | E-mail do sistema | Viagens Labs | viagenslabs@luizalabs.com |
+
+---
+
+## 11. Sistema Unificado de Auditoria de Acessos, Middleware & Telemetria
+
+Na atualização de **24/05/2026**, foi introduzido um sistema de auditoria global de altíssima resiliência e impacto de performance nulo:
+
+### A. Banco de Dados e Modelos
+* **Tabela `log_acessos` (`LogAcessoModel`):** Tabela 100% desacoplada sem chaves estrangeiras. Contém colunas `id`, `username`, `nome`, `perfil`, `ip_origem`, `status_acesso` (`SUCESSO` | `BLOQUEADO`), `observacao` e `data_criacao`.
+* **Indexação Avançada:** Índices definidos nas colunas `username` e `data_criacao` para garantir respostas sub-milisegundo em queries de telemetria e KPIs.
+
+### B. Middleware Global de Navegação (FastAPI)
+* **Auditoria de Requisições:** Intercepta requisições de API (`/api/v1/`), extrai o token JWT silenciosamente em memória e gera logs ricos de console em tempo real.
+* **Resiliência Ativa:** Qualquer falha na decodificação ou leitura do token é tratada de forma silenciosa para nunca interromper o carregamento da requisição do usuário.
+
+### C. Autenticação e Logins Resilientes (`/login`)
+* **Persistência de Conexões:** O endpoint `/login` agora recebe `request: Request` para capturar o IP real do cliente.
+* **Logins Seguros e Tratamento de Falhas:** Tentativas de login bem-sucedidas ou bloqueadas por grupos inválidos do AD/erros de rede são gravadas na tabela de logs de forma resiliente. Qualquer erro no banco de dados SQLite nunca impedirá o login do viajante.
+
+### D. Endpoints de Telemetria e Interfaces
+* **GET `/dev/logs-acesso`:** Últimos 100 acessos integrados reativamente com polling de 5 segundos no Portal Dev.
+* **GET `/setor/stats` & GET `/setor/alertas-acesso`:** KPI "Ativos Hoje" na dashboard do setor e widget de "Alertas de Onboarding (Acesso AD)" na aba de terceiros com polling automático de 8 segundos, agilizando liberações de colaboradores barrados no Active Directory.
