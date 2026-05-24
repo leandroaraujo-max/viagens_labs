@@ -90,44 +90,68 @@
   </div>
 
   <!-- ══════════════════════ PORTAL PRINCIPAL ═══════════════════════════════ -->
-  <div v-else-if="tela === 'portal'" class="min-h-screen flex flex-col">
+  <div v-else-if="tela === 'portal'" class="min-h-screen flex bg-dev-bg text-slate-300 w-full relative">
 
-    <!-- Topbar -->
-    <header class="bg-dev-panel border-b border-dev-border px-6 py-3 flex items-center gap-4 sticky top-0 z-40">
-      <div class="flex items-center gap-3">
-        <div class="w-8 h-8 rounded-lg bg-indigo-600/20 border border-indigo-500/40 flex items-center justify-center">
+    <!-- SIDEBAR LATERAL FIXA (DEV STYLE) -->
+    <aside :class="menuRecolhido ? 'w-20' : 'w-64'" class="bg-dev-panel text-slate-300 flex flex-col shrink-0 border-r border-dev-border min-h-screen transition-all duration-300 z-30 relative shadow-2xl">
+      <!-- Logo e Título -->
+      <div class="p-5 flex items-center gap-3 border-b border-dev-border">
+        <div class="w-8 h-8 rounded-lg bg-indigo-600/20 border border-indigo-500/40 flex items-center justify-center shrink-0 glow">
           <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
           </svg>
         </div>
-        <div>
-          <span class="text-white font-bold text-sm">ViagensLabs</span>
-          <span class="text-indigo-400 text-xs font-mono ml-1.5">/ dev</span>
+        <div v-if="!menuRecolhido" class="min-w-0">
+          <span class="text-white font-bold text-sm tracking-tight block truncate">ViagensLabs</span>
+          <span class="text-[10px] font-mono text-indigo-400 block tracking-widest leading-none uppercase mt-0.5">DEV CENTER</span>
         </div>
       </div>
 
-      <!-- Tabs de navegação -->
-      <nav class="flex gap-1 ml-6 flex-1">
+      <!-- Navegação Vertical (Abas) -->
+      <nav class="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
         <button v-for="tab in tabs" :key="tab.id" @click="abaAtiva = tab.id"
-                :class="abaAtiva === tab.id ? 'bg-indigo-600/20 text-indigo-300 border-indigo-500/40' : 'text-slate-400 hover:text-slate-200 border-transparent hover:border-dev-border'"
-                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition">
-          <span>{{ tab.icon }}</span> {{ tab.label }}
+          :class="abaAtiva === tab.id ? 'bg-indigo-600/15 text-indigo-400 border-l-4 border-indigo-500 font-bold rounded-lg' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/20 border-l-4 border-transparent rounded-lg'"
+          class="w-full flex items-center gap-3 px-3 py-2.5 text-xs transition-all duration-200 text-left">
+          <span class="text-base shrink-0">{{ tab.icon }}</span>
+          <span v-if="!menuRecolhido" class="truncate flex-1">{{ tab.label }}</span>
         </button>
       </nav>
 
-      <div class="flex items-center gap-3 shrink-0">
-        <div class="flex items-center gap-2">
-          <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-          <span class="text-xs font-mono text-slate-400">{{ nomeUsuario }}</span>
-        </div>
-        <button @click="logout" class="text-slate-500 hover:text-red-400 transition text-xs font-semibold px-2 py-1 rounded border border-dev-border hover:border-red-500/40">
-          Sair
+      <!-- Rodapé da Sidebar -->
+      <div class="p-4 border-t border-dev-border flex flex-col gap-3 shrink-0">
+        <button @click="menuRecolhido = !menuRecolhido" class="w-full flex items-center justify-center gap-2 px-3 py-2 bg-slate-800/20 border border-slate-700/30 hover:bg-slate-800/30 text-slate-400 hover:text-slate-200 rounded-lg text-[10px] font-mono transition">
+          <span>{{ menuRecolhido ? '▶' : '◀ Recolher' }}</span>
         </button>
       </div>
-    </header>
+    </aside>
 
-    <!-- Conteúdo -->
-    <main class="flex-1 p-6 overflow-auto">
+    <!-- ÁREA DE CONTEÚDO PRINCIPAL -->
+    <div class="flex-grow flex flex-col min-w-0 min-h-screen">
+      <!-- Novo Header Compacto (DEV STYLE) -->
+      <header class="bg-dev-panel border-b border-dev-border px-6 py-3 flex items-center justify-between sticky top-0 z-20 shadow-lg">
+        <div class="flex items-center gap-3 min-w-0">
+          <span class="text-sm font-bold text-white tracking-tight uppercase">
+            {{ tabs.find(t => t.id === abaAtiva)?.label }}
+          </span>
+          <span class="h-4 w-px bg-dev-border hidden sm:block"></span>
+          <p class="text-xs text-slate-500 truncate hidden sm:block font-mono">
+            Console de Gerenciamento & Auditoria da Plataforma
+          </p>
+        </div>
+
+        <div class="flex items-center gap-3 shrink-0">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+            <span class="text-xs font-mono text-slate-400">{{ nomeUsuario }}</span>
+          </div>
+          <button @click="logout" class="ml-2 text-xs font-semibold text-red-400 hover:text-red-300 hover:bg-red-500/10 px-2.5 py-1.5 rounded-lg border border-red-500/20 hover:border-red-500/50 transition">
+            Sair
+          </button>
+        </div>
+      </header>
+
+      <!-- Área de Conteúdo -->
+      <main class="flex-grow p-6 overflow-auto w-full">
 
       <!-- ── ABA: Dashboard ──────────────────────────────────────────────── -->
       <div v-if="abaAtiva === 'dashboard'">
@@ -147,21 +171,25 @@
 
         <!-- Métricas -->
         <div v-if="stats" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div class="bg-dev-card border border-dev-border rounded-xl p-4">
-            <p class="text-xs text-slate-500 uppercase tracking-wide font-semibold">Total Solicitações</p>
-            <p class="text-3xl font-bold text-white mt-1">{{ stats.total_solicitacoes }}</p>
+          <div class="bg-indigo-950/25 border border-indigo-500/30 rounded-2xl p-5 relative overflow-hidden transition duration-300 hover:shadow-indigo-500/10 hover:shadow-lg hover:-translate-y-0.5">
+            <div class="absolute -right-6 -bottom-6 w-16 h-16 bg-indigo-500/15 rounded-full blur-xl"></div>
+            <p class="text-xs text-indigo-300 uppercase tracking-wider font-bold">Total Solicitações</p>
+            <p class="text-3xl font-extrabold text-white mt-2 leading-none font-mono">{{ stats.total_solicitacoes }}</p>
           </div>
-          <div class="bg-dev-card border border-dev-border rounded-xl p-4">
-            <p class="text-xs text-slate-500 uppercase tracking-wide font-semibold">Agências Ativas</p>
-            <p class="text-3xl font-bold text-dev-cyan mt-1">{{ stats.total_agencias }}</p>
+          <div class="bg-cyan-950/25 border border-cyan-500/30 rounded-2xl p-5 relative overflow-hidden transition duration-300 hover:shadow-cyan-500/10 hover:shadow-lg hover:-translate-y-0.5">
+            <div class="absolute -right-6 -bottom-6 w-16 h-16 bg-cyan-500/15 rounded-full blur-xl"></div>
+            <p class="text-xs text-cyan-300 uppercase tracking-wider font-bold">Agências Ativas</p>
+            <p class="text-3xl font-extrabold text-dev-cyan mt-2 leading-none font-mono">{{ stats.total_agencias }}</p>
           </div>
-          <div class="bg-dev-card border border-dev-border rounded-xl p-4">
-            <p class="text-xs text-slate-500 uppercase tracking-wide font-semibold">Cotações</p>
-            <p class="text-3xl font-bold text-dev-yellow mt-1">{{ stats.total_cotacoes }}</p>
+          <div class="bg-amber-950/25 border border-amber-500/30 rounded-2xl p-5 relative overflow-hidden transition duration-300 hover:shadow-amber-500/10 hover:shadow-lg hover:-translate-y-0.5">
+            <div class="absolute -right-6 -bottom-6 w-16 h-16 bg-amber-500/15 rounded-full blur-xl"></div>
+            <p class="text-xs text-amber-300 uppercase tracking-wider font-bold">Cotações</p>
+            <p class="text-3xl font-extrabold text-dev-yellow mt-2 leading-none font-mono">{{ stats.total_cotacoes }}</p>
           </div>
-          <div class="bg-dev-card border border-dev-border rounded-xl p-4">
-            <p class="text-xs text-slate-500 uppercase tracking-wide font-semibold">Vouchers</p>
-            <p class="text-3xl font-bold text-dev-green mt-1">{{ stats.total_vouchers }}</p>
+          <div class="bg-emerald-950/25 border border-emerald-500/30 rounded-2xl p-5 relative overflow-hidden transition duration-300 hover:shadow-emerald-500/10 hover:shadow-lg hover:-translate-y-0.5">
+            <div class="absolute -right-6 -bottom-6 w-16 h-16 bg-emerald-500/15 rounded-full blur-xl"></div>
+            <p class="text-xs text-emerald-300 uppercase tracking-wider font-bold">Vouchers</p>
+            <p class="text-3xl font-extrabold text-dev-green mt-2 leading-none font-mono">{{ stats.total_vouchers }}</p>
           </div>
         </div>
 
@@ -586,23 +614,32 @@
           </div>
         </div>
 
-        <div class="bg-[#030712] border border-dev-border rounded-2xl overflow-hidden glow">
-          <div class="bg-[#0f172a] px-4 py-2 border-b border-dev-border flex items-center justify-between text-[10px] text-slate-400 font-mono">
-            <span>Caminho: {{ logCaminho || 'Procurando log…' }}</span>
-            <span class="animate-pulse flex items-center gap-1" v-if="!logPausado && logCarregando">
-              <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> Carregando…
-            </span>
-            <span v-else-if="logPausado">⏸ Atualização pausada</span>
-            <span class="text-slate-500" v-else>Próxima verificação em 3s</span>
+        <div class="bg-[#030712] border border-dev-border rounded-2xl overflow-hidden shadow-2xl relative">
+          <!-- Terminal Titlebar with macOS buttons -->
+          <div class="bg-[#0f172a] px-4 py-3 border-b border-dev-border flex items-center justify-between text-[10px] text-slate-400 font-mono">
+            <div class="flex items-center gap-2">
+              <span class="w-3.5 h-3.5 rounded-full bg-[#ff5f56]"></span>
+              <span class="w-3.5 h-3.5 rounded-full bg-[#ffbd2e]"></span>
+              <span class="w-3.5 h-3.5 rounded-full bg-[#27c93f]"></span>
+              <span class="ml-2 font-semibold text-slate-400">Terminal Shell // {{ logCaminho || 'system.log' }}</span>
+            </div>
+            <div class="flex items-center gap-1.5 font-semibold text-[10px]">
+              <span class="animate-pulse flex items-center gap-1" v-if="!logPausado && logCarregando">
+                <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> Syncing...
+              </span>
+              <span v-else-if="logPausado">⏸ PAUSED</span>
+              <span class="text-slate-500" v-else>AUTO-REFRESH (3s)</span>
+            </div>
           </div>
           <!-- Terminal container -->
-          <div class="p-4 font-mono text-[11px] leading-relaxed text-[#10b981] overflow-y-auto h-[55vh] bg-[#030712] whitespace-pre-wrap select-text">
-            {{ logConteudo || 'Nenhum log para exibir.' }}
+          <div class="p-5 font-mono text-[11px] leading-relaxed text-[#34d399] overflow-y-auto h-[55vh] bg-[#020617] whitespace-pre-wrap select-text selection:bg-[#34d399]/20 selection:text-white" style="text-shadow: 0 0 4px rgba(52,211,153,0.15)">
+            {{ logConteudo || 'Initializing debug session... No log streams recorded.' }}
           </div>
         </div>
       </div>
 
-    </main>
+      </main>
+    </div>
   </div>
 
   <!-- Modal confirmação de exclusão cascade -->
@@ -647,6 +684,7 @@ createApp({
     const loginErro   = ref('');
     const loginCarregando = ref(false);
     const abaAtiva    = ref('dashboard');
+    const menuRecolhido = ref(false);
 
     const tabs = [
       { id: 'dashboard',    icon: '◈', label: 'Dashboard' },
@@ -1038,7 +1076,7 @@ createApp({
 
     return {
       tela, token, nomeUsuario, loginForm, loginErro, loginCarregando,
-      abaAtiva, tabs, portais, endpoints, statusOpcoes,
+      abaAtiva, menuRecolhido, tabs, portais, endpoints, statusOpcoes,
       realizarLogin, logout,
       stats, statsCarregando, atividade, atividadeCarregando, carregarStats,
       solicitacoes, solCarregando, solTotal, solOffset, solFiltro, carregarSolicitacoes,

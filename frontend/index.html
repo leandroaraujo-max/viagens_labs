@@ -54,48 +54,57 @@
 
         <!-- TELA DE LOGIN -->
         <transition name="fade">
-            <div v-if="!token" class="bg-viagens min-h-screen flex items-center justify-center p-4">
-                <div class="glass-card w-full max-w-md p-8 relative overflow-hidden">
-                    <div class="absolute top-0 left-0 w-full h-2 bg-labs-blue"></div>
+            <div v-if="!token" class="min-h-screen flex items-center justify-center p-4 bg-[#0a0f1e] relative overflow-hidden">
+                <!-- Efeitos de iluminação de fundo / ambient glow -->
+                <div class="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none"></div>
+                <div class="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none"></div>
+
+                <div class="bg-slate-900/60 backdrop-blur-2xl w-full max-w-md p-8 rounded-3xl border border-slate-800/60 shadow-2xl relative overflow-hidden transition-all duration-300">
+                    <div class="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500"></div>
                     
                     <div class="text-center mb-8 mt-2 flex flex-col items-center">
-                        <img src="/img/luizalabs-logo.png" alt="Luizalabs Logo" class="h-14 mb-4 object-contain">
-                        <h1 class="text-2xl font-bold text-labs-dark tracking-tight">Portal de Viagens</h1>
-                        <p class="text-gray-500 text-xs mt-1 font-semibold uppercase tracking-widest">Acesso Corporativo</p>
+                        <div class="w-16 h-16 rounded-2xl bg-blue-600/10 border border-blue-500/20 flex items-center justify-center mb-4 shadow-inner">
+                            <svg class="w-8 h-8 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
+                              <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"></circle>
+                              <circle cx="12" cy="12" r="4" fill="currentColor"></circle>
+                            </svg>
+                        </div>
+                        <h1 class="text-2xl font-extrabold text-white tracking-tight">ViagensLabs</h1>
+                        <p class="text-slate-400 text-xs mt-1.5 font-bold uppercase tracking-widest">Portal do Viajante</p>
                     </div>
 
-                    <div v-if="erroLogin && !semAcessoAd" class="mb-5 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded-md shadow-sm">
+                    <div v-if="erroLogin && !semAcessoAd" class="mb-5 p-4 bg-red-950/40 border-l-4 border-red-500 text-red-200 text-xs rounded-xl shadow-sm border border-red-900/30">
                         {{ erroLogin }}
                     </div>
 
-                    <div v-if="semAcessoAd" class="mb-5 p-4 bg-amber-50 border-l-4 border-amber-500 text-amber-900 text-sm rounded-lg shadow-sm">
-                        <div class="flex items-center gap-2 mb-2 font-bold text-amber-800">
-                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    <div v-if="semAcessoAd" class="mb-5 p-4 bg-amber-950/40 border-l-4 border-amber-500 text-amber-200 text-xs rounded-xl shadow-sm border border-amber-900/30">
+                        <div class="flex items-center gap-2 mb-2 font-bold text-amber-400">
+                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                             <span>Acesso Negado</span>
                         </div>
                         <p class="mb-2 font-medium">Você não possui acesso ao sistema.</p>
-                        <div class="text-xs text-gray-700 bg-white/70 p-3 rounded border border-amber-200/50 leading-relaxed space-y-2">
-                            <span>Para solicitar sua liberação, acesse o portal <a href="https://iam.corp.luizalabs.com/v2/requisicao/new/add_access" target="_blank" class="text-blue-600 hover:text-blue-800 underline font-bold transition">TURIA</a> e siga o passo a passo:</span>
-                            <div class="text-[11px] text-gray-600 bg-gray-50/80 p-2 rounded font-mono border border-gray-200/50 flex flex-col gap-1">
+                        <div class="text-xs text-slate-300 bg-slate-950/50 p-3 rounded-lg border border-slate-800/80 leading-relaxed space-y-2">
+                            <span>Solicite sua liberação no portal <a href="https://iam.corp.luizalabs.com/v2/requisicao/new/add_access" target="_blank" class="text-blue-400 hover:text-blue-300 underline font-bold transition">TURIA</a>:</span>
+                            <div class="text-[10px] text-slate-400 bg-slate-900/80 p-2.5 rounded font-mono border border-slate-800/80 flex flex-col gap-1">
                                 <div><strong>Solicitar</strong> &gt; <strong>Solicitar Acessos</strong></div>
                                 <div>&gt; <strong>Pra mim</strong> &gt; <strong>Montar manualmente</strong></div>
-                                <div>&gt; Buscar: <strong>AD Magalu</strong> &gt; <strong>Solicitar acesso</strong></div>
-                                <div>&gt; Buscar grupo: <span class="bg-blue-50 text-blue-700 px-1 py-0.5 rounded font-bold">G_ACCESS_VIAGENSLABS_USERS</span></div>
+                                <div>&gt; Buscar: <strong>AD Magalu</strong></div>
+                                <div>&gt; Grupo: <span class="bg-blue-500/10 text-blue-400 px-1 py-0.5 rounded font-bold border border-blue-500/20">G_ACCESS_VIAGENSLABS_USERS</span></div>
                             </div>
                         </div>
                     </div>
 
-                    <form @submit.prevent="realizarLogin" class="space-y-6">
+                    <form @submit.prevent="realizarLogin" class="space-y-5">
                         <div>
-                            <label class="block text-gray-700 text-sm font-semibold mb-2" for="username">Usuário de Rede (AD)</label>
-                            <input v-model="loginForm.username" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-labs-blue focus:ring-2 focus:ring-blue-100 transition-all duration-200 bg-white shadow-sm" id="username" type="text" placeholder="Mesmo login do computador" required>
+                            <label class="block text-slate-300 text-xs font-bold uppercase tracking-wider mb-2" for="username">Usuário de Rede (AD)</label>
+                            <input v-model="loginForm.username" class="w-full px-4 py-3 rounded-xl border border-slate-800 bg-slate-950 text-white placeholder-slate-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-900/30 transition-all duration-200 text-sm shadow-sm" id="username" type="text" placeholder="ex: felipe.araujo" required>
                         </div>
                         <div>
-                            <label class="block text-gray-700 text-sm font-semibold mb-2" for="password">Senha Corporativa</label>
-                            <input v-model="loginForm.password" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-labs-blue focus:ring-2 focus:ring-blue-100 transition-all duration-200 bg-white shadow-sm" id="password" type="password" placeholder="Sua senha da rede" required>
+                            <label class="block text-slate-300 text-xs font-bold uppercase tracking-wider mb-2" for="password">Senha Corporativa</label>
+                            <input v-model="loginForm.password" class="w-full px-4 py-3 rounded-xl border border-slate-800 bg-slate-950 text-white placeholder-slate-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-900/30 transition-all duration-200 text-sm shadow-sm" id="password" type="password" placeholder="Mesma senha do e-mail" required>
                         </div>
                         
-                        <button :disabled="carregando" class="w-full bg-labs-blue hover:bg-labs-dark text-white font-bold py-3.5 px-4 rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none" type="submit">
+                        <button :disabled="carregando" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg hover:shadow-blue-500/20 transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-75 disabled:cursor-not-allowed disabled:transform-none mt-2" type="submit">
                             <span v-if="carregando" class="flex items-center justify-center">
                                 <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                                 Autenticando...
@@ -104,8 +113,8 @@
                         </button>
                     </form>
                     
-                    <div class="mt-8 text-center border-t border-gray-100 pt-6">
-                        <p class="text-xs text-gray-400 font-medium">© 2026 Luizalabs. Infraestrutura CDs.</p>
+                    <div class="mt-8 text-center border-t border-slate-800/80 pt-6">
+                        <p class="text-[10px] text-slate-500 font-mono tracking-widest">© 2026 LUIZALABS · INFRA CD</p>
                     </div>
                 </div>
             </div>
@@ -113,56 +122,102 @@
 
         <!-- TELA DO DASHBOARD -->
         <transition name="fade">
-            <div v-if="token" class="flex-grow flex flex-col">
-                <!-- Topbar -->
-                <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
-                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-                        <div class="flex items-center gap-4">
-                            <img src="/img/luizalabs-logo.png" alt="Luizalabs" class="h-8 object-contain border-r border-gray-200 pr-4">
-                            <h1 class="text-xl font-bold text-gray-900 tracking-tight hidden sm:block">Portal de Viagens</h1>
+            <div v-if="token" class="min-h-screen flex bg-[#f8fafc] text-slate-800 w-full relative">
+                <!-- SIDEBAR LATERAL FIXA -->
+                <aside :class="menuRecolhido ? 'w-20' : 'w-64'" class="bg-[#0a0f1e] text-slate-300 flex flex-col shrink-0 border-r border-slate-800/40 min-h-screen transition-all duration-300 z-30 relative shadow-2xl">
+                    <!-- Logo e Título -->
+                    <div class="p-5 flex items-center gap-3 border-b border-slate-800/40">
+                        <div class="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/40 flex items-center justify-center shrink-0">
+                            <svg class="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2.5"></circle>
+                                <circle cx="12" cy="12" r="4" fill="currentColor"></circle>
+                            </svg>
                         </div>
-                        
-                        <div class="flex items-center gap-4">
-                            <div class="hidden sm:flex flex-col items-end">
-                                <span class="text-sm font-semibold text-gray-700">{{ nomeUsuario }}</span>
-                                <span class="text-xs text-gray-500 font-medium bg-gray-100 px-2 py-0.5 rounded-md">{{ badgePerfil }}</span>
-                            </div>
-                            <div class="h-9 w-9 rounded-lg bg-labs-dark text-white flex items-center justify-center font-bold text-sm shadow-sm">
-                                {{ nomeUsuario.charAt(0).toUpperCase() }}
-                            </div>
-                            <div class="h-6 w-px bg-gray-300 mx-2"></div>
-                            <!-- Link para o Painel do Setor (só aparece para usuários do setor ou dev) -->
-                            <a v-if="perfilUsuario === 'setor' || perfilUsuario === 'dev'" href="#" @click.prevent="vlNavigate('/setor.html')"
-                               class="flex items-center gap-1.5 text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 hover:bg-blue-100 hover:border-blue-300 px-2.5 py-1 rounded-lg transition-all duration-200"
-                               title="Acessar o Painel do Setor">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-                                Painel do Setor
-                            </a>
-                            <!-- Link para o Portal do Dev (só aparece para desenvolvedores) -->
-                            <a v-if="perfilUsuario === 'dev'" href="/dev.html" target="_blank"
-                               class="flex items-center gap-1.5 text-xs font-semibold text-purple-700 bg-purple-50 border border-purple-200 hover:bg-purple-100 hover:border-purple-300 px-2.5 py-1 rounded-lg transition-all duration-200"
-                               title="Acessar o Portal do Desenvolvedor">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
-                                Portal Dev
-                            </a>
-                            <!-- Link para o Portal da Agência (só aparece para desenvolvedores) -->
-                            <a v-if="perfilUsuario === 'dev'" href="/agencia.html" target="_blank"
-                               class="flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 hover:bg-amber-100 hover:border-amber-300 px-2.5 py-1 rounded-lg transition-all duration-200"
-                               title="Acessar o Portal da Agência">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-                                Portal Agência
-                            </a>
-                            <div v-if="perfilUsuario === 'setor' || perfilUsuario === 'dev'" class="h-6 w-px bg-gray-300 mx-1"></div>
-                            <button @click="logout" class="text-gray-500 hover:text-red-600 transition-colors duration-200" title="Sair do Sistema">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                            </button>
+                        <div v-if="!menuRecolhido" class="min-w-0">
+                            <span class="text-white font-bold text-sm tracking-tight block truncate">LuizaLabs</span>
+                            <span class="text-[10px] font-mono text-blue-400 block tracking-widest leading-none uppercase mt-0.5">Viagens</span>
                         </div>
                     </div>
-                </header>
 
-                <main class="flex-grow max-w-7xl w-full mx-auto py-8 px-4 sm:px-6 lg:px-8">
+                    <!-- Navegação Vertical (Abas) -->
+                    <nav class="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
+                        <button @click="abaAtiva = 'nova_solicitacao'"
+                            :class="abaAtiva === 'nova_solicitacao' ? 'bg-blue-600/15 text-blue-400 border-l-4 border-blue-500 font-bold rounded-lg' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/20 border-l-4 border-transparent rounded-lg'"
+                            class="w-full flex items-center gap-3 px-3 py-2.5 text-xs transition-all duration-200 text-left">
+                            <span class="text-base shrink-0">➕</span>
+                            <span v-if="!menuRecolhido" class="truncate flex-1">Nova Solicitação</span>
+                        </button>
+
+                        <button @click="abaAtiva = 'minhas_viagens'; carregarHistorico();"
+                            :class="abaAtiva === 'minhas_viagens' ? 'bg-blue-600/15 text-blue-400 border-l-4 border-blue-500 font-bold rounded-lg' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/20 border-l-4 border-transparent rounded-lg'"
+                            class="w-full flex items-center gap-3 px-3 py-2.5 text-xs transition-all duration-200 text-left">
+                            <span class="text-base shrink-0">✈️</span>
+                            <span v-if="!menuRecolhido" class="truncate flex-1">Minhas Viagens</span>
+                        </button>
+
+                        <button @click="abaAtiva = 'autorizacoes'; carregarAutorizacoesTerceiros();"
+                            :class="abaAtiva === 'autorizacoes' ? 'bg-blue-600/15 text-blue-400 border-l-4 border-blue-500 font-bold rounded-lg' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/20 border-l-4 border-transparent rounded-lg'"
+                            class="w-full flex items-center gap-3 px-3 py-2.5 text-xs transition-all duration-200 text-left">
+                            <span class="text-base shrink-0">🛡️</span>
+                            <span v-if="!menuRecolhido" class="truncate flex-1">Acesso Terceiros</span>
+                        </button>
+
+                        <!-- Portais Administrativos rápidos -->
+                        <div v-if="!menuRecolhido && (perfilUsuario === 'setor' || perfilUsuario === 'dev')" class="pt-4 border-t border-slate-800/40 mt-4 space-y-1.5">
+                            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider px-3">Administrativo</p>
+                            <a href="#" @click.prevent="vlNavigate('/setor.html')"
+                               class="flex items-center gap-3 px-3 py-2 text-xs text-slate-400 hover:text-slate-200 hover:bg-slate-800/20 rounded-lg transition-all animate-none">
+                                <span class="text-base">🏢</span>
+                                <span>Painel do Setor</span>
+                            </a>
+                            <a v-if="perfilUsuario === 'dev'" href="#" @click.prevent="vlNavigate('/dev.html')"
+                               class="flex items-center gap-3 px-3 py-2 text-xs text-slate-400 hover:text-slate-200 hover:bg-slate-800/20 rounded-lg transition-all animate-none">
+                                <span class="text-base">🧪</span>
+                                <span>Portal Dev</span>
+                            </a>
+                        </div>
+                    </nav>
+
+                    <!-- Rodapé da Sidebar -->
+                    <div class="p-4 border-t border-slate-800/40 flex flex-col gap-3 shrink-0">
+                        <button @click="menuRecolhido = !menuRecolhido" class="w-full flex items-center justify-center gap-2 px-3 py-2 bg-slate-800/20 border border-slate-800/40 hover:bg-slate-800/30 text-slate-400 hover:text-slate-200 rounded-lg text-[10px] font-mono transition">
+                            <span>{{ menuRecolhido ? '▶' : '◀ Recolher' }}</span>
+                        </button>
+                    </div>
+                </aside>
+
+                <!-- ÁREA DE CONTEÚDO PRINCIPAL -->
+                <div class="flex-grow flex flex-col min-w-0 min-h-screen">
+                    <!-- Novo Header Compacto -->
+                    <header class="bg-white border-b border-gray-200/80 px-6 py-3 flex items-center justify-between sticky top-0 z-20 shadow-xs">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <span class="text-sm font-bold text-gray-800 tracking-tight">
+                                {{ abaAtiva === 'nova_solicitacao' ? 'Nova Solicitação de Viagem' : abaAtiva === 'minhas_viagens' ? 'Minhas Viagens' : 'Controle de Acesso (Terceiros)' }}
+                            </span>
+                            <span class="h-4 w-px bg-gray-200 hidden sm:block"></span>
+                            <p class="text-xs text-gray-400 truncate hidden sm:block">
+                                {{ abaAtiva === 'nova_solicitacao' ? 'Preencha o formulário e crie uma nova solicitação corporativa.' : abaAtiva === 'minhas_viagens' ? 'Monitore e acompanhe o status de todas as suas solicitações.' : 'Solicite e gerencie permissões de delegação de acesso AD para terceiros.' }}
+                            </p>
+                        </div>
+
+                        <div class="flex items-center gap-3 shrink-0">
+                            <div class="hidden sm:flex flex-col items-end">
+                                <span class="text-xs font-semibold text-gray-700 leading-tight">{{ nomeUsuario }}</span>
+                                <span class="text-[9px] font-medium bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-md mt-0.5">{{ badgePerfil }}</span>
+                            </div>
+                            <div class="h-8 w-8 rounded-lg bg-[#0a0f1e] text-white flex items-center justify-center font-extrabold text-xs shadow-sm shrink-0">
+                                {{ nomeUsuario.charAt(0).toUpperCase() }}
+                            </div>
+                            <button @click="logout" class="ml-2 text-xs font-semibold text-red-500 hover:text-red-700 hover:bg-red-50 px-2.5 py-1.5 rounded-lg transition">
+                                Sair
+                            </button>
+                        </div>
+                    </header>
+
+                    <!-- Main body content container with tab checks -->
+                    <main class="w-full p-6 flex-grow">
                     
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div v-show="abaAtiva === 'nova_solicitacao'" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
                         <!-- Coluna Principal (Formulário Multi-Passo) -->
                         <div class="lg:col-span-2">
@@ -937,8 +992,116 @@
                                 </ul>
                             </div>
                         </div>
+                    </div> <!-- closes grid of nova_solicitacao -->
+
+                    <!-- ─────────────────────── ABA MINHAS VIAGENS ─────────────────────── -->
+                    <div v-show="abaAtiva === 'minhas_viagens'" class="glass-card card-accent-blue p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
+                        <div class="flex items-center justify-between mb-5">
+                            <div>
+                                <h2 class="text-base font-bold text-gray-800">Minhas Viagens</h2>
+                                <p class="text-xs text-gray-400">Histórico de todas as suas solicitações de viagens corporativas e seus status.</p>
+                            </div>
+                            <button @click="carregarHistorico" :disabled="historicoCarregando" class="px-3.5 py-1.5 text-xs font-semibold bg-blue-50 border border-blue-200 text-blue-600 rounded-lg hover:bg-blue-100 transition shadow-sm flex items-center gap-1">
+                                <span :class="{'animate-spin': historicoCarregando}">↺</span> Atualizar
+                            </button>
+                        </div>
+
+                        <div v-if="historicoCarregando" class="py-20 text-center text-sm text-gray-400 font-medium">Carregando viagens...</div>
+                        <div v-else-if="historico.length === 0" class="flex flex-col items-center justify-center py-20 text-gray-400">
+                            <svg class="w-14 h-14 mb-4 opacity-25" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                            </svg>
+                            <p class="text-sm font-semibold">Nenhuma viagem solicitada.</p>
+                        </div>
+                        <div v-else class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b border-gray-100 text-gray-500 text-xs font-bold uppercase tracking-wider">
+                                        <th class="text-left px-4 py-3">Protocolo</th>
+                                        <th class="text-left px-4 py-3">Destino</th>
+                                        <th class="text-left px-4 py-3">Data de Ida</th>
+                                        <th class="text-left px-4 py-3">Serviços</th>
+                                        <th class="text-left px-4 py-3">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <tr v-for="s in historico" :key="s.id" class="hover:bg-slate-50/80 transition-colors">
+                                        <td class="px-4 py-3.5 font-mono font-bold text-blue-600 text-xs tracking-tight">{{ s.protocolo }}</td>
+                                        <td class="px-4 py-3.5 text-gray-700 font-semibold">{{ s.destino_cidade }}/{{ s.destino_estado }}</td>
+                                        <td class="px-4 py-3.5 text-gray-500 font-mono">{{ s.data_ida ? new Date(s.data_ida).toLocaleDateString('pt-BR') : '—' }}</td>
+                                        <td class="px-4 py-3.5">
+                                            <span class="text-[10px] bg-slate-100 text-slate-600 font-medium px-2 py-0.5 rounded border border-slate-200">
+                                                {{ (s.tipo_servico || '').replace(/,/g, ' · ') }}
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3.5">
+                                            <span :class="statusCorMini(s.status)" class="text-[10px] font-bold px-2 py-0.5 rounded-full border">
+                                                {{ statusLabelMini(s.status) }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </main>
+
+                    <!-- ─────────────────────── ABA ACESSO TERCEIROS ─────────────────────── -->
+                    <div v-show="abaAtiva === 'autorizacoes'" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <!-- Coluna Principal (Lista de Autorizações) -->
+                        <div class="lg:col-span-2 space-y-6">
+                            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                                <h3 class="font-bold text-labs-dark text-base mb-2">Minhas Autorizações (Terceiros)</h3>
+                                <p class="text-xs text-gray-400 mb-4">Veja as pessoas que autorizaram você a realizar solicitações de viagens em seu nome.</p>
+                                
+                                <div v-if="autorizacoesTerceiros.length === 0" class="p-8 text-center text-sm text-gray-400 font-medium bg-slate-50 rounded-xl border border-dashed">
+                                    Nenhum acesso de terceiros ativo no momento.
+                                </div>
+                                
+                                <div v-else class="overflow-x-auto">
+                                    <table class="w-full text-sm">
+                                        <thead>
+                                            <tr class="bg-slate-50 border-b border-gray-100 text-gray-500 text-xs font-bold uppercase tracking-wider">
+                                                <th class="text-left px-4 py-3">Data</th>
+                                                <th class="text-left px-4 py-3">Nome</th>
+                                                <th class="text-left px-4 py-3">E-mail</th>
+                                                <th class="text-left px-4 py-3">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-gray-100">
+                                            <tr v-for="aut in autorizacoesTerceiros" :key="aut.id" class="hover:bg-slate-50/50 transition">
+                                                <td class="px-4 py-3 text-gray-500 font-mono">{{ aut.data_criacao ? new Date(aut.data_criacao).toLocaleDateString('pt-BR') : '—' }}</td>
+                                                <td class="px-4 py-3 font-semibold text-gray-700">{{ aut.terceiro_nome || aut.terceiro_username }}</td>
+                                                <td class="px-4 py-3 text-gray-500 text-xs">{{ aut.terceiro_email }}</td>
+                                                <td class="px-4 py-3">
+                                                    <span :class="aut.status === 'APROVADA' ? 'bg-green-50 text-green-700 border-green-200' : aut.status === 'PENDENTE' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-red-50 text-red-700 border-red-200'" class="text-[10px] font-bold px-2 py-0.5 rounded-full border">
+                                                        {{ aut.status }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Coluna Lateral (Solicitar Novo Acesso) -->
+                        <div>
+                            <div class="bg-white rounded-2xl shadow-sm border border-blue-100 p-6 space-y-4">
+                                <div class="flex items-center gap-2 text-labs-blue">
+                                    <span class="text-lg">➕</span>
+                                    <h4 class="font-bold">Solicitar Novo Acesso</h4>
+                                </div>
+                                <p class="text-xs text-gray-500 leading-relaxed">Você precisa anexar o PDF assinado pelo superior/terceiro autorizando você a gerenciar as viagens dele.</p>
+                                
+                                <button @click="mostrandoModalTerceiro = true" class="w-full bg-labs-blue hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs shadow-md transition text-center block">
+                                    Iniciar Solicitação de Acesso
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    </main>
+                </div>
             </div>
         </transition>
 
@@ -1058,6 +1221,9 @@
 
                 // --- Navegação por passos ---
                 const passoAtual = ref(1); // 1=viajante 2=dados 3=preferências 4=sucesso
+                
+                const menuRecolhido = ref(false);
+                const abaAtiva = ref('nova_solicitacao');
 
                 // --- Passo 1: Identificação do Viajante ---
                 const tipo_solicitacao = ref('proprio');
@@ -1936,7 +2102,7 @@
 
                 return {
                     token, nomeUsuario, perfilUsuario, badgePerfil, carregando, erroLogin, semAcessoAd, loginForm, realizarLogin, logout,
-                    passoAtual,
+                    passoAtual, menuRecolhido, abaAtiva,
                     tipo_solicitacao, cpfBusca, buscandoColaborador, viajanteDados, erroBusca, erroBuscaProprioUsuario, mostrarBuscaFallback, buscarColaboradorGCP,
                     celularViajante, dataNascimentoViajante, perfilSalvo,
                     formatarCPF, mascaraData, mascaraDataIda, mascaraDataVolta, mascaraDataCarroRet, mascaraDataCarroDev, mascaraDataGeneric, mascaraCelular, salvarPerfilViajante,
