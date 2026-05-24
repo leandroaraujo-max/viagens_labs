@@ -148,7 +148,11 @@
     </div>
   </header>
 
-  <!-- ═══════════════════════════ BODY LAYOUT ═════�    <!-- ── NAV DE ABAS HORIZONTAL E SUTIL COM FUNDO E EXPORTAÇÃO CSV ALINHADA ── -->
+  <!-- ═══════════════════════════ BODY LAYOUT ═══════════════════════════ -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6">
+
+    <!-- ── NAV DE ABAS HORIZONTAL E SUTIL COM FUNDO (SEGMENTED TABS) ── -->
+    <!-- ── NAV DE ABAS HORIZONTAL E SUTIL COM FUNDO E EXPORTAÇÃO CSV ALINHADA ── -->
     <div class="flex flex-wrap items-center justify-between gap-4 w-full">
       <div class="bg-gray-50 border border-gray-200 p-1 rounded-xl flex flex-wrap items-center gap-1">
         <!-- Solicitações -->
@@ -214,9 +218,6 @@
           Volume Mensal
         </button>
       </div>
-    </div>   <span>Acesso Terceiros</span>
-        <span v-if="ticketsTerceirosPendentesCount" class="ml-1 bg-indigo-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{{ ticketsTerceirosPendentesCount }}</span>
-      </button>
     </div>
 
     <!-- ── ÁREA DE CONTEÚDO ── -->
