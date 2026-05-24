@@ -295,8 +295,8 @@
       <!-- ── ABA: Agências ───────────────────────────────────────────────── -->
       <div v-if="abaAtiva === 'agencias'">
         <div class="flex items-center justify-between mb-5">
-          <h2 class="text-xl font-bold text-white">Agências</h2>
-          <button @click="carregarAgencias" class="text-xs px-3 py-1.5 bg-dev-card border border-dev-border text-slate-400 hover:text-slate-200 rounded-lg transition">
+          <h2 class="text-xl font-bold text-white">Agências de Viagens</h2>
+          <button @click="carregarAgencias" class="text-xs px-3 py-1.5 bg-dev-card border border-dev-border text-slate-300 hover:text-slate-100 rounded-lg transition">
             Recarregar
           </button>
         </div>
@@ -304,61 +304,45 @@
           <div class="animate-spin w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full"></div>
         </div>
         <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          <div v-for="ag in agencias" :key="ag.id" class="bg-dev-card border border-dev-border rounded-xl p-4 flex flex-col justify-between hover:border-indigo-500/30 transition-all duration-300">
+          <div v-for="ag in agencias" :key="ag.id" class="bg-dev-card border border-dev-border rounded-xl p-5 flex flex-col justify-between hover:border-indigo-500/40 transition-all duration-300">
             <div>
-              <div class="flex items-start justify-between mb-3 gap-2">
+              <div class="flex items-start justify-between mb-3 gap-3">
                 <div class="min-w-0">
                   <p class="font-bold text-slate-100 truncate text-sm" :title="ag.agencia_nome">{{ ag.agencia_nome || 'Sem Nome' }}</p>
-                  <p class="text-[10px] text-slate-500 italic truncate mt-0.5" :title="ag.razao_social">{{ ag.razao_social || 'Sem Razão Social' }}</p>
+                  <p class="text-[10px] text-slate-300 italic truncate mt-0.5" :title="ag.razao_social">{{ ag.razao_social || 'Sem Razão Social' }}</p>
                 </div>
                 <span :class="ag.ativo ? 'bg-green-500/10 text-green-400 border-green-500/30' : 'bg-red-500/10 text-red-400 border-red-500/30'"
                       class="text-[9px] font-bold px-2 py-0.5 rounded-full border uppercase shrink-0">
                   {{ ag.ativo ? 'ATIVA' : 'INATIVA' }}
                 </span>
               </div>
-              <div class="space-y-1.5 mb-4 text-xs">
-                <div class="flex items-center gap-1.5 text-slate-400">
-                  <span class="text-slate-600">CNPJ:</span>
-                  <span class="font-mono text-slate-300">{{ formatarCnpj(ag.cnpj) }}</span>
+              <div class="space-y-2 mb-4 text-xs">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-slate-400 font-medium w-16">CNPJ:</span>
+                  <span class="font-mono text-slate-200">{{ formatarCnpj(ag.cnpj) }}</span>
                 </div>
-                <div class="flex items-center gap-1.5 text-slate-400 truncate">
-                  <span class="text-slate-600">E-mail:</span>
-                  <span class="truncate font-mono text-slate-300" :title="ag.email">{{ ag.email || '—' }}</span>
+                <div class="flex items-center gap-1.5 truncate">
+                  <span class="text-slate-400 font-medium w-16">E-mail:</span>
+                  <span class="truncate font-mono text-slate-200" :title="ag.email">{{ ag.email || '—' }}</span>
+                </div>
+                <div v-if="ag.municipio" class="flex items-center gap-1.5">
+                  <span class="text-slate-400 font-medium w-16">Município:</span>
+                  <span class="text-slate-200 font-medium">{{ ag.municipio }}/{{ ag.uf }}</span>
+                </div>
+                <div v-if="ag.banco_nome" class="flex items-start gap-1.5">
+                  <span class="text-slate-400 font-medium w-16 shrink-0">Banco:</span>
+                  <span class="text-slate-200 leading-tight">
+                    {{ ag.banco_nome }} 
+                    <span class="text-[10px] text-slate-300 font-mono block mt-0.5">(Ag {{ ag.agencia_bancaria }} · CC {{ ag.conta_bancaria }})</span>
+                  </span>
                 </div>
               </div>
             </div>
-            <div class="flex gap-2 mt-auto pt-2 border-t border-dev-border/40">
+            <div class="flex mt-auto pt-3 border-t border-dev-border/40">
               <button @click="toggleAgencia(ag)"
-                      class="flex-1 py-1.5 text-xs font-semibold rounded-lg border transition"
+                      class="w-full py-1.5 text-xs font-semibold rounded-lg border transition"
                       :class="ag.ativo ? 'border-red-500/40 text-red-400 hover:bg-red-500/10' : 'border-green-500/40 text-green-400 hover:bg-green-500/10'">
-                {{ ag.ativo ? 'Desativar' : 'Ativar' }}
-              </button>
-              <button @click="abrirResetSenha(ag)"
-                      class="flex-1 py-1.5 text-xs font-semibold rounded-lg border border-dev-border text-slate-400 hover:text-slate-200 hover:border-indigo-500/40 transition">
-                Reset Senha
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Modal reset senha -->
-        <div v-if="resetSenhaModal.aberto" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div class="bg-dev-card border border-dev-border rounded-2xl p-6 w-full max-w-sm">
-            <h3 class="text-sm font-bold text-white mb-1">Resetar senha</h3>
-            <p class="text-xs text-slate-500 mb-4">{{ resetSenhaModal.agencia?.agencia_nome }}</p>
-            <input v-model="resetSenhaModal.novaSenha" type="password" placeholder="Nova senha (mínimo 8 caracteres)"
-                   class="w-full bg-dev-panel border border-dev-border text-slate-200 rounded-lg px-3 py-2.5 text-sm font-mono focus:outline-none focus:border-indigo-500 mb-3 placeholder-slate-600">
-            <div v-if="resetSenhaModal.erro" class="text-xs text-red-400 mb-3">{{ resetSenhaModal.erro }}</div>
-            <div v-if="resetSenhaModal.ok" class="text-xs text-green-400 mb-3">✓ Senha atualizada com sucesso!</div>
-            <div class="flex gap-2">
-              <button @click="confirmarResetSenha"
-                      :disabled="resetSenhaModal.carregando"
-                      class="flex-1 py-2 text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition disabled:opacity-60">
-                {{ resetSenhaModal.carregando ? 'Salvando…' : 'Confirmar' }}
-              </button>
-              <button @click="resetSenhaModal.aberto = false"
-                      class="flex-1 py-2 text-xs font-semibold border border-dev-border text-slate-400 rounded-lg hover:border-slate-500 transition">
-                Cancelar
+                {{ ag.ativo ? 'Desativar Agência' : 'Ativar Agência' }}
               </button>
             </div>
           </div>
@@ -734,7 +718,6 @@ createApp({
     // ── Agências ───────────────────────────────────────────────────────
     const agencias = ref([]);
     const agenciasCarregando = ref(false);
-    const resetSenhaModal = reactive({ aberto: false, agencia: null, novaSenha: '', erro: '', ok: false, carregando: false });
 
     async function carregarAgencias() {
       agenciasCarregando.value = true;
@@ -748,26 +731,6 @@ createApp({
     async function toggleAgencia(ag) {
       const res = await fetch(`${API}/dev/agencias/${ag.id}/toggle-ativa`, { method: 'PATCH', headers: authHeaders() });
       if (res.ok) { const d = await res.json(); ag.ativo = d.ativo; }
-    }
-
-    function abrirResetSenha(ag) {
-      Object.assign(resetSenhaModal, { aberto: true, agency: ag, novaSenha: '', erro: '', ok: false, carregando: false });
-      resetSenhaModal.agencia = ag;
-    }
-
-    async function confirmarResetSenha() {
-      if (resetSenhaModal.novaSenha.length < 8) { resetSenhaModal.erro = 'Mínimo 8 caracteres.'; return; }
-      resetSenhaModal.carregando = true; resetSenhaModal.erro = '';
-      try {
-        const res = await fetch(`${API}/dev/agencias/${resetSenhaModal.agencia.id}/reset-senha`, {
-          method: 'POST', headers: authHeaders(),
-          body: JSON.stringify({ nova_senha: resetSenhaModal.novaSenha }),
-        });
-        const d = await res.json();
-        if (!res.ok) { resetSenhaModal.erro = d.detail || 'Erro ao resetar.'; return; }
-        resetSenhaModal.ok = true;
-        setTimeout(() => { resetSenhaModal.aberto = false; }, 1500);
-      } finally { resetSenhaModal.carregando = false; }
     }
 
     // ── Configuração ───────────────────────────────────────────────────
@@ -986,7 +949,6 @@ createApp({
       stats, statsCarregando, atividade, atividadeCarregando, carregarStats,
       solicitacoes, solCarregando, solTotal, solOffset, solFiltro, carregarSolicitacoes,
       agencias, agenciasCarregando, carregarAgencias, toggleAgencia,
-      resetSenhaModal, abrirResetSenha, confirmarResetSenha,
       config, configCarregando, configGrupos, carregarConfig,
       corStatus, corBarraStatus, formatarData, formatarTempo, formatarCnpj,
       qaTesters, qaTestersCarregando, qaForm, qaFormErro, qaFormOk, qaFormLoading, carregarQATesters, salvarQATester, removerQATester,

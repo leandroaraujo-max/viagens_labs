@@ -271,35 +271,35 @@
                                             <h4 class="text-base font-bold text-labs-dark mt-1 mb-3">{{ viajanteDados.nome }}</h4>
                                             <div class="grid grid-cols-2 gap-x-6 gap-y-2.5 text-xs">
                                                 <div>
-                                                    <p class="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">CPF</p>
+                                                    <p class="text-[10px] text-gray-500 font-semibold uppercase tracking-wide">CPF</p>
                                                     <p class="font-semibold text-gray-700">{{ formatarCPF(viajanteDados.cpf) }}</p>
                                                 </div>
                                                 <div>
-                                                    <p class="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Matrícula</p>
+                                                    <p class="text-[10px] text-gray-500 font-semibold uppercase tracking-wide">Matrícula</p>
                                                     <p class="font-semibold text-gray-700">{{ viajanteDados.matricula || '—' }}</p>
                                                 </div>
                                                 <div class="col-span-2">
-                                                    <p class="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Cargo</p>
+                                                    <p class="text-[10px] text-gray-500 font-semibold uppercase tracking-wide">Cargo</p>
                                                     <p class="font-semibold text-gray-700">{{ viajanteDados.cargo }}</p>
                                                 </div>
                                                 <div>
-                                                    <p class="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Filial</p>
+                                                    <p class="text-[10px] text-gray-500 font-semibold uppercase tracking-wide">Filial</p>
                                                     <p class="font-semibold text-gray-700">{{ viajanteDados.filial || '—' }}</p>
                                                 </div>
                                                 <div>
-                                                    <p class="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Cód. CC</p>
+                                                    <p class="text-[10px] text-gray-500 font-semibold uppercase tracking-wide">Cód. CC</p>
                                                     <p class="font-semibold text-gray-700">{{ viajanteDados.cod_centro_custo || '—' }}</p>
                                                 </div>
                                                 <div class="col-span-2">
-                                                    <p class="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Centro de Custo</p>
+                                                    <p class="text-[10px] text-gray-500 font-semibold uppercase tracking-wide">Centro de Custo</p>
                                                     <p class="font-semibold text-gray-700">{{ viajanteDados.centro_custo || '—' }}</p>
                                                 </div>
                                                 <div v-if="viajanteDados.data_admissao">
-                                                    <p class="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Admissão</p>
+                                                    <p class="text-[10px] text-gray-500 font-semibold uppercase tracking-wide">Admissão</p>
                                                     <p class="font-semibold text-gray-700">{{ viajanteDados.data_admissao }}</p>
                                                 </div>
                                             </div>
-                                            <div class="mt-3 pt-3 border-t border-blue-100 text-xs text-gray-500 flex flex-col gap-1">
+                                            <div class="mt-3 pt-3 border-t border-blue-100 text-xs text-gray-600 flex flex-col gap-1">
                                                 <span>Aprovador N1: <strong class="text-labs-dark">{{ viajanteDados.aprovador_n1_nome || 'Não definido' }}</strong></span>
                                                 <span>E-mail: {{ viajanteDados.aprovador_n1_email || '—' }}</span>
                                             </div>
