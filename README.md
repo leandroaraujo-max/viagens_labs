@@ -99,6 +99,7 @@ Viajante solicita  →  N1 aprova  →  N2 aprova (se aplicável)
 | Git | qualquer | — |
 | Google Cloud SDK | qualquer | Para BigQuery (ADC) |
 | Acesso ao AD Magalu | — | `ldap3` via intranet |
+| API Google Places (Hotéis) | — | Proxy de busca de hotéis integrado no backend usando a biblioteca `httpx` |
 
 > **Nota:** O sistema foi projetado para rodar on-premises na intranet da Magalu. A integração com BigQuery e AD exige conectividade com a infraestrutura interna.
 
@@ -561,6 +562,22 @@ BASE_URL_AGENCIA=http://viagenslabs.magazineluiza.intranet
 | Método | Rota | Descrição |
 |---|---|---|
 | `POST` | `/api/v1/duffel/pesquisar` | Pesquisa voos via API Duffel |
+
+### Dev, Auditoria & Telemetria (requer perfil `dev` ou `setor` conforme o caso)
+| Método | Rota | Descrição |
+|---|---|---|
+| `GET` | `/api/v1/dev/stats` | Métricas operacionais globais do sistema (exclusivo dev) |
+| `GET` | `/api/v1/dev/solicitacoes` | Listagem irrestrita de viagens com busca (exclusivo dev) |
+| `GET` | `/api/v1/dev/agencias` | Consulta estruturada de todas as agências cadastradas (exclusivo dev) |
+| `GET` | `/api/v1/dev/config` | Visualização segura e truncada da configuração ativa (exclusivo dev) |
+| `GET` | `/api/v1/dev/atividade` | Feed contínuo de atualizações e auditorias recentes (exclusivo dev) |
+| `GET` | `/api/v1/dev/logs` | Leitura em tempo real dos logs de console (FastAPI/Nginx) (exclusivo dev) |
+| `GET` | `/api/v1/dev/logs-acesso` | Trilha de auditoria das últimas 100 conexões e logins (exclusivo dev) |
+| `GET` | `/api/v1/dev/usuarios-qa` | Listagem dos testadores cadastrados de QA (exclusivo dev) |
+| `POST` | `/api/v1/dev/usuarios-qa` | Cadastro de novos testadores de QA para desvio de e-mail (exclusivo dev) |
+| `DELETE` | `/api/v1/dev/solicitacoes/{id}` | Exclusão definitiva em cascata de dados e tokens (exclusivo dev) |
+| `GET` | `/api/v1/setor/stats` | Telemetria de quantidade de viajantes únicos ativos hoje |
+| `GET` | `/api/v1/setor/alertas-acesso` | Trilha de tentativas de login negadas no Active Directory (48h) |
 
 ---
 
