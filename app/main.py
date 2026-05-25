@@ -12,6 +12,7 @@ logging.basicConfig(
     handlers=[logging.StreamHandler(sys.stdout)]
 )
 logger = logging.getLogger("viagenslabs")
+logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
 
 from app.infrastructure.database import Base, engine
 from app.infrastructure.orm import models
