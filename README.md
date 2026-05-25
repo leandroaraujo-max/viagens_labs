@@ -346,7 +346,31 @@ viagens_labs/
 | `viajante_celular` / `viajante_data_nascimento` / `viajante_data_admissao` | String | Dados adicionais |
 | `status` | String | Estado atual do fluxo |
 | `agencia_vencedora` | String | `Tastur` ou `Kontrip` (após decisão) |
-| `created_at` | DateTime | Timestamp de criação |
+| `lembrete_n1_count` / `lembrete_cot_count` | Integer | Lembretes de SLA de aprovação/cotação enviados |
+| `hosp_data_checkin` / `hosp_data_checkout` | String | Datas de checkin/checkout de hospedagem |
+| `tipo_solicitacao_cancelamento` | String | `'CANCELAR'` ou `'REMARCAR'` |
+| `itens_a_cancelar` | String | Itens selecionados para cancelamento (ex: `Aereo,Hospedagem`) |
+| `motivo_cancelamento` | Text | Justificativa do cancelamento/remarcação |
+| `taxa_cancelamento_agencia` | Numeric | Taxa/multa preenchida pela agência |
+| `valor_reembolsavel_agencia` | Numeric | Valor de reembolso em dinheiro |
+| `valor_credito_gerado` | Numeric | Valor de crédito gerado com a companhia aérea |
+| `companhia_credito` | String | Companhia aérea associada ao crédito gerado |
+| `documento_cancelamento_caminho` | String | Caminho do comprovante PDF de liquidação da agência |
+| `credito_utilizado` | Boolean | Indica se o crédito gerado já foi consumido em nova viagem |
+| `data_criacao` / `data_atualizacao` | DateTime | Timestamps de criação e modificação |
+
+### Tabela `colaboradores_cache`
+| Coluna | Tipo | Descrição |
+|---|---|---|
+| `username` | String PK | Login AD do colaborador |
+| `cpf` / `matricula` | String | Documento e matrícula do colaborador |
+| `nome` / `email` / `cargo` / `filial` | String | Informações cadastrais e funcionais |
+| `centro_custo` / `cod_centro_custo` | String | Centro de custo associado |
+| `data_admissao` / `situacao` | String | Data de admissão e estado de ativação |
+| `aprovador_n1_nome` / `aprovador_n1_email` | String | Aprovador N1 |
+| `aprovador_n2_nome` / `aprovador_n2_email` | String | Aprovador N2 |
+| `foneres` | String | Telefone residencial/contato |
+| `data_atualizacao` | DateTime | Timestamp para controle do TTL de 7 dias |
 
 ### Tabela `tokens_agencia`
 | Coluna | Tipo | Descrição |
@@ -398,7 +422,74 @@ viagens_labs/
 | `banco_nome` / `agencia_bancaria` / `conta_bancaria` | String | Dados Bancários |
 | `ativo` | Boolean | Habilita/desabilita envio de novos tokens |
 
-> **Migrações seguras:** O `app/main.py` roda `_migracoes_seguras()` no startup que executa `ALTER TABLE … ADD COLUMN IF NOT EXISTS` e `DROP CONSTRAINT IF EXISTS` — sem necessidade de Alembic.
+### Tabela `autorizacoes_terceiros`
+| Coluna | Tipo | Descrição |
+|---|---|---|
+| `id` | Integer PK | — |
+| `solicitante_username` | String | Usuário Magalu solicitante |
+| `terceiro_username` | String | Usuário Magalu titular da delegação |
+| `terceiro_nome` / `terceiro_email` | String | Dados de nome e e-mail |
+| `pdf_path` | String | Caminho do termo de delegação assinado |
+| `status` | String | `PENDENTE`, `APROVADA`, `REPROVADA` |
+| `observacao_setor` / `operador_setor` | String | Observação e operador da decisão |
+| `data_criacao` / `data_decisao` | DateTime | Timestamps associados |
+
+### Tabela `log_acessos`
+| Coluna | Tipo | Descrição |
+|---|---|---|
+| `id` | Integer PK | — |
+| `username` / `nome` / `perfil` | String | Identidade de acesso |
+| `ip_origem` | String | IP de origem da requisição |
+| `status_acesso` | String | `SUCESSO`, `BLOQUEADO` |
+| `observacao` | Text | Descrição do evento auditado |
+| `data_criacao` | DateTime | Timestamp de log |
+
+### Tabela `casamentos`
+| Coluna | Tipo | Descrição |
+|---|---|---|
+| `id` | Integer PK | — |
+| `solicitacao_a_id` / `solicitacao_b_id` | FK | Solicitações com trechos comuns |
+| `tipo_match` | String | Tipo de compatibilidade (ex: `HOTEL`) |
+| `status` | String | `PENDENTE`, `VINCULADO`, `IGNORADO` |
+| `operador_acao` / `grupo_viagem` | String | Operador da ação e código do grupo |
+| `data_casamento` / `data_acao` | DateTime | Timestamps associados |
+
+### Tabela `usuarios_qa_teste`
+| Coluna | Tipo | Descrição |
+|---|---|---|
+| `id` | Integer PK | — |
+| `username` / `email` | String | Username e email de desvio de QA |
+| `ativo` | Boolean | Testador ativo no ambiente sandbox |
+| `data_criacao` | DateTime | Timestamp de cadastro |
+
+### Tabela `vouchers`
+| Coluna | Tipo | Descrição |
+|---|---|---|
+| `id` | Integer PK | — |
+| `solicitacao_id` | FK | Referência à solicitação |
+| `tipo_voucher` | String | Tipo de voucher (ex: `aereo`, `hotel`) |
+| `caminho_arquivo` | String | Localização em disco do PDF do voucher |
+| `data_criacao` | DateTime | Timestamp de envio |
+### Tabela `user_profiles`
+| Coluna | Tipo | Descrição |
+|---|---|---|
+| `username` | String PK | Login AD do viajante |
+| `celular` | String | Telefone celular cadastrado manualmente |
+| `data_nascimento` | String | Data de nascimento cadastrada manualmente |
+
+### Tabela `log_eventos`
+| Coluna | Tipo | Descrição |
+|---|---|---|
+| `id` | Integer PK | Auto-increment |
+| `solicitacao_id` | FK | Referência à solicitação associada |
+| `evento` | String | Tipo de evento (ex: `STATUS_CHANGE`, `APROVACAO`, `REPROVACAO`) |
+| `de_status` | String | Status anterior no fluxo |
+| `para_status` | String | Novo status no fluxo |
+| `ator` | String | Usuário Magalu ou sistema que realizou a ação |
+| `observacao` | Text | Detalhes adicionais / Auditoria / Justificativa |
+| `data_criacao` | DateTime | Timestamp de registro do evento |
+
+> **Migrações seguras:** O `app/main.py` roda `_migracoes_seguras()` no startup que executa `ALTER TABLE … ADD COLUMN IF NOT EXISTS` e `CREATE TABLE IF NOT EXISTS` — sem necessidade de Alembic.
 
 ---
 
