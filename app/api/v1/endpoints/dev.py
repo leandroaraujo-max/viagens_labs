@@ -412,6 +412,62 @@ def listar_logs_acesso(
     ]
 
 
+@router.post("/servicos/reiniciar-backend")
+def reiniciar_backend(_: str = Depends(require_dev)):
+    """Encerra o processo atual para forçar o WinSW a reiniciar o serviço em 10 segundos."""
+    import time
+    import os
+    import signal
+    import threading
+
+    def kill_self():
+        time.sleep(1) # Aguarda a resposta HTTP ser enviada ao cliente
+        logger.info("[SERVIÇO] Reiniciando processo ViagensLabs via graceful exit...")
+        os.kill(os.getpid(), signal.SIGTERM)
+
+    # Dispara a interrupção em thread daemon paralela
+    threading.Thread(target=kill_self, daemon=True).start()
+    return {"sucesso": True, "mensagem": "Comando de reinicialização enviado. Aguarde 12 segundos..."}
+
+
+@router.post("/servicos/recarregar-nginx")
+def recarregar_nginx(_: str = Depends(require_dev)):
+    """Recarrega as configurações do Nginx executando o comando reload no diretório de instalação."""
+    import subprocess
+    import os
+    nginx_paths = [
+        r"C:\nginx\nginx.exe",
+        r"c:\nginx\nginx.exe",
+        r"C:\nginx-1.24.0\nginx.exe",
+        r"c:\nginx-1.24.0\nginx.exe",
+    ]
+    
+    executable = None
+    for p in nginx_paths:
+        if os.path.exists(p):
+            executable = p
+            break
+            
+    if not executable:
+        # Tenta simplesmente rodar no PATH
+        executable = "nginx"
+        
+    try:
+        # Comando para Windows: nginx.exe -s reload
+        # Executa no diretório correspondente
+        cwd = os.path.dirname(executable) if os.path.exists(executable) else None
+        res = subprocess.run([executable, "-s", "reload"], cwd=cwd, capture_output=True, text=True, timeout=5)
+        if res.returncode == 0:
+            logger.info("[SERVIÇO] Nginx recarregado com sucesso.")
+            return {"sucesso": True, "mensagem": "Nginx recarregado com sucesso."}
+        else:
+            logger.error(f"[SERVIÇO] Falha ao recarregar Nginx: {res.stderr}")
+            raise HTTPException(status_code=502, detail=f"Erro Nginx: {res.stderr}")
+    except Exception as e:
+        logger.error(f"[SERVIÇO] Exceção ao recarregar Nginx: {e}")
+        raise HTTPException(status_code=500, detail=f"Exceção ao recarregar Nginx: {str(e)}")
+
+
 @router.post("/consultas/executar")
 def executar_consulta_predefinida(
     body: dict,

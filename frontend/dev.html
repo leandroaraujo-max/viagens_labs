@@ -627,6 +627,32 @@
           </div>
         </div>
 
+        <!-- Painel de Gerenciamento de Serviços -->
+        <div class="bg-dev-card border border-dev-border rounded-xl p-4 mb-5 glow flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              <span class="flex h-2 w-2 relative">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              Gerenciamento de Serviços Nginx &amp; ViagensLabs
+            </h3>
+            <p class="text-xs text-slate-400 mt-1 font-sans">Controle de reinicialização e recarga rápida dos serviços em um único clique.</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <button @click="recarregarServicoNginx" 
+                    :disabled="recarregandoNginx"
+                    class="px-4 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 border border-dev-border hover:border-slate-500 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-md">
+              <span v-if="recarregandoNginx" class="animate-spin w-3.5 h-3.5 border-2 border-slate-400 border-t-transparent rounded-full mr-1"></span>
+              <span v-else>⚙️</span> Recarregar Nginx
+            </button>
+            <button @click="reiniciarServicoBackend"
+                    class="px-4 py-2 bg-indigo-650 hover:bg-indigo-600 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-indigo-600/10 border border-indigo-500/30">
+              🚀 Reiniciar Backend (ViagensLabs)
+            </button>
+          </div>
+        </div>
+
         <div class="bg-[#030712] border border-dev-border rounded-2xl overflow-hidden shadow-2xl relative">
           <!-- Terminal Titlebar with macOS buttons -->
           <div class="bg-[#0f172a] px-4 py-3 border-b border-dev-border flex items-center justify-between text-[10px] text-slate-400 font-mono">
@@ -998,6 +1024,28 @@
                 class="flex-1 py-2 text-xs font-semibold border border-dev-border text-slate-400 rounded-lg hover:border-slate-500 transition">
           Cancelar
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Overlay de Reinicialização de Backend -->
+  <div v-if="reiniciandoBackend" class="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center z-50 p-4">
+    <div class="bg-dev-card border border-dev-border rounded-2xl p-8 w-full max-w-md text-center glow space-y-6">
+      <div class="relative flex justify-center">
+        <!-- Spinner premium circular -->
+        <div class="animate-spin rounded-full h-20 w-20 border-4 border-indigo-500/20 border-t-indigo-500"></div>
+        <div class="absolute inset-0 flex items-center justify-center">
+          <span class="text-2xl font-bold font-mono text-indigo-400 animate-pulse">{{ contadorRegressivo }}</span>
+        </div>
+      </div>
+      <div>
+        <h3 class="text-lg font-bold text-white tracking-tight">Reiniciando Serviços</h3>
+        <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+          O serviço do backend do <strong class="text-indigo-300 font-semibold font-mono">ViagensLabs</strong> está sendo reiniciado graciosamente. O WinSW irá reconectar a aplicação em alguns instantes.
+        </p>
+      </div>
+      <div class="bg-indigo-950/20 border border-indigo-500/10 rounded-xl p-3 text-[10px] text-indigo-300 font-mono">
+        Aguarde, redirecionando em {{ contadorRegressivo }} segundos...
       </div>
     </div>
   </div>
@@ -1533,6 +1581,68 @@ ORDER BY COALESCE(SUM(valor_credito_gerado), 0) DESC;`
       if (res.ok) await carregarQATesters();
     }
 
+    // ── Gerenciamento de Serviços ──────────────────────────────────────
+    const reiniciandoBackend = ref(false);
+    const contadorRegressivo = ref(12);
+    const recarregandoNginx = ref(false);
+
+    async function recarregarServicoNginx() {
+      recarregandoNginx.value = true;
+      try {
+        const res = await fetch(`${API}/dev/servicos/recarregar-nginx`, {
+          method: 'POST',
+          headers: authHeaders()
+        });
+        const d = await res.json();
+        if (res.ok && d.sucesso) {
+          alert('✓ Nginx recarregado com sucesso!');
+        } else {
+          alert('⚠ Erro ao recarregar Nginx: ' + (d.detail || d.mensagem || 'Erro desconhecido'));
+        }
+      } catch (e) {
+        alert('⚠ Falha de comunicação ao recarregar o Nginx.');
+      } finally {
+        recarregandoNginx.value = false;
+      }
+    }
+
+    async function reiniciarServicoBackend() {
+      if (!confirm('Deseja realmente reiniciar o serviço do backend (ViagensLabs)? O portal ficará temporariamente indisponível por 12 segundos.')) return;
+      
+      try {
+        const res = await fetch(`${API}/dev/servicos/reiniciar-backend`, {
+          method: 'POST',
+          headers: authHeaders()
+        });
+        if (res.ok) {
+          reiniciandoBackend.value = true;
+          contadorRegressivo.value = 12;
+          const interval = setInterval(() => {
+            contadorRegressivo.value--;
+            if (contadorRegressivo.value <= 0) {
+              clearInterval(interval);
+              window.location.reload();
+            }
+          }, 1000);
+        } else {
+          const d = await res.json();
+          alert('⚠ Erro ao iniciar reinicialização: ' + (d.detail || d.mensagem || 'Erro desconhecido'));
+        }
+      } catch (e) {
+        // Como o serviço desliga quase imediatamente, o fetch pode estourar erro de rede.
+        // Tratamos isso como sucesso e ativamos o contador mesmo assim!
+        reiniciandoBackend.value = true;
+        contadorRegressivo.value = 12;
+        const interval = setInterval(() => {
+          contadorRegressivo.value--;
+          if (contadorRegressivo.value <= 0) {
+            clearInterval(interval);
+            window.location.reload();
+          }
+        }, 1000);
+      }
+    }
+
     // ── Logs ──────────────────────────────────────────────────────────
     const logServico   = ref('app_out');
     const logLinhas    = ref(100);
@@ -1828,6 +1938,9 @@ ORDER BY COALESCE(SUM(valor_credito_gerado), 0) DESC;`
       delegacoes, delegacoesCarregando, delForm, delFormErro, delFormOk, delFormLoading,
       solicitanteInfo, solicitanteBuscando, viajanteInfo, viajanteBuscando,
       carregarDelegacoes, salvarDelegacao, removerDelegacao,
+      // Gerenciamento de Serviços
+      reiniciandoBackend, contadorRegressivo, recarregandoNginx,
+      recarregarServicoNginx, reiniciarServicoBackend,
     };
   }
 }).mount('#app');
