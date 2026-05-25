@@ -599,37 +599,8 @@
 
     <!-- ─────────────────────── ABA ACESSO TERCEIROS ─────────────────────── -->
     <template v-if="aba === 'terceiros'">
-      <!-- Alertas de Onboarding (Acesso AD) -->
-      <div v-if="alertasAcesso.length > 0" class="mb-6 p-5 bg-gray-50 border border-gray-200 rounded-2xl flex flex-col gap-3">
-        <div class="flex items-center gap-2">
-          <span class="text-lg">🛡</span>
-          <div>
-            <h3 class="text-xs font-bold text-gray-800 uppercase tracking-wider">Alertas de Onboarding (Acesso AD)</h3>
-            <p class="text-[11px] text-gray-400 font-medium leading-none mt-0.5">
-              Os seguintes colaboradores tentaram acessar a ferramenta nas últimas 48h, mas foram bloqueados por falta de grupo no Active Directory (AD).
-            </p>
-          </div>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          <div v-for="al in alertasAcesso" :key="al.id" class="bg-white border border-gray-200 rounded-xl p-3 shadow-xs flex flex-col justify-between">
-            <div>
-              <div class="flex justify-between items-start gap-2">
-                <span class="text-xs font-bold text-gray-700 font-mono">{{ al.username }}</span>
-                <span class="text-[9px] font-semibold bg-red-50 text-red-600 border border-red-100 rounded-md px-1.5 py-0.5">Acesso Negado</span>
-              </div>
-              <p class="text-[10px] text-gray-400 mt-2 font-medium leading-normal">
-                {{ al.observacao }}
-              </p>
-            </div>
-            <div class="mt-3 flex items-center justify-between border-t border-gray-100 pt-2 text-[9px] text-gray-400 font-mono">
-              <span>IP: {{ al.ip_origem }}</span>
-              <span>{{ fmtDataHora(al.data_criacao) }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="glass-panel card-accent-blue p-6">
+      <!-- Tickets de Autorização para Terceiros no topo -->
+      <div class="glass-panel card-accent-blue p-6 mb-6">
         <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
           <div>
             <h2 class="text-base font-bold text-gray-800 mb-0.5">Tickets de Autorização para Terceiros</h2>
@@ -703,6 +674,45 @@
                     <p><strong>Decidido por:</strong> {{ t.operador_setor }} · {{ fmtData(t.data_decisao) }}</p>
                     <p v-if="t.observacao_setor" class="mt-0.5 italic"><strong>Obs:</strong> {{ t.observacao_setor }}</p>
                   </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Alertas de Onboarding (Acesso AD) descem e viram lista linha a linha -->
+      <div v-if="alertasAcesso.length > 0" class="glass-panel card-accent-purple p-6">
+        <div class="flex items-center gap-2.5 mb-4">
+          <span class="text-lg">🛡️</span>
+          <div>
+            <h2 class="text-base font-bold text-gray-800 mb-0.5">Alertas de Onboarding (Acesso AD)</h2>
+            <p class="text-xs text-gray-400 font-medium leading-normal">
+              Os seguintes colaboradores tentaram acessar a ferramenta nas últimas 48h, mas foram bloqueados por falta de grupo no Active Directory (AD).
+            </p>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="bg-labs-gray border-b border-labs-border text-gray-500 text-xs uppercase font-semibold">
+                <th class="text-left px-4 py-3">Data/Hora</th>
+                <th class="text-left px-4 py-3">Colaborador (AD)</th>
+                <th class="text-left px-4 py-3">IP Origem</th>
+                <th class="text-left px-4 py-3">Detalhe do Bloqueio</th>
+                <th class="text-center px-4 py-3">Status</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              <tr v-for="al in alertasAcesso" :key="al.id" class="row-hover text-xs font-medium">
+                <td class="px-4 py-3 text-gray-500 font-mono">{{ fmtDataHora(al.data_criacao) }}</td>
+                <td class="px-4 py-3 font-semibold text-gray-800 font-mono">{{ al.username }}</td>
+                <td class="px-4 py-3 text-gray-400 font-mono">{{ al.ip_origem }}</td>
+                <td class="px-4 py-3 text-gray-600 font-sans leading-relaxed text-left whitespace-pre-wrap">{{ al.observacao }}</td>
+                <td class="px-4 py-3 text-center">
+                  <span class="inline-flex items-center text-[9px] font-semibold bg-red-50 text-red-650 border border-red-100 rounded-md px-1.5 py-0.5 shadow-sm">
+                    Acesso Negado
+                  </span>
                 </td>
               </tr>
             </tbody>

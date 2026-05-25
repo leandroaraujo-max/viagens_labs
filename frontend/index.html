@@ -614,7 +614,10 @@
                                                     <span class="text-xs text-blue-500">{{ formViagem.origem_cidade }} → {{ formViagem.destino_cidade }}</span>
                                                 </div>
                                                 <div class="space-y-2 max-h-72 overflow-y-auto pr-1">
-                                                <div v-for="voo in duffelVoos" :key="voo.id"
+                                                 <div v-if="voosFiltrados.length === 0 && duffelVoos.length > 0" class="text-xs text-amber-700 bg-amber-50 p-4 rounded-xl border border-amber-200 font-medium mb-3 select-none">
+                                                     ⚠ Nenhum voo de ida disponível no período selecionado ({{ formPreferencias.aereo_periodo_preferido === 'manha' ? 'Manhã: 06h–12h' : formPreferencias.aereo_periodo_preferido === 'tarde' ? 'Tarde: 12h–18h' : 'Noite/Madrugada: 18h–06h' }}).
+                                                 </div>
+                                                 <div v-for="voo in voosFiltrados" :key="voo.id"
                                                     @click="selecionarVoo(voo)"
                                                     :class="duffelVooSelecionado && duffelVooSelecionado.id === voo.id
                                                         ? 'border-blue-500 bg-white ring-2 ring-blue-400'
@@ -679,7 +682,10 @@
 
                                                 <!-- Lista de Voos de Volta -->
                                                 <div v-if="duffelVoosVolta.length" class="space-y-2 max-h-72 overflow-y-auto pr-1">
-                                                    <div v-for="voo in duffelVoosVolta" :key="'v-' + voo.id"
+                                                     <div v-if="voosVoltaFiltrados.length === 0 && duffelVoosVolta.length > 0" class="text-xs text-amber-700 bg-amber-50 p-4 rounded-xl border border-amber-200 font-medium mb-3 select-none">
+                                                         ⚠ Nenhum voo de volta disponível no período selecionado ({{ formPreferencias.aereo_periodo_preferido === 'manha' ? 'Manhã: 06h–12h' : formPreferencias.aereo_periodo_preferido === 'tarde' ? 'Tarde: 12h–18h' : 'Noite/Madrugada: 18h–06h' }}).
+                                                     </div>
+                                                     <div v-for="voo in voosVoltaFiltrados" :key="'v-' + voo.id"
                                                         @click="selecionarVoo(voo, 'volta')"
                                                         :class="duffelVooSelecionadoVolta && duffelVooSelecionadoVolta.id === voo.id
                                                             ? 'border-blue-500 bg-white ring-2 ring-blue-400'
@@ -1504,6 +1510,31 @@
                 ];
 
                 // --- Computados ---
+                const voosFiltrados = computed(() => {
+                    const de = formPreferencias.value.aereo_periodo_preferido;
+                    if (!de) return duffelVoos.value;
+                    return duffelVoos.value.filter(v => {
+                        if (!v.saida) return false;
+                        const hr = parseInt(v.saida.slice(11, 13), 10);
+                        if (de === 'manha') return hr >= 6 && hr < 12;
+                        if (de === 'tarde') return hr >= 12 && hr < 18;
+                        if (de === 'noite') return hr >= 18 || hr < 6;
+                        return true;
+                    });
+                });
+
+                const voosVoltaFiltrados = computed(() => {
+                    const de = formPreferencias.value.aereo_periodo_preferido;
+                    if (!de) return duffelVoosVolta.value;
+                    return duffelVoosVolta.value.filter(v => {
+                        if (!v.saida) return false;
+                        const hr = parseInt(v.saida.slice(11, 13), 10);
+                        if (de === 'manha') return hr >= 6 && hr < 12;
+                        if (de === 'tarde') return hr >= 12 && hr < 18;
+                        if (de === 'noite') return hr >= 18 || hr < 6;
+                        return true;
+                    });
+                });
                 const classificacaoAereo = computed(() => {
                     if (!formViagem.value.data_ida || !formViagem.value.tipo_servico.includes('Aereo')) return null;
                     const dataIda = parseDateBR(formViagem.value.data_ida);
@@ -2024,17 +2055,7 @@
                 };
 
                 // --- Duffel: funções de busca de voos ---
-                const _sortByPeriodo = (voosRef) => {
-                    const periodo = formPreferencias.value.aereo_periodo_preferido;
-                    if (!periodo || !voosRef.value.length) return;
-                    const faixas = { manha: [6, 12], tarde: [12, 18], noite: [18, 24] };
-                    const [h0, h1] = faixas[periodo] || [0, 24];
-                    voosRef.value = voosRef.value.slice().sort((a, b) => {
-                        const ha = new Date(a.saida).getHours();
-                        const hb = new Date(b.saida).getHours();
-                        return ((ha >= h0 && ha < h1) ? 0 : 1) - ((hb >= h0 && hb < h1) ? 0 : 1);
-                    });
-                };
+                // _sortByPeriodo removida em prol do filtro dinamico reativo voosFiltrados.
 
                 const buscarVoosDuffel = async () => {
                     duffelErro.value = '';
@@ -2065,7 +2086,6 @@
                             return;
                         }
                         duffelVoos.value = dados.opcoes;
-                        _sortByPeriodo(duffelVoos);
 
                         // Busca voo de volta se trecho = ambos
                         if (tipo === 'ambos' && f.data_volta && f.data_volta.length === 10) {
@@ -2085,7 +2105,7 @@
                             if (respV.ok) {
                                 const dadosV = await respV.json();
                                 duffelVoosVolta.value = dadosV.opcoes || [];
-                                _sortByPeriodo(duffelVoosVolta);
+                                // _sortByPeriodo(duffelVoosVolta);
                             }
                         }
                     } catch (e) {
