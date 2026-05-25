@@ -18,6 +18,7 @@ from app.core.config import settings
 from app.core.security import get_password_hash
 
 router = APIRouter()
+logger = logging.getLogger("viagenslabs")
 
 LOG_FILES = {
     "app_out": [
@@ -436,9 +437,12 @@ def reiniciar_backend(_: str = Depends(require_dev)):
 
 @router.post("/servicos/recarregar-nginx")
 def recarregar_nginx(_: str = Depends(require_dev)):
-    """Recarrega as configurações do Nginx executando o comando reload no diretório de instalação."""
+    """Recarrega as configurações do Nginx de forma assíncrona para enviar a resposta HTTP de sucesso antes do reload."""
     import subprocess
     import os
+    import threading
+    import time
+    
     nginx_paths = [
         r"C:\nginx\nginx.exe",
         r"c:\nginx\nginx.exe",
@@ -453,23 +457,23 @@ def recarregar_nginx(_: str = Depends(require_dev)):
             break
             
     if not executable:
-        # Tenta simplesmente rodar no PATH
         executable = "nginx"
         
-    try:
-        # Comando para Windows: nginx.exe -s reload
-        # Executa no diretório correspondente
-        cwd = os.path.dirname(executable) if os.path.exists(executable) else None
-        res = subprocess.run([executable, "-s", "reload"], cwd=cwd, capture_output=True, text=True, timeout=5)
-        if res.returncode == 0:
-            logger.info("[SERVIÇO] Nginx recarregado com sucesso.")
-            return {"sucesso": True, "mensagem": "Nginx recarregado com sucesso."}
-        else:
-            logger.error(f"[SERVIÇO] Falha ao recarregar Nginx: {res.stderr}")
-            raise HTTPException(status_code=502, detail=f"Erro Nginx: {res.stderr}")
-    except Exception as e:
-        logger.error(f"[SERVIÇO] Exceção ao recarregar Nginx: {e}")
-        raise HTTPException(status_code=500, detail=f"Exceção ao recarregar Nginx: {str(e)}")
+    def do_reload():
+        time.sleep(1) # Aguarda 1s para o cliente receber o JSON de sucesso
+        try:
+            cwd = os.path.dirname(executable) if os.path.exists(executable) else None
+            res = subprocess.run([executable, "-s", "reload"], cwd=cwd, capture_output=True, text=True, timeout=5)
+            if res.returncode == 0:
+                logger.info("[SERVIÇO] Nginx recarregado em background com sucesso.")
+            else:
+                logger.error(f"[SERVIÇO] Falha ao recarregar Nginx no background: {res.stderr}")
+        except Exception as e:
+            logger.error(f"[SERVIÇO] Exceção ao recarregar Nginx no background: {e}")
+
+    # Dispara a recarga em thread paralela para que a conexão HTTP responda com sucesso
+    threading.Thread(target=do_reload, daemon=True).start()
+    return {"sucesso": True, "mensagem": "Comando de recarga do Nginx enviado com sucesso. Recarregando..."}
 
 
 @router.post("/consultas/executar")
