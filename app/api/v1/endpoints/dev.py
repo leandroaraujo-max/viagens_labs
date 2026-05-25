@@ -437,43 +437,23 @@ def reiniciar_backend(_: str = Depends(require_dev)):
 
 @router.post("/servicos/recarregar-nginx")
 def recarregar_nginx(_: str = Depends(require_dev)):
-    """Recarrega as configurações do Nginx de forma assíncrona para enviar a resposta HTTP de sucesso antes do reload."""
+    """Mata todas as instâncias ativas e órfãs do Nginx. O WinSW irá reiniciar o serviço de forma limpa em segundos."""
     import subprocess
-    import os
     import threading
     import time
     
-    nginx_paths = [
-        r"C:\nginx\nginx.exe",
-        r"c:\nginx\nginx.exe",
-        r"C:\nginx-1.24.0\nginx.exe",
-        r"c:\nginx-1.24.0\nginx.exe",
-    ]
-    
-    executable = None
-    for p in nginx_paths:
-        if os.path.exists(p):
-            executable = p
-            break
-            
-    if not executable:
-        executable = "nginx"
-        
-    def do_reload():
-        time.sleep(1) # Aguarda 1s para o cliente receber o JSON de sucesso
+    def do_kill_and_restart():
+        time.sleep(1) # Aguarda 1s para o cliente receber a resposta HTTP de sucesso
         try:
-            cwd = os.path.dirname(executable) if os.path.exists(executable) else None
-            res = subprocess.run([executable, "-s", "reload"], cwd=cwd, capture_output=True, text=True, timeout=5)
-            if res.returncode == 0:
-                logger.info("[SERVIÇO] Nginx recarregado em background com sucesso.")
-            else:
-                logger.error(f"[SERVIÇO] Falha ao recarregar Nginx no background: {res.stderr}")
+            # Força a finalização de todas as instâncias do Nginx (incluindo processos órfãos sob LocalSystem)
+            res = subprocess.run(["taskkill", "/F", "/IM", "nginx.exe"], capture_output=True, text=True, timeout=5)
+            logger.info(f"[SERVIÇO] Nginx finalizado com taskkill. Retorno: {res.stdout}")
         except Exception as e:
-            logger.error(f"[SERVIÇO] Exceção ao recarregar Nginx no background: {e}")
+            logger.error(f"[SERVIÇO] Exceção ao finalizar Nginx: {e}")
 
-    # Dispara a recarga em thread paralela para que a conexão HTTP responda com sucesso
-    threading.Thread(target=do_reload, daemon=True).start()
-    return {"sucesso": True, "mensagem": "Comando de recarga do Nginx enviado com sucesso. Recarregando..."}
+    # Executa em thread paralela para que a conexão HTTP responda com sucesso antes da terminação do Nginx
+    threading.Thread(target=do_kill_and_restart, daemon=True).start()
+    return {"sucesso": True, "mensagem": "Nginx está sendo reiniciado do zero. Aguarde 5 segundos para a limpeza de processos órfãos..."}
 
 
 @router.post("/consultas/executar")
