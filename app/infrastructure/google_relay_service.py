@@ -57,39 +57,43 @@ class GoogleRelayService:
         if not self.disponivel():
             return False
 
-        payload = {
-            'action':         'registrar',
-            'secret':         self.secret,
-            'token':          token_model.uuid,
-            'protocolo':      solicitacao.protocolo,
-            'viajante_nome':  getattr(solicitacao, 'viajante_nome', '') or '',
-            'destino_cidade': getattr(solicitacao, 'destino_cidade', '') or '',
-            'destino_estado': getattr(solicitacao, 'destino_estado', '') or '',
-            'data_ida':       (
-                solicitacao.data_ida.strftime('%d/%m/%Y')
-                if getattr(solicitacao, 'data_ida', None) else ''
-            ),
-            'data_volta':     (
-                solicitacao.data_volta.strftime('%d/%m/%Y')
-                if getattr(solicitacao, 'data_volta', None) else ''
-            ),
-            'tipo_servico':   getattr(solicitacao, 'tipo_servico', '') or '',
-            'motivo':         getattr(solicitacao, 'motivo_viagem', '') or '',
-            'nivel':          token_model.nivel,
-            'nome_aprovador': token_model.nome_aprovador or '',
-            'expirado_em':    token_model.data_expiracao.strftime('%d/%m/%Y %H:%M'),
-        }
+        def _worker():
+            payload = {
+                'action':         'registrar',
+                'secret':         self.secret,
+                'token':          token_model.uuid,
+                'protocolo':      solicitacao.protocolo,
+                'viajante_nome':  getattr(solicitacao, 'viajante_nome', '') or '',
+                'destino_cidade': getattr(solicitacao, 'destino_cidade', '') or '',
+                'destino_estado': getattr(solicitacao, 'destino_estado', '') or '',
+                'data_ida':       (
+                    solicitacao.data_ida.strftime('%d/%m/%Y')
+                    if getattr(solicitacao, 'data_ida', None) else ''
+                ),
+                'data_volta':     (
+                    solicitacao.data_volta.strftime('%d/%m/%Y')
+                    if getattr(solicitacao, 'data_volta', None) else ''
+                ),
+                'tipo_servico':   getattr(solicitacao, 'tipo_servico', '') or '',
+                'motivo':         getattr(solicitacao, 'motivo_viagem', '') or '',
+                'nivel':          token_model.nivel,
+                'nome_aprovador': token_model.nome_aprovador or '',
+                'expirado_em':    token_model.data_expiracao.strftime('%d/%m/%Y %H:%M'),
+            }
 
-        result = self._post(payload)
-        ok = bool(result and result.get('ok'))
-        if ok:
-            logger.info(
-                f'[GAS] Aprovação registrada: {token_model.uuid[:8]}… '
-                f'({token_model.nivel} — {solicitacao.protocolo})'
-            )
-        else:
-            logger.warning(f'[GAS] Falha ao registrar aprovação: {result}')
-        return ok
+            result = self._post(payload)
+            ok = bool(result and result.get('ok'))
+            if ok:
+                logger.info(
+                    f'[GAS] Aprovação registrada: {token_model.uuid[:8]}… '
+                    f'({token_model.nivel} — {solicitacao.protocolo})'
+                )
+            else:
+                logger.warning(f'[GAS] Falha ao registrar aprovação: {result}')
+
+        import threading
+        threading.Thread(target=_worker, daemon=True).start()
+        return True
 
     def poll_decisoes(self) -> list[dict]:
         """
@@ -130,42 +134,47 @@ class GoogleRelayService:
         """Registra token de cotação no GAS para acesso externo da agência."""
         if not self.disponivel():
             return False
-        payload = {
-            'action':                 'registrar_agencia',
-            'secret':                 self.secret,
-            'token':                  token_agencia.uuid,
-            'protocolo':              solicitacao.protocolo,
-            'agencia_nome':           token_agencia.agencia_nome,
-            'tipo_servico':           getattr(solicitacao, 'tipo_servico', '') or '',
-            'solicitante':            getattr(solicitacao, 'solicitante_username', '') or '',
-            'destino':                f"{getattr(solicitacao,'destino_cidade','')} / {getattr(solicitacao,'destino_estado','')}",
-            'data_ida':               solicitacao.data_ida.strftime('%d/%m/%Y') if getattr(solicitacao, 'data_ida', None) else '',
-            'data_volta':             solicitacao.data_volta.strftime('%d/%m/%Y') if getattr(solicitacao, 'data_volta', None) else '',
-            'aereo_periodo':          getattr(solicitacao, 'aereo_periodo_preferido', '') or '',
-            'aereo_trecho':           getattr(solicitacao, 'aereo_tipo_trecho', '') or '',
-            'bagagem_extra':          bool(getattr(solicitacao, 'bagagem_extra', False)),
-            'assento':                getattr(solicitacao, 'assento_especial', '') or '',
-            'rodov_periodo':          getattr(solicitacao, 'rodov_periodo_preferido', '') or '',
-            'rodov_tipo':             getattr(solicitacao, 'rodov_tipo_onibus', '') or '',
-            'hotel_nome_pref':        getattr(solicitacao, 'preferencia_hotel_nome', '') or '',
-            'carro_retirada_cidade':  getattr(solicitacao, 'carro_cidade_retirada', '') or '',
-            'carro_devolucao_cidade': getattr(solicitacao, 'carro_cidade_devolucao', '') or '',
-            'observacoes_viajante':   getattr(solicitacao, 'observacoes_viajante', '') or '',
-            'expirado_em':            token_agencia.data_expiracao.isoformat(),
-            'viajante_nome':          getattr(solicitacao, 'viajante_nome', '') or '',
-            'viajante_cpf':           getattr(solicitacao, 'viajante_cpf', '') or '',
-            'viajante_data_nascimento': getattr(solicitacao, 'viajante_data_nascimento', '') or '',
-            'viajante_celular':       getattr(solicitacao, 'viajante_celular', '') or '',
-            'viajante_matricula':     getattr(solicitacao, 'viajante_matricula', '') or '',
-            'viajante_centro_custo':  getattr(solicitacao, 'viajante_centro_custo', '') or '',
-            'preferencia_voo':        getattr(solicitacao, 'preferencia_voo', '') or '',
-            'preferencia_voo_volta':  getattr(solicitacao, 'preferencia_voo_volta', '') or '',
-        }
-        result = self._post(payload)
-        ok = bool(result and result.get('ok'))
-        if not ok:
-            logger.warning(f'[GAS] Falha ao registrar agência {token_agencia.agencia_nome}: {result}')
-        return ok
+
+        def _worker():
+            payload = {
+                'action':                 'registrar_agencia',
+                'secret':                 self.secret,
+                'token':                  token_agencia.uuid,
+                'protocolo':              solicitacao.protocolo,
+                'agencia_nome':           token_agencia.agencia_nome,
+                'tipo_servico':           getattr(solicitacao, 'tipo_servico', '') or '',
+                'solicitante':            getattr(solicitacao, 'solicitante_username', '') or '',
+                'destino':                f"{getattr(solicitacao,'destino_cidade','')} / {getattr(solicitacao,'destino_estado','')}",
+                'data_ida':               solicitacao.data_ida.strftime('%d/%m/%Y') if getattr(solicitacao, 'data_ida', None) else '',
+                'data_volta':             solicitacao.data_volta.strftime('%d/%m/%Y') if getattr(solicitacao, 'data_volta', None) else '',
+                'aereo_periodo':          getattr(solicitacao, 'aereo_periodo_preferido', '') or '',
+                'aereo_trecho':           getattr(solicitacao, 'aereo_tipo_trecho', '') or '',
+                'bagagem_extra':          bool(getattr(solicitacao, 'bagagem_extra', False)),
+                'assento':                getattr(solicitacao, 'assento_especial', '') or '',
+                'rodov_periodo':          getattr(solicitacao, 'rodov_periodo_preferido', '') or '',
+                'rodov_tipo':             getattr(solicitacao, 'rodov_tipo_onibus', '') or '',
+                'hotel_nome_pref':        getattr(solicitacao, 'preferencia_hotel_nome', '') or '',
+                'carro_retirada_cidade':  getattr(solicitacao, 'carro_cidade_retirada', '') or '',
+                'carro_devolucao_cidade': getattr(solicitacao, 'carro_cidade_devolucao', '') or '',
+                'observacoes_viajante':   getattr(solicitacao, 'observacoes_viajante', '') or '',
+                'expirado_em':            token_agencia.data_expiracao.isoformat(),
+                'viajante_nome':          getattr(solicitacao, 'viajante_nome', '') or '',
+                'viajante_cpf':           getattr(solicitacao, 'viajante_cpf', '') or '',
+                'viajante_data_nascimento': getattr(solicitacao, 'viajante_data_nascimento', '') or '',
+                'viajante_celular':       getattr(solicitacao, 'viajante_celular', '') or '',
+                'viajante_matricula':     getattr(solicitacao, 'viajante_matricula', '') or '',
+                'viajante_centro_custo':  getattr(solicitacao, 'viajante_centro_custo', '') or '',
+                'preferencia_voo':        getattr(solicitacao, 'preferencia_voo', '') or '',
+                'preferencia_voo_volta':  getattr(solicitacao, 'preferencia_voo_volta', '') or '',
+            }
+            result = self._post(payload)
+            ok = bool(result and result.get('ok'))
+            if not ok:
+                logger.warning(f'[GAS] Falha ao registrar agência {token_agencia.agencia_nome}: {result}')
+
+        import threading
+        threading.Thread(target=_worker, daemon=True).start()
+        return True
 
     def poll_cotacoes(self) -> list[dict]:
         """Retorna cotações de agências não processadas vindas do GAS."""

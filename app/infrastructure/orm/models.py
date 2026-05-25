@@ -89,6 +89,17 @@ class SolicitacaoModel(Base):
     lembrete_n1_count  = Column(Integer, default=0)
     lembrete_cot_count = Column(Integer, default=0)
 
+    # Cancelamentos e remarcações
+    tipo_solicitacao_cancelamento  = Column(String(50), nullable=True)     # 'CANCELAR' ou 'REMARCAR'
+    itens_a_cancelar               = Column(String(200), nullable=True)    # ex: 'Aereo,Hospedagem'
+    motivo_cancelamento            = Column(Text, default='')
+    taxa_cancelamento_agencia      = Column(Numeric, nullable=True)
+    valor_reembolsavel_agencia     = Column(Numeric, nullable=True)
+    valor_credito_gerado           = Column(Numeric, nullable=True)
+    companhia_credito              = Column(String(100), nullable=True)
+    documento_cancelamento_caminho = Column(String(500), nullable=True)
+    credito_utilizado              = Column(Boolean, default=False)
+
     data_criacao = Column(DateTime(timezone=True), server_default=func.now())
     data_atualizacao = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -315,3 +326,26 @@ class LogAcessoModel(Base):
     status_acesso  = Column(String(50), default='SUCESSO')  # SUCESSO | BLOQUEADO
     observacao     = Column(Text, default='')
     data_criacao   = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+
+
+class ColaboradorCacheModel(Base):
+    """Tabela de Cache Local do BigQuery para colaboradores (RH). Expirável em 7 dias."""
+    __tablename__ = "colaboradores_cache"
+
+    username          = Column(String(100), primary_key=True, index=True)
+    cpf               = Column(String(20),  default='')
+    matricula         = Column(String(20),  default='')
+    nome              = Column(String(200), default='')
+    email             = Column(String(200), default='')
+    cargo             = Column(String(200), default='')
+    filial            = Column(String(50),  default='')
+    centro_custo      = Column(String(200), default='')
+    cod_centro_custo  = Column(String(50),  default='')
+    data_admissao     = Column(String(50),  default='')
+    aprovador_n1_nome = Column(String(200), default='')
+    aprovador_n1_email= Column(String(200), default='')
+    aprovador_n2_nome = Column(String(200), default='')
+    aprovador_n2_email= Column(String(200), default='')
+    foneres           = Column(String(50),  default='')
+    situacao          = Column(String(50),  default='')
+    data_atualizacao  = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

@@ -60,9 +60,10 @@ def tail_file(filepath: str, lines_count: int = 100) -> str:
             seek_pos = file_size
             
             while seek_pos > 0 and len(lines) <= lines_count:
+                old_seek_pos = seek_pos
                 seek_pos = max(0, seek_pos - chunk_size)
                 f.seek(seek_pos)
-                chunk = f.read(min(chunk_size, file_size - seek_pos))
+                chunk = f.read(old_seek_pos - seek_pos)
                 buffer = chunk + buffer
                 lines = buffer.split(b"\n")
             
@@ -409,4 +410,192 @@ def listar_logs_acesso(
         }
         for l in logs
     ]
+
+
+@router.post("/consultas/executar")
+def executar_consulta_predefinida(
+    body: dict,
+    db: Session = Depends(get_db_session),
+    _: str = Depends(require_dev),
+):
+    """Executa uma consulta SQL predefinida de forma segura."""
+    query_id = body.get("query_id")
+    
+    queries = {
+        "custos_cc": """
+            SELECT 
+                cod_centro_custo AS "Código CC", 
+                centro_custo AS "Nome Centro de Custo", 
+                COUNT(id) AS "Total Viagens", 
+                COALESCE(SUM(valor_reembolsavel_agencia), 0) AS "Total Reembolsado (R$)",
+                COALESCE(SUM(taxa_cancelamento_agencia), 0) AS "Total Multas (R$)"
+            FROM solicitacoes 
+            GROUP BY cod_centro_custo, centro_custo 
+            ORDER BY COUNT(id) DESC;
+        """,
+        "market_share": """
+            SELECT 
+                agencia_nome AS "Agência de Viagem", 
+                COUNT(id) AS "Total Cotações Recebidas",
+                SUM(CASE WHEN status = 'APROVADO' THEN 1 ELSE 0 END) AS "Cotações Vencidas (Aprovadas)",
+                ROUND(100.0 * SUM(CASE WHEN status = 'APROVADO' THEN 1 ELSE 0 END) / NULLIF(COUNT(id), 0), 2) || '%' AS "Taxa de Conversão"
+            FROM cotacoes 
+            GROUP BY agencia_nome 
+            ORDER BY SUM(CASE WHEN status = 'APROVADO' THEN 1 ELSE 0 END) DESC;
+        """,
+        "auditoria_delegacoes": """
+            SELECT 
+                username AS "Usuário Dev", 
+                nome AS "Nome do Dev", 
+                perfil AS "Perfil", 
+                observacao AS "Ação Auditada", 
+                data_criacao AS "Data e Hora"
+            FROM log_acessos 
+            WHERE observacao LIKE '%Delegação manual%' 
+            ORDER BY data_criacao DESC;
+        """,
+        "creditos_cia": """
+            SELECT 
+                companhia_credito AS "Companhia Aérea", 
+                COUNT(id) AS "Quantidade de Créditos",
+                COALESCE(SUM(valor_credito_gerado), 0) AS "Total Créditos Acumulados (R$)"
+            FROM solicitacoes 
+            WHERE tipo_solicitacao_cancelamento = 'CANCELAR' 
+              AND credito_utilizado = FALSE 
+            GROUP BY companhia_credito 
+            ORDER BY COALESCE(SUM(valor_credito_gerado), 0) DESC;
+        """
+    }
+    
+    if query_id not in queries:
+        raise HTTPException(status_code=400, detail="Consulta predefinida não encontrada.")
+        
+    sql_text = queries[query_id]
+    try:
+        from sqlalchemy import text
+        result = db.execute(text(sql_text))
+        
+        # Obter cabeçalhos de coluna
+        headers = list(result.keys())
+        
+        # Obter linhas
+        rows = [dict(zip(headers, row)) for row in result.fetchall()]
+        
+        return {
+            "headers": headers,
+            "rows": rows,
+            "query_sql": sql_text.strip()
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao executar consulta: {str(e)}")
+
+
+@router.get("/delegacoes")
+def listar_delegacoes_ad(
+    db: Session = Depends(get_db_session),
+    _: str = Depends(require_dev),
+):
+    """Retorna todas as delegações AD cadastradas."""
+    from app.infrastructure.orm.models import AutorizacaoTerceiroModel
+    delegacoes = db.query(AutorizacaoTerceiroModel).order_by(AutorizacaoTerceiroModel.data_criacao.desc()).all()
+    return [
+        {
+            "id": d.id,
+            "solicitante": d.solicitante_username,
+            "terceiro_username": d.terceiro_username,
+            "terceiro_nome": d.terceiro_nome or "",
+            "terceiro_email": d.terceiro_email or "",
+            "pdf_path": d.pdf_path or "",
+            "status": d.status,
+            "operador": d.operador_setor or "",
+            "data_criacao": d.data_criacao.isoformat() if d.data_criacao else None,
+        }
+        for d in delegacoes
+    ]
+
+
+@router.post("/delegacoes", status_code=201)
+def cadastrar_delegacao_ad(
+    body: dict,
+    db: Session = Depends(get_db_session),
+    username_dev: str = Depends(require_dev),
+):
+    """Cadastra diretamente uma delegação AD com status APROVADA e trilha de auditoria."""
+    from app.infrastructure.orm.models import AutorizacaoTerceiroModel, LogAcessoModel
+    solicitante = body.get("solicitante", "").strip()
+    viajante = body.get("viajante", "").strip()
+    
+    if not solicitante or not viajante:
+        raise HTTPException(status_code=400, detail="Forneça o usuário solicitante e viajante.")
+        
+    # Busca dados do viajante (terceiro_username) via BigQuery para salvar nome/email corretos
+    try:
+        from app.infrastructure.bigquery_service import BigQueryService
+        bq = BigQueryService("maga-bigdata", "maga-bigdata.kirk.assignee", "maga-bigdata.mlpap.mag_v_funcionarios_ativos")
+        dados = bq.buscar_colaborador(viajante)
+    except Exception:
+        dados = None
+        
+    terceiro_nome = dados.get("nome", "") if dados else f"Viajante {viajante}"
+    terceiro_email = dados.get("email", "") if dados else f"{viajante}@magazineluiza.com.br"
+    
+    # Cria a delegação como APROVADA
+    nova = AutorizacaoTerceiroModel(
+        solicitante_username=solicitante,
+        terceiro_username=viajante,
+        terceiro_nome=terceiro_nome,
+        terceiro_email=terceiro_email,
+        pdf_path="MANUAL_DEV",
+        status="APROVADA",
+        observacao_setor=f"Delegação manual inserida pelo Desenvolvedor {username_dev}",
+        operador_setor=username_dev,
+        data_decisao=func.now()
+    )
+    db.add(nova)
+    db.commit()
+    db.refresh(nova)
+    
+    # Registra no log de acessos/auditoria
+    log = LogAcessoModel(
+        username=username_dev,
+        perfil="dev",
+        status_acesso="SUCESSO",
+        observacao=f"Delegação manual inserida pelo Desenvolvedor {username_dev} (Terceiro: {solicitante} -> Titular: {viajante})",
+        data_criacao=func.now()
+    )
+    db.add(log)
+    db.commit()
+    
+    return {"id": nova.id, "status": "APROVADA", "mensagem": "Delegação manual ativada com sucesso."}
+
+
+@router.delete("/delegacoes/{delegacao_id}", status_code=204)
+def remover_delegacao_ad(
+    delegacao_id: int,
+    db: Session = Depends(get_db_session),
+    username_dev: str = Depends(require_dev),
+):
+    """Exclui diretamente uma delegação AD com trilha de auditoria."""
+    from app.infrastructure.orm.models import AutorizacaoTerceiroModel, LogAcessoModel
+    aut = db.query(AutorizacaoTerceiroModel).filter(AutorizacaoTerceiroModel.id == delegacao_id).first()
+    if not aut:
+        raise HTTPException(status_code=404, detail="Delegação não encontrada.")
+        
+    sol = aut.solicitante_username
+    viaj = aut.terceiro_username
+    
+    db.delete(aut)
+    db.commit()
+    
+    # Registra exclusão no log de acessos
+    log = LogAcessoModel(
+        username=username_dev,
+        perfil="dev",
+        status_acesso="SUCESSO",
+        observacao=f"Delegação manual excluída pelo Desenvolvedor {username_dev} (Terceiro: {sol} -> Titular: {viaj})",
+        data_criacao=func.now()
+    )
+    db.add(log)
+    db.commit()
+    return None
 

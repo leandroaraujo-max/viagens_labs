@@ -621,6 +621,61 @@
             </p>
           </div>
 
+          <!-- ─── LIQUIDAÇÃO DE CANCELAMENTO / REMARCAÇÃO ─── -->
+          <div v-if="solDetalhe.status === 'PENDENTE_CANCELAMENTO' || solDetalhe.status === 'PENDENTE_REMARCACAO' || solDetalhe.status === 'pendente_cancelamento' || solDetalhe.status === 'pendente_remarcacao'"
+            class="bg-gradient-to-br from-red-50 to-orange-50 border border-orange-250 rounded-3xl p-6 mt-8 shadow-sm">
+            <h2 class="text-base font-extrabold text-orange-950 mb-1 flex items-center gap-1.5">
+              <span>🛑</span> Liquidar Custos de Cancelamento / Remarcação
+            </h2>
+            <p class="text-xs text-orange-850 mb-6 font-medium">
+              Informe as multas de cancelamento aplicadas, valores reembolsáveis, créditos gerados por companhia aérea e anexe o comprovante (PDF) oficial.
+            </p>
+
+            <form @submit.prevent="submeterLiquidarCancelamento" class="space-y-5">
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                  <label class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Taxa / Multa de Cancelamento (R$)</label>
+                  <input v-model.number="formCancelamento.taxa_cancelamento_agencia" type="number" min="0" step="0.01" required
+                    class="mt-1.5 w-full border border-slate-250 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 bg-white transition duration-200 font-bold text-slate-700" />
+                </div>
+                <div>
+                  <label class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Valor Reembolsável (R$)</label>
+                  <input v-model.number="formCancelamento.valor_reembolsavel_agencia" type="number" min="0" step="0.01" required
+                    class="mt-1.5 w-full border border-slate-250 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 bg-white transition duration-200 font-bold text-slate-700" />
+                </div>
+                <div>
+                  <label class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Valor de Crédito Gerado (R$)</label>
+                  <input v-model.number="formCancelamento.valor_credito_gerado" type="number" min="0" step="0.01" required
+                    class="mt-1.5 w-full border border-slate-250 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 bg-white transition duration-200 font-bold text-slate-700" />
+                </div>
+                <div>
+                  <label class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Companhia Aérea do Crédito</label>
+                  <select v-model="formCancelamento.companhia_credito"
+                    class="mt-1.5 w-full border border-slate-250 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 bg-white transition duration-200 font-bold text-slate-700">
+                    <option value="">Nenhuma / Não se aplica</option>
+                    <option value="LATAM">LATAM</option>
+                    <option value="GOL">GOL</option>
+                    <option value="AZUL">AZUL</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label class="text-[10px] text-slate-550 font-bold uppercase tracking-wider block mb-1.5">Anexar Comprovante / Recibo de Taxas (PDF) <span class="text-red-500">*</span></label>
+                <input type="file" accept="application/pdf" @change="selecionarArquivoCancelamento" required
+                  class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-orange-100 file:text-orange-700 hover:file:bg-orange-200 transition duration-150 cursor-pointer" />
+              </div>
+
+              <div class="flex justify-end gap-3 pt-2">
+                <button type="submit" :disabled="enviandoCancelamento"
+                  class="px-6 py-2.5 text-xs font-extrabold bg-orange-600 hover:bg-orange-700 disabled:opacity-60 text-white rounded-xl shadow-md shadow-orange-500/10 hover:shadow-lg transition duration-150 flex items-center gap-1.5">
+                  <span v-if="enviandoCancelamento" class="animate-spin w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full"></span>
+                  <span>Confirmar Liquidação de Custos</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
       </div><!-- /wrapper card -->
     </main>
   </div>
@@ -664,6 +719,16 @@ createApp({
     const enviandoCotacao = ref(false);
     const cotacaoSucesso  = ref(false);
     const cotacaoErro     = ref('');
+
+    // Cancelamento
+    const formCancelamento = reactive({
+      taxa_cancelamento_agencia: 0.0,
+      valor_reembolsavel_agencia: 0.0,
+      valor_credito_gerado: 0.0,
+      companhia_credito: '',
+    });
+    const arquivoCancelamento = ref(null);
+    const enviandoCancelamento = ref(false);
 
     // ── Helpers ────────────────────────────────────────────────────
     function authHeaders() {
@@ -889,6 +954,41 @@ createApp({
       }
     }
 
+    function selecionarArquivoCancelamento(event) {
+      arquivoCancelamento.value = event.target.files[0] || null;
+    }
+
+    async function submeterLiquidarCancelamento() {
+      if (!solDetalhe.value) return;
+      enviandoCancelamento.value = true;
+      try {
+        const fd = new FormData();
+        fd.append('taxa_cancelamento_agencia', formCancelamento.taxa_cancelamento_agencia);
+        fd.append('valor_reembolsavel_agencia', formCancelamento.valor_reembolsavel_agencia);
+        fd.append('valor_credito_gerado', formCancelamento.valor_credito_gerado);
+        fd.append('companhia_credito', formCancelamento.companhia_credito);
+        if (arquivoCancelamento.value) {
+          fd.append('arquivo', arquivoCancelamento.value);
+        }
+        const url = modoToken.value
+          ? `${API}/agencia/token/${tokenUUID.value}/liquidar-cancelamento`
+          : `${API}/agencia/solicitacoes/${solDetalhe.value.id}/liquidar-cancelamento`;
+        const headers = modoToken.value ? {} : { Authorization: `Bearer ${token.value}` };
+        const res = await fetch(url, { method: 'POST', headers, body: fd });
+        const dados = await res.json();
+        if (!res.ok) {
+          alert(dados.detail || 'Erro ao submeter liquidação.');
+          return;
+        }
+        alert('Custos de cancelamento/remarcação liquidados com sucesso! Aguardando aprovação final do setor.');
+        voltarLista();
+      } catch (e) {
+        alert('Erro de conexão com o servidor.');
+      } finally {
+        enviandoCancelamento.value = false;
+      }
+    }
+
     function sair() {
       token.value = '';
       tela.value = 'token_erro';
@@ -912,13 +1012,15 @@ createApp({
     });
 
     return {
-      tela, nomeUsuario, agenciaNome,
+      tela, nomeUsuario, agencies: [], agenciaNome,
       modoToken, tokenErro,
       solicitacoes, carregandoLista, filtroStatus, carregarSolicitacoes,
       solDetalhe, abrirDetalhe, voltarLista, sair,
       formCotacao, enviandoCotacao, cotacaoSucesso, cotacaoErro, enviarCotacao,
       arquivosVoucher, enviandoVoucher, voucherSucesso, voucherErro,
       tiposVoucherNecessarios, selecionarArquivoVoucher, uploadVoucher,
+      // Cancelamento
+      formCancelamento, arquivoCancelamento, enviandoCancelamento, selecionarArquivoCancelamento, submeterLiquidarCancelamento,
       temServico, formatarData, formatarMoeda, badgeStatus, labelStatus, badgeCasamento,
     };
   }

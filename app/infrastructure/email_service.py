@@ -244,21 +244,24 @@ class EmailService:
                 logger.warning(f"[QA Override] Redirecionando e-mail de {destinatarios} para testador QA: {qa_email} | Assunto: {assunto}")
                 destinatarios = [qa_email]
 
-        try:
-            msg = MIMEMultipart("alternative")
-            msg["Subject"]  = assunto
-            msg["From"]     = formataddr((self.from_name, self.smtp_from))
-            msg["To"]       = ", ".join(destinatarios)
-            if self.reply_to:
-                msg["Reply-To"] = self.reply_to
-            msg.attach(MIMEText(html, "html", "utf-8"))
-            with smtplib.SMTP(self.smtp_host, self.smtp_port, timeout=15) as smtp:
-                smtp.sendmail(self.smtp_from, destinatarios, msg.as_string())
-            logger.info(f"E-mail enviado → {destinatarios} | {assunto}")
-            return True
-        except Exception as e:
-            logger.error(f"Falha ao enviar e-mail → {destinatarios}: {e}")
-            return False
+        def _worker():
+            try:
+                msg = MIMEMultipart("alternative")
+                msg["Subject"]  = assunto
+                msg["From"]     = formataddr((self.from_name, self.smtp_from))
+                msg["To"]       = ", ".join(destinatarios)
+                if self.reply_to:
+                    msg["Reply-To"] = self.reply_to
+                msg.attach(MIMEText(html, "html", "utf-8"))
+                with smtplib.SMTP(self.smtp_host, self.smtp_port, timeout=15) as smtp:
+                    smtp.sendmail(self.smtp_from, destinatarios, msg.as_string())
+                logger.info(f"E-mail enviado → {destinatarios} | {assunto}")
+            except Exception as e:
+                logger.error(f"Falha ao enviar e-mail → {destinatarios}: {e}")
+
+        import threading
+        threading.Thread(target=_worker, daemon=True).start()
+        return True
 
     def _link_aprovacao(self, token_uuid: str) -> str:
         """Retorna o link de aprovação correto:

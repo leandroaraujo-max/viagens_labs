@@ -671,23 +671,25 @@ Todos os portais usam **Vue.js 3 (CDN) + TailwindCSS (CDN)** — sem node_module
 
 ## 📊 Estado Atual e Próximos Passos
 
-### ✅ Implementado (Fase 6 & Fase 7)
+### ✅ Implementado (Fase 6 & Fase 7 & Fase 12)
 - **Portal do Desenvolvedor (`dev.html`):** Dashboard gerencial completo com métricas de telemetria, painel de variáveis de ambiente do `.env` sanitizadas e console terminal hacker escuro para acompanhamento de logs em tempo real (FastAPI, Nginx, wrapper do Windows Service) com atualização automática a cada 3 segundos.
+- **Aba de Relatórios SQL "Grandes Resultados":** Nova aba no Portal Dev para consultas analíticas predefinidas de alta performance executadas localmente, com cópia automática de SQL e exibição na tabela de resultados.
+- **Gestão Manual de Delegações AD:** Ferramenta no Portal Dev para incluir (com busca automática via BigQuery) e remover delegações de terceiros de forma auditada com logs no banco.
 - **Gestão de QA & Mocks Locais:** Área de gerenciamento no portal do desenvolvedor com o CRUD de usuários testadores de QA (`UsuarioQATesteModel`). O fluxo de e-mails de viagens criadas por esses usuários é automaticamente desviado para eles mesmos, evitando span em gerentes e diretores reais. Além disso, fallbacks robustos offline do BigQuery e LDAP foram introduzidos para viabilizar desenvolvimento e testes sem conectividade de rede corporativa Magalu.
+- **Cache Local do BigQuery:** Tabela `colaboradores_cache` no banco com expiração (TTL) de 7 dias e suporte a force refresh manual, gerando zero custos de consultas repetitivas no BQ.
 - **Exclusão Avançada de Solicitações:** Botão administrativo para excluir fisicamente uma solicitação de ponta a ponta no banco, executando uma cascata manual completa (logs, casamentos, vouchers, tokens de agência/aprovação, cotações).
 - **Redesign de Agências:** Agências agora usam um modelo unificado (CNPJ, endereço, banco) sem necessidade de login. O acesso é exclusivo via Token/GAS.
 - **Dynamicização Completa de Agências:** Acoplamento inteligente baseado no flag `ativo = True` das agências no banco relacional. O backend (`cotacao_service.py`) conta de forma flexível as agências ativas e espera a resposta exata de todas para alterar o status do fluxo. No painel do setor (`setor.html`), KPIs reativos, cores exclusivas e botões de ação comparativa lado a lado funcionam de forma totalmente responsiva e dinâmica.
 - **Solicitação para Terceiros:** Novo workflow completo substituindo a delegação legada. O viajante pode anexar termos em PDF (até 10MB) solicitando autorização permanente para realizar viagens em nome de gerentes/diretores. O setor avalia e aprova/reprova o ticket de autorização na interface.
-- **Segurança da Google Places API (Hotéis):** A chave do Places API foi removida inteiramente do código front-end exposto e isolada no backend através de um proxy seguro e transparente em `/api/v1/hoteis/sugestoes`.
+- **Fluxo Itemizado de Cancelamento & Remarcação:** Modais com aviso legal literal da regra das 24h. A agência anexa comprovantes e informa taxas, reembolsos e créditos acumulados por companhia aérea. O setor de viagens revisa e aprova/reprova em tempo real através de um painel de auditoria com badge visual e download seguro de arquivos.
+- **Segurança da Google Places API & BrasilAPI Proxies:** A chave do Places API foi removida inteiramente do código front-end exposto e isolada no backend através de um proxy seguro e transparente em `/api/v1/hoteis/sugestoes`. Criamos também rotas proxy sob `/api/v1/setor/proxy/` para CEP, CNPJ e Banco, evitando problemas de CORS e protegendo chamadas de infraestrutura.
 - **Independência de Rede (CDNs Offline):** Os pacotes browser-ready do Vue.js 3 e TailwindCSS foram baixados no repositório (`frontend/js/lib/`) eliminando a dependência de conexões de internet externa na intranet.
 - **FastAPI Windows Service Wrapper:** Configuração completa com arquivos executável wrapper e XML configurável para rodar a aplicação em segundo plano nativamente no Windows Server via script `gerenciar_servidor.bat`.
 - **Bypass de Tela Preta:** Melhoria de acessibilidade navegando de forma limpa via `target="_blank"` em links de portais de suporte técnico para evitar bloqueios de transição.
 
 ### 🔜 Próximos Passos (Fases Futuras)
-- **Fase 5B: Motor SLA** (lembretes de aprovação/cotação atrasados com daemon).
-- **Fase 5C: Casamento completo** (vincular/ignorar no painel do setor em interface visual).
-- **Fase 6: Histórico com linha do tempo** no portal do viajante.
-- **Fase 7: GAS relay para vouchers** (upload via Google Drive) OU VPN para agências.
+- **Fase 8: Histórico com linha do tempo** no portal do viajante.
+- **Fase 9: GAS relay para vouchers** (upload via Google Drive) OU VPN para agências.
 
 ---
 

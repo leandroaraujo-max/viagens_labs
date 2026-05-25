@@ -277,3 +277,122 @@ async def upload_voucher_por_token(
         "caminho_arquivo":    voucher.caminho_arquivo,
         "status_solicitacao": sol.status,
     }
+
+
+@router.post("/token/{token_uuid}/liquidar-cancelamento")
+async def liquidar_cancelamento_por_token(
+    token_uuid: str,
+    taxa_cancelamento_agencia: float = Form(0.0),
+    valor_reembolsavel_agencia: float = Form(0.0),
+    valor_credito_gerado: float = Form(0.0),
+    companhia_credito: str = Form(""),
+    arquivo: Optional[UploadFile] = File(None),
+    db = Depends(get_db_session),
+):
+    """Permite à agência liquidar taxas e créditos de cancelamento/remarcação via link seguro."""
+    # O token de cancelamento pode ser reusado, mas idealmente é do tipo VOUCHER ou similar.
+    # Vamos validar contra qualquer token pendente daquela solicitação.
+    tok = (
+        db.query(TokenAgenciaModel)
+        .filter(
+            TokenAgenciaModel.uuid == token_uuid,
+            TokenAgenciaModel.status == "PENDENTE",
+        )
+        .first()
+    )
+    if not tok:
+        raise HTTPException(status_code=404, detail="Link inválido ou já utilizado.")
+        
+    sol: SolicitacaoModel = db.query(SolicitacaoModel).filter_by(id=tok.solicitacao_id).first()
+    if not sol:
+        raise HTTPException(status_code=404, detail="Solicitação não encontrada.")
+        
+    if sol.status not in ["PENDENTE_CANCELAMENTO", "PENDENTE_REMARCACAO"]:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Esta solicitação não está aguardando liquidação da agência (status atual: {sol.status}).",
+        )
+        
+    import os
+    doc_path = None
+    if arquivo:
+        conteudo = await arquivo.read()
+        if len(conteudo) > _MAX_BYTES:
+            raise HTTPException(status_code=413, detail="Arquivo excede 20 MB.")
+        if len(conteudo) > 0:
+            os.makedirs(os.path.join("uploads", "cancelamentos"), exist_ok=True)
+            filename = f"cancelamento_{sol.id}_{int(datetime.now().timestamp())}.pdf"
+            doc_path = os.path.join("uploads", "cancelamentos", filename)
+            with open(doc_path, "wb") as f:
+                f.write(conteudo)
+                
+    sol.taxa_cancelamento_agencia = taxa_cancelamento_agencia
+    sol.valor_reembolsavel_agencia = valor_reembolsavel_agencia
+    sol.valor_credito_gerado = valor_credito_gerado
+    sol.companhia_credito = companhia_credito
+    if doc_path:
+        sol.documento_cancelamento_caminho = doc_path
+        
+    if sol.tipo_solicitacao_cancelamento == "REMARCAR":
+        sol.status = "PENDENTE_APROVACAO_REMARCACAO"
+    else:
+        sol.status = "PENDENTE_APROVACAO_CANCELAMENTO"
+        
+    # Invalida o token após liquidar
+    tok.status = "USADO"
+    
+    db.commit()
+    return {"protocolo": sol.protocolo, "status": sol.status, "mensagem": "Liquidação enviada ao setor de viagens para aprovação final."}
+
+
+@router.post("/solicitacoes/{solicitacao_id}/liquidar-cancelamento")
+async def liquidar_cancelamento_autenticado(
+    solicitacao_id: int,
+    taxa_cancelamento_agencia: float = Form(0.0),
+    valor_reembolsavel_agencia: float = Form(0.0),
+    valor_credito_gerado: float = Form(0.0),
+    companhia_credito: str = Form(""),
+    arquivo: Optional[UploadFile] = File(None),
+    db = Depends(get_db_session),
+    agencia_info: tuple = Depends(require_agencia),
+):
+    """Permite à agência autenticada liquidar taxas e créditos de cancelamento/remarcação."""
+    agencia_usuario, agencia_nome = agencia_info
+    sol: SolicitacaoModel = db.query(SolicitacaoModel).filter_by(id=solicitacao_id).first()
+    if not sol:
+        raise HTTPException(status_code=404, detail="Solicitação não encontrada.")
+        
+    if sol.status not in ["PENDENTE_CANCELAMENTO", "PENDENTE_REMARCACAO"]:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Esta solicitação não está aguardando liquidação da agência (status atual: {sol.status}).",
+        )
+        
+    import os
+    doc_path = None
+    if arquivo:
+        conteudo = await arquivo.read()
+        if len(conteudo) > _MAX_BYTES:
+            raise HTTPException(status_code=413, detail="Arquivo excede 20 MB.")
+        if len(conteudo) > 0:
+            os.makedirs(os.path.join("uploads", "cancelamentos"), exist_ok=True)
+            filename = f"cancelamento_{sol.id}_{int(datetime.now().timestamp())}.pdf"
+            doc_path = os.path.join("uploads", "cancelamentos", filename)
+            with open(doc_path, "wb") as f:
+                f.write(conteudo)
+                
+    sol.taxa_cancelamento_agencia = taxa_cancelamento_agencia
+    sol.valor_reembolsavel_agencia = valor_reembolsavel_agencia
+    sol.valor_credito_gerado = valor_credito_gerado
+    sol.companhia_credito = companhia_credito
+    if doc_path:
+        sol.documento_cancelamento_caminho = doc_path
+        
+    if sol.tipo_solicitacao_cancelamento == "REMARCAR":
+        sol.status = "PENDENTE_APROVACAO_REMARCACAO"
+    else:
+        sol.status = "PENDENTE_APROVACAO_CANCELAMENTO"
+        
+    db.commit()
+    return {"protocolo": sol.protocolo, "status": sol.status, "mensagem": "Liquidação enviada ao setor de viagens para aprovação final."}
+

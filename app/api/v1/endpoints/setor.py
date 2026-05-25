@@ -105,6 +105,57 @@ def executar_acao(
     return resultado
 
 
+from pydantic import BaseModel
+
+class SetorCancelamentoRequest(BaseModel):
+    acao: str  # 'APROVAR' ou 'REPROVAR'
+    observacao: str = ""
+
+
+@router.post("/solicitacoes/{solicitacao_id}/decidir-cancelamento", status_code=status.HTTP_200_OK)
+def decidir_cancelamento(
+    solicitacao_id: int,
+    body: SetorCancelamentoRequest,
+    db: Session = Depends(get_db_session),
+    username: str = Depends(require_setor_username),
+):
+    """Aprova ou reprova a liquidação de cancelamento/remarcação enviada pela agência."""
+    from app.infrastructure.orm.models import SolicitacaoModel
+    sol = db.query(SolicitacaoModel).filter_by(id=solicitacao_id).first()
+    if not sol:
+        raise HTTPException(status_code=404, detail="Solicitação não encontrada.")
+        
+    if sol.status not in ["PENDENTE_APROVACAO_CANCELAMENTO", "PENDENTE_APROVACAO_REMARCACAO"]:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Esta solicitação não está aguardando decisão de cancelamento/remarcação (status atual: {sol.status})."
+        )
+        
+    is_remarcacao = (sol.status == "PENDENTE_APROVACAO_REMARCACAO")
+    
+    if body.acao.upper() == "APROVAR":
+        if is_remarcacao:
+            # Remarcação confirmada!
+            sol.status = "CONCLUIDA"
+            sol.motivo_cancelamento = f"[Remarcação Aprovada] {sol.motivo_cancelamento}. Obs Setor: {body.observacao}"
+        else:
+            # Cancelamento confirmado!
+            sol.status = "CANCELADA"
+            sol.motivo_cancelamento = f"[Cancelamento Aprovado] {sol.motivo_cancelamento}. Obs Setor: {body.observacao}"
+    else:
+        # Reprovado pelo setor -> retorna a CONCLUIDA e anula as taxas/créditos
+        sol.status = "CONCLUIDA"
+        sol.motivo_cancelamento = f"[Cancelamento/Remarcação Reprovada] Obs Setor: {body.observacao}. Motivo original: {sol.motivo_cancelamento}"
+        # Reseta os valores para segurança
+        sol.taxa_cancelamento_agencia = 0
+        sol.valor_reembolsavel_agencia = 0
+        sol.valor_credito_gerado = 0
+        sol.companhia_credito = ""
+        
+    db.commit()
+    return {"protocolo": sol.protocolo, "status": sol.status, "mensagem": f"Decisão de cancelamento registrada com sucesso: {body.acao}."}
+
+
 # ── Casamentos ────────────────────────────────────────────────────────────────
 
 from app.services.casamento_service import CasamentoService
@@ -334,4 +385,73 @@ def obter_alertas_acesso(
         }
         for a in alertas
     ]
+
+
+@router.get("/proxy/cep/{cep}")
+def proxy_cep(
+    cep: str,
+    _: str = Depends(require_setor),
+):
+    """Intermedeia de forma segura a busca de CEP via BrasilAPI."""
+    import requests
+    cep_clean = "".join(filter(str.isdigit, cep))
+    url = f"https://brasilapi.com.br/api/cep/v1/{cep_clean}"
+    try:
+        res = requests.get(url, timeout=10)
+        if res.status_code != 200:
+            raise HTTPException(status_code=res.status_code, detail="Erro ao consultar CEP na BrasilAPI.")
+        return res.json()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro interno de comunicação: {str(e)}")
+
+
+@router.get("/proxy/cnpj/{cnpj}")
+def proxy_cnpj(
+    cnpj: str,
+    _: str = Depends(require_setor),
+):
+    """Intermedeia de forma segura a busca de CNPJ via BrasilAPI."""
+    import requests
+    cnpj_clean = "".join(filter(str.isdigit, cnpj))
+    url = f"https://brasilapi.com.br/api/cnpj/v1/{cnpj_clean}"
+    try:
+        res = requests.get(url, timeout=10)
+        if res.status_code != 200:
+            raise HTTPException(status_code=res.status_code, detail="CNPJ inválido ou erro de conexão na BrasilAPI.")
+        return res.json()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro interno de comunicação: {str(e)}")
+
+
+@router.get("/proxy/bank/{code}")
+def proxy_bank(
+    code: str,
+    _: str = Depends(require_setor),
+):
+    """Intermedeia de forma segura a busca de Banco por código via BrasilAPI."""
+    import requests
+    code_clean = "".join(filter(str.isdigit, code))
+    url = f"https://brasilapi.com.br/api/banks/v1/{code_clean}"
+    try:
+        res = requests.get(url, timeout=10)
+        if res.status_code != 200:
+            raise HTTPException(status_code=res.status_code, detail="Banco não encontrado ou erro na BrasilAPI.")
+        return res.json()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro interno de comunicação: {str(e)}")
+
+
+@router.get("/solicitacoes/documento/{filename:path}")
+def obter_documento(filename: str, _: str = Depends(require_setor)):
+    """Retorna um arquivo de documento de cancelamento de forma segura."""
+    from fastapi.responses import FileResponse
+    import os
+    base_dir = os.path.abspath(os.path.join("uploads", "cancelamentos"))
+    file_path = os.path.abspath(os.path.join(base_dir, filename))
+    if not file_path.startswith(base_dir):
+        raise HTTPException(status_code=403, detail="Acesso não autorizado.")
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Documento não encontrado.")
+    return FileResponse(file_path)
+
 

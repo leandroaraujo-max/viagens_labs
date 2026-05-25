@@ -99,7 +99,7 @@
 
     <!-- Navegação Vertical (Abas) -->
     <nav class="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
-      <button v-for="item in menuItens" :key="item.id" @click="aba = item.id; if (item.id === 'indicadores') calcularIndicadores(); if (item.id === 'casamentos') carregarCasamentos(); if (item.id === 'terceiros') carregarTicketsTerceiros();"
+      <button v-for="item in menuItens" :key="item.id" @click="aba = item.id; if (item.id === 'indicadores') calcularIndicadores(); if (item.id === 'casamentos') carregarCasamentos(); if (item.id === 'terceiros') carregarTicketsTerceiros(); if (item.id === 'agencias') carregarAgencias();"
         :class="aba === item.id ? 'bg-blue-600/15 text-blue-400 border-l-4 border-blue-500 font-bold font-semibold rounded-lg' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/20 border-l-4 border-transparent rounded-lg'"
         class="w-full flex items-center gap-3 px-3 py-2.5 text-xs transition-all duration-200 text-left">
         <span class="text-base shrink-0">{{ item.icon }}</span>
@@ -581,6 +581,17 @@
                 Cadastro: {{ fmtData(ag.data_criacao) }}
               </div>
             </div>
+
+            <!-- Botão Ativar/Desativar Agência (Saas Premium Style) -->
+            <div class="mt-4 pt-3 border-t border-gray-100 flex justify-end">
+              <button @click="toggleAgencia(ag)"
+                class="w-full py-2 text-xs font-bold rounded-xl border transition-all duration-200 shadow-sm"
+                :class="ag.ativo 
+                  ? 'border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300 bg-rose-50/15' 
+                  : 'border-emerald-200 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-300 bg-emerald-50/15'">
+                {{ ag.ativo ? '🛑 Desativar Agência' : '✅ Ativar Agência' }}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -849,6 +860,15 @@
               <input v-model="agenciaForm.titularidade_razao_social" type="text"
                 class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-labs-blue/30" />
             </div>
+            
+            <!-- Campo Ativo/Inativo no Formulário Modal -->
+            <div class="sm:col-span-6 flex items-center pt-2">
+              <label class="inline-flex items-center cursor-pointer select-none">
+                <input v-model="agenciaForm.ativo" type="checkbox" class="sr-only peer">
+                <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-labs-blue"></div>
+                <span class="ms-3 text-xs font-bold text-gray-600">Agência parceira ativa para receber cotações por e-mail</span>
+              </label>
+            </div>
           </div>
         </div>
 
@@ -900,6 +920,88 @@
 
       <!-- Corpo -->
       <div class="px-6 py-5 space-y-5 overflow-y-auto max-h-[62vh]">
+
+        <!-- Painel de Revisão de Cancelamento / Remarcação (SaaS Premium Style) -->
+        <div v-if="detalhe.status === 'PENDENTE_APROVACAO_CANCELAMENTO' || detalhe.status === 'PENDENTE_APROVACAO_REMARCACAO'" 
+             class="border rounded-2xl p-5 bg-rose-50/20 border-rose-200 shadow-sm space-y-4">
+          <div class="flex items-center justify-between border-b border-rose-100 pb-3 flex-wrap gap-2">
+            <div class="flex items-center gap-2">
+              <span class="text-xl">⚠️</span>
+              <div>
+                <h3 class="text-xs font-bold text-rose-800 uppercase tracking-wider">
+                  Revisão de {{ detalhe.status === 'PENDENTE_APROVACAO_CANCELAMENTO' ? 'Cancelamento' : 'Remarcação' }}
+                </h3>
+                <p class="text-[10px] text-gray-400 mt-0.5">Confirme as taxas e reembolsos informados pela agência antes de aprovar.</p>
+              </div>
+            </div>
+            <!-- Badge 24h -->
+            <div class="shrink-0">
+              <span v-if="isWithin24h(detalhe.data_criacao, detalhe.data_atualizacao)" 
+                    class="bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm">
+                🛡️ Dentro das 24h (Sem Custos)
+              </span>
+              <span v-else 
+                    class="bg-rose-100 text-rose-800 border border-rose-200 text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm">
+                ⚠️ Fora das 24h (Sujeito a Taxas)
+              </span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+            <div>
+              <span class="text-gray-400 block mb-0.5">Tipo</span>
+              <strong class="text-gray-700 uppercase">{{ detalhe.tipo_solicitacao_cancelamento || 'CANCELAR' }}</strong>
+            </div>
+            <div>
+              <span class="text-gray-400 block mb-0.5">Itens a Cancelar</span>
+              <strong class="text-gray-700">{{ detalhe.itens_a_cancelar || 'Todos' }}</strong>
+            </div>
+            <div class="col-span-2">
+              <span class="text-gray-400 block mb-0.5">Motivo Informado</span>
+              <p class="text-gray-700 italic font-medium">"{{ detalhe.motivo_cancelamento || 'Sem justificativa informada' }}"</p>
+            </div>
+          </div>
+
+          <div class="bg-white border border-rose-100 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs shadow-inner">
+            <div>
+              <span class="text-gray-400 block mb-0.5">Taxa de Cancelamento (Agência)</span>
+              <strong class="text-red-650 text-sm font-mono">R$ {{ fmtValor(detalhe.taxa_cancelamento_agencia) }}</strong>
+            </div>
+            <div>
+              <span class="text-gray-400 block mb-0.5">Valor Reembolsável</span>
+              <strong class="text-emerald-600 text-sm font-mono">R$ {{ fmtValor(detalhe.valor_reembolsavel_agencia) }}</strong>
+            </div>
+            <div>
+              <span class="text-gray-400 block mb-0.5">Crédito Gerado</span>
+              <strong class="text-blue-600 text-sm font-mono">R$ {{ fmtValor(detalhe.valor_credito_gerado) }} <span class="text-[10px] text-gray-500 font-sans" v-if="detalhe.companhia_credito">({{ detalhe.companhia_credito }})</span></strong>
+            </div>
+          </div>
+
+          <!-- Comprovante PDF -->
+          <div v-if="detalhe.documento_cancelamento_caminho" class="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs">
+            <div class="flex items-center gap-2">
+              <span class="text-base">📄</span>
+              <span class="font-medium text-gray-600">Comprovante de Liquidação da Agência</span>
+            </div>
+            <a :href="'/api/v1/setor/solicitacoes/documento/' + detalhe.documento_cancelamento_caminho.split('/').pop()" 
+               target="_blank" rel="noopener noreferrer" 
+               class="bg-labs-blue hover:bg-blue-700 text-white font-bold px-3 py-1.5 rounded-lg shadow-sm transition">
+              Visualizar PDF
+            </a>
+          </div>
+
+          <!-- Ações rápidas no painel -->
+          <div class="flex justify-end gap-2 border-t border-rose-100 pt-3 flex-wrap">
+            <button @click="decidirCancelamento(detalhe, 'APROVAR')" 
+                    class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2 rounded-lg shadow-sm transition">
+              ✓ Aprovar Cancelamento
+            </button>
+            <button @click="decidirCancelamento(detalhe, 'REPROVAR')" 
+                    class="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-bold px-4 py-2 rounded-lg transition">
+              ✕ Negar Cancelamento
+            </button>
+          </div>
+        </div>
 
         <!-- Dados da viagem -->
         <div class="grid grid-cols-2 gap-4 text-sm">
@@ -1186,6 +1288,17 @@
             </button>
           </template>
 
+          <template v-else-if="detalhe.status === 'PENDENTE_APROVACAO_CANCELAMENTO' || detalhe.status === 'PENDENTE_APROVACAO_REMARCACAO'">
+            <button @click="decidirCancelamento(detalhe, 'APROVAR')" :disabled="acaoCarregando"
+              class="text-sm bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg px-5 py-2.5 font-bold shadow-sm hover:shadow transition-all">
+              ✓ Aprovar Cancelamento
+            </button>
+            <button @click="decidirCancelamento(detalhe, 'REPROVAR')" :disabled="acaoCarregando"
+              class="text-sm bg-rose-50 hover:bg-rose-100 disabled:opacity-50 text-rose-700 border border-rose-200 rounded-lg px-5 py-2.5 font-bold transition-all">
+              ✕ Negar Cancelamento
+            </button>
+          </template>
+
           <template v-else-if="detalhe.status === 'PENDENTE_APROVACAO_SETOR_COTACAO'">
             <template v-for="slot in slotsCotacao" :key="slot.agencia">
               <button v-if="slot.cot" @click="executarAcao(detalhe, 'APROVAR_' + slot.agencia.toUpperCase())" :disabled="acaoCarregando"
@@ -1445,6 +1558,32 @@ createApp({
       }
     };
 
+    const decidirCancelamento = async (sol, acao, observacao = '') => {
+      acaoCarregando.value = true;
+      acaoErro.value = '';
+      try {
+        const resp = await fetch(`/api/v1/setor/solicitacoes/${sol.id}/decidir-cancelamento`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token.value}`,
+          },
+          body: JSON.stringify({ acao, observacao }),
+        });
+        const dados = await resp.json();
+        if (!resp.ok) throw new Error(dados.detail || 'Erro ao decidir cancelamento/remarcação.');
+
+        confirmacao.aberto = false;
+        await carregarSolicitacoes();
+        // Recarrega o detalhe se o modal estiver aberto
+        if (modalAberto.value) await abrirDetalhe(sol);
+      } catch (e) {
+        acaoErro.value = e.message;
+      } finally {
+        acaoCarregando.value = false;
+      }
+    };
+
     // ── Indicadores ───────────────────────────────────────────────────────────
     const calcularIndicadores = () => {
       const lista  = solicitacoes.value;
@@ -1621,6 +1760,11 @@ createApp({
       CONCLUIDA:                        'Concluída',
       REPROVADA:                        'Reprovada',
       CADEIA_INCOMPLETA:                'Cadeia Incompleta',
+      PENDENTE_CANCELAMENTO:            'Ag. Agência (Cancelamento)',
+      PENDENTE_REMARCACAO:              'Ag. Agência (Remarcação)',
+      PENDENTE_APROVACAO_CANCELAMENTO:  'Revisar Cancelamento',
+      PENDENTE_APROVACAO_REMARCACAO:    'Revisar Remarcação',
+      CANCELADA:                        'Cancelada',
     };
     const statusLabel = (s) => STATUS_LABELS[s] || s;
 
@@ -1635,6 +1779,11 @@ createApp({
         AGUARDANDO_N1:                    'bg-gray-50 text-gray-600 border-gray-200',
         AGUARDANDO_N2:                    'bg-orange-50 text-orange-600 border-orange-200',
         CADEIA_INCOMPLETA:                'bg-gray-100 text-gray-500 border-gray-200',
+        PENDENTE_CANCELAMENTO:            'bg-amber-50 text-amber-700 border-amber-200',
+        PENDENTE_REMARCACAO:              'bg-amber-50 text-amber-700 border-amber-200',
+        PENDENTE_APROVACAO_CANCELAMENTO:  'bg-rose-100 text-rose-700 border-rose-300 animate-pulse',
+        PENDENTE_APROVACAO_REMARCACAO:    'bg-violet-100 text-violet-700 border-violet-300 animate-pulse',
+        CANCELADA:                        'bg-red-100 text-red-700 border-red-200',
       };
       return m[s] || 'bg-gray-50 text-gray-500 border-gray-200';
     };
@@ -1649,6 +1798,11 @@ createApp({
         COTACAO_ENVIADA:                  'bg-indigo-500',
         AGUARDANDO_N1:                    'bg-gray-400',
         AGUARDANDO_N2:                    'bg-orange-400',
+        PENDENTE_CANCELAMENTO:            'bg-amber-500',
+        PENDENTE_REMARCACAO:              'bg-amber-500',
+        PENDENTE_APROVACAO_CANCELAMENTO:  'bg-rose-500',
+        PENDENTE_APROVACAO_REMARCACAO:    'bg-violet-500',
+        CANCELADA:                        'bg-red-650',
       };
       return m[s] || 'bg-gray-400';
     };
@@ -1774,6 +1928,7 @@ createApp({
       cep:'', logradouro:'', numero:'', complemento:'', bairro:'', municipio:'', uf:'',
       banco_nome:'', banco_codigo:'', agencia_bancaria:'', conta_bancaria:'',
       tipo_conta:'CC', titularidade_cnpj:'', titularidade_razao_social:'',
+      ativo: true,
     });
     const agenciaForm = ref(_emptyAgenciaForm());
 
@@ -1797,8 +1952,10 @@ createApp({
       cnpjErro.value = '';
       cnpjBuscando.value = true;
       try {
-        const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`);
-        if (!res.ok) { cnpjErro.value = 'CNPJ não encontrado na Receita Federal.'; return; }
+        const res = await fetch(`/api/v1/setor/proxy/cnpj/${cnpj}`, {
+          headers: { Authorization: `Bearer ${token.value}` },
+        });
+        if (!res.ok) { cnpjErro.value = 'CNPJ não encontrado ou erro na consulta.'; return; }
         const d = await res.json();
         agenciaForm.value.razao_social       = d.razao_social || '';
         agenciaForm.value.agencia_nome       = agenciaForm.value.agencia_nome || d.nome_fantasia || '';
@@ -1812,7 +1969,7 @@ createApp({
         agenciaForm.value.cep                = (d.cep || '').replace(/\D/g,'').replace(/^(\d{5})(\d{3})$/,'$1-$2');
         agenciaForm.value.titularidade_cnpj  = agenciaForm.value.titularidade_cnpj || agenciaForm.value.cnpj;
         agenciaForm.value.titularidade_razao_social = agenciaForm.value.titularidade_razao_social || d.razao_social || '';
-      } catch (e) { cnpjErro.value = 'Erro ao consultar BrasilAPI.'; }
+      } catch (e) { cnpjErro.value = 'Erro ao consultar CNPJ via proxy.'; }
       finally     { cnpjBuscando.value = false; }
     };
 
@@ -1820,7 +1977,9 @@ createApp({
       const cep = agenciaForm.value.cep.replace(/\D/g,'');
       if (cep.length !== 8) return;
       try {
-        const res = await fetch(`https://brasilapi.com.br/api/cep/v1/${cep}`);
+        const res = await fetch(`/api/v1/setor/proxy/cep/${cep}`, {
+          headers: { Authorization: `Bearer ${token.value}` },
+        });
         if (!res.ok) return;
         const d = await res.json();
         if (d.street)        agenciaForm.value.logradouro = d.street;
@@ -1835,7 +1994,9 @@ createApp({
       if (!cod) return;
       bancoBuscando.value = true;
       try {
-        const res = await fetch(`https://brasilapi.com.br/api/banks/v1/${cod}`);
+        const res = await fetch(`/api/v1/setor/proxy/bank/${cod}`, {
+          headers: { Authorization: `Bearer ${token.value}` },
+        });
         if (!res.ok) return;
         const d = await res.json();
         agenciaForm.value.banco_nome = d.name || d.fullName || agenciaForm.value.banco_nome;
@@ -1983,7 +2144,17 @@ createApp({
       }
     });
 
+    const isWithin24h = (dataCriacao, dataAtualizacao) => {
+      if (!dataCriacao) return false;
+      const criacao = new Date(dataCriacao);
+      const atualizacao = dataAtualizacao ? new Date(dataAtualizacao) : new Date();
+      const diffTime = Math.abs(atualizacao - criacao);
+      const diffHours = diffTime / (1000 * 60 * 60);
+      return diffHours <= 24;
+    };
+
     return {
+      isWithin24h, decidirCancelamento,
       token, nomeUsuario, perfilUsuario, aba, carregando, solicitacoes, filtros,
       slotsCotacao,
       menuRecolhido, menuItens, menuLabel, menuDesc, kpiCardConfig,

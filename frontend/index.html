@@ -150,6 +150,13 @@
                             <span v-if="!menuRecolhido" class="truncate flex-1">Acesso Terceiros</span>
                         </button>
 
+                        <button @click="abaAtiva = 'gestao_creditos'; carregarMeusCreditos();"
+                            :class="abaAtiva === 'gestao_creditos' ? 'bg-blue-600/15 text-blue-400 border-l-4 border-blue-500 font-bold rounded-lg' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/20 border-l-4 border-transparent rounded-lg'"
+                            class="w-full flex items-center gap-3 px-3 py-2.5 text-xs transition-all duration-200 text-left">
+                            <span class="text-base shrink-0">💳</span>
+                            <span v-if="!menuRecolhido" class="truncate flex-1">Gestão de Créditos</span>
+                        </button>
+
                         <!-- Portais Administrativos rápidos -->
                         <div v-if="!menuRecolhido && (perfilUsuario === 'setor' || perfilUsuario === 'dev')" class="pt-4 border-t border-slate-800/40 mt-4 space-y-1.5">
                             <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider px-3">Administrativo</p>
@@ -210,6 +217,13 @@
                         <!-- Coluna Principal (Formulário Multi-Passo) -->
                         <div class="lg:col-span-2">
                             <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                                <!-- Informativo da Regra de 24h -->
+                                <div class="bg-blue-600 text-white px-6 py-3.5 text-xs font-semibold flex items-center justify-between gap-2 select-none shadow-sm">
+                                    <div class="flex items-center gap-2">
+                                        <span>ℹ️</span>
+                                        <span><strong>Regra do Viajante:</strong> Cancelamento sem custos dentro do prazo máximo de 24 horas.</span>
+                                    </div>
+                                </div>
 
                                 <!-- Cabeçalho com Step Indicator -->
                                 <div class="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
@@ -508,6 +522,19 @@
 
                                         <!-- Preferências de Voo (orienta a busca Duffel) -->
                                         <div v-if="formViagem.tipo_servico.includes('Aereo')" class="bg-sky-50/60 rounded-xl border border-sky-100 p-4 space-y-3">
+                                            <!-- Alerta de Crédito Corporativo Ativo -->
+                                            <div v-if="meusCreditos.length" class="bg-amber-100 border-l-4 border-amber-500 rounded-lg p-3 text-xs text-amber-800 space-y-1 select-none animate-pulse">
+                                                <p class="font-bold flex items-center gap-1.5">
+                                                    <span>💳</span>
+                                                    <span>Crédito Corporativo Disponível!</span>
+                                                </p>
+                                                <p>Você possui crédito ativo em cancelamento anterior para usar na sua nova emissão. Informe à agência para reuso:</p>
+                                                <ul class="list-disc pl-4 space-y-0.5 font-semibold">
+                                                    <li v-for="c in meusCreditos" :key="c.id">
+                                                        {{ c.companhia }}: {{ formatarMoeda(c.valor) }} (Protocolo: #{{ c.protocolo }} - Viajante: {{ c.viajante_nome }})
+                                                    </li>
+                                                </ul>
+                                            </div>
                                             <div class="flex items-center gap-2">
                                                 <span class="text-sky-600">✈️</span>
                                                 <span class="font-semibold text-sky-800 text-sm">Preferências de Voo</span>
@@ -1006,15 +1033,18 @@
                                 <thead>
                                     <tr class="bg-slate-50 border-b border-gray-100 text-gray-500 text-xs font-bold uppercase tracking-wider">
                                         <th class="text-left px-4 py-3">Protocolo</th>
+                                        <th class="text-left px-4 py-3">Viajante</th>
                                         <th class="text-left px-4 py-3">Destino</th>
                                         <th class="text-left px-4 py-3">Data de Ida</th>
                                         <th class="text-left px-4 py-3">Serviços</th>
                                         <th class="text-left px-4 py-3">Status</th>
+                                        <th class="text-center px-4 py-3">Ações</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-100">
                                     <tr v-for="s in historico" :key="s.id" class="hover:bg-slate-50/80 transition-colors">
-                                        <td class="px-4 py-3.5 font-mono font-bold text-blue-600 text-xs tracking-tight">{{ s.protocolo }}</td>
+                                        <td class="px-4 py-3.5 font-mono font-bold text-blue-600 text-xs tracking-tight">#{{ s.protocolo }}</td>
+                                        <td class="px-4 py-3.5 text-gray-700 font-semibold text-xs">{{ s.viajante_nome || s.solicitante_username }}</td>
                                         <td class="px-4 py-3.5 text-gray-700 font-semibold">{{ s.destino_cidade }}/{{ s.destino_estado }}</td>
                                         <td class="px-4 py-3.5 text-gray-500 font-mono">{{ s.data_ida ? new Date(s.data_ida).toLocaleDateString('pt-BR') : '—' }}</td>
                                         <td class="px-4 py-3.5">
@@ -1026,6 +1056,17 @@
                                             <span :class="statusCorMini(s.status)" class="text-[10px] font-bold px-2 py-0.5 rounded-full border">
                                                 {{ statusLabelMini(s.status) }}
                                             </span>
+                                        </td>
+                                        <td class="px-4 py-3.5 text-center flex items-center justify-center gap-2">
+                                            <template v-if="s.status !== 'reprovada' && s.status !== 'cancelada' && !s.status.startsWith('pendente_')">
+                                                <button @click="abrirModalCancelar(s)" class="px-2.5 py-1 text-[11px] font-bold bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 rounded-md transition shadow-xs">
+                                                    🚫 Cancelar
+                                                </button>
+                                                <button @click="abrirModalRemarcar(s)" class="px-2.5 py-1 text-[11px] font-bold bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 rounded-md transition shadow-xs">
+                                                    📅 Remarcar
+                                                </button>
+                                            </template>
+                                            <span v-else class="text-xs text-gray-400 font-medium">—</span>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -1084,6 +1125,45 @@
                                 <button @click="mostrandoModalTerceiro = true" class="w-full bg-labs-blue hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs shadow-md transition text-center block">
                                     Iniciar Solicitação de Acesso
                                 </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ─────────────────────── ABA GESTÃO DE CRÉDITOS ─────────────────────── -->
+                    <div v-show="abaAtiva === 'gestao_creditos'" class="glass-card card-accent-blue p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
+                        <div class="flex items-center justify-between mb-5">
+                            <div>
+                                <h2 class="text-base font-bold text-gray-800">Gestão de Créditos Latam / Gol / Azul</h2>
+                                <p class="text-xs text-gray-400">Acompanhe créditos ativos gerados a partir de cancelamentos de passagens aéreas.</p>
+                            </div>
+                            <button @click="carregarMeusCreditos" class="px-3.5 py-1.5 text-xs font-semibold bg-blue-50 border border-blue-200 text-blue-600 rounded-lg hover:bg-blue-100 transition shadow-sm flex items-center gap-1">
+                                ↺ Atualizar
+                            </button>
+                        </div>
+
+                        <div v-if="meusCreditos.length === 0" class="flex flex-col items-center justify-center py-20 text-gray-400">
+                            <span class="text-4xl mb-3">💳</span>
+                            <p class="text-sm font-semibold">Nenhum crédito de cancelamento ativo no momento.</p>
+                            <p class="text-xs text-gray-400 mt-1">Créditos gerados em cancelamentos de voos futuros aparecerão aqui.</p>
+                        </div>
+                        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div v-for="c in meusCreditos" :key="c.id" class="bg-gradient-to-tr from-slate-900 to-indigo-950 text-white rounded-3xl p-5 border border-indigo-800/30 shadow-lg relative overflow-hidden flex flex-col justify-between min-h-[160px]">
+                                <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none"></div>
+                                <div class="flex items-start justify-between">
+                                    <div>
+                                        <span class="text-[9px] font-bold uppercase tracking-widest text-blue-300">Crédito Disponível</span>
+                                        <h4 class="text-lg font-extrabold tracking-wide mt-0.5">{{ c.companhia }}</h4>
+                                    </div>
+                                    <span class="text-lg">✈️</span>
+                                </div>
+                                <div class="mt-4">
+                                    <p class="text-[9px] text-indigo-300 font-bold uppercase tracking-widest leading-none">Valor Acumulado</p>
+                                    <p class="text-2xl font-black mt-1">{{ formatarMoeda(c.valor) }}</p>
+                                </div>
+                                <div class="mt-4 pt-3 border-t border-indigo-900/60 flex items-center justify-between text-[10px] text-indigo-200">
+                                    <span>Ref: #{{ c.protocolo }}</span>
+                                    <span>Viajante: {{ c.viajante_nome }}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1181,6 +1261,96 @@
                         </button>
                     </div>
 
+                </div>
+            </div>
+        </transition>
+
+        <!-- MODAL: SOLICITAR CANCELAMENTO -->
+        <transition name="fade">
+            <div v-show="mostrandoModalCancelar" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
+                <div class="relative w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 flex flex-col max-h-[90vh]">
+                    <div class="absolute top-0 left-0 w-full h-[3px] bg-red-500"></div>
+                    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                        <h3 class="text-base font-bold text-gray-800">Solicitar Cancelamento de Viagem</h3>
+                        <button @click="mostrandoModalCancelar = false" class="text-gray-400 hover:text-gray-600 text-sm">✕</button>
+                    </div>
+                    <div class="p-6 overflow-y-auto space-y-4">
+                        <!-- Regra 24 horas banner -->
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800 font-medium">
+                            ℹ️ <strong>Regra do Viajante:</strong> Cancelamento sem custos dentro do prazo máximo de 24 horas da criação da solicitação.
+                        </div>
+
+                        <div v-if="viagemACancelar" class="bg-gray-50 p-3 rounded-lg border text-xs text-gray-600">
+                            Protocolo: <strong class="text-gray-800">#{{ viagemACancelar.protocolo }}</strong><br>
+                            Destino: <strong class="text-gray-800">{{ viagemACancelar.destino_cidade }}</strong><br>
+                            Criada em: <strong class="text-gray-800">{{ formatarData(viagemACancelar.data_criacao) }}</strong>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-2">Selecione os itens a serem cancelados <span class="text-red-500">*</span></label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <label v-for="item in ['Aereo', 'Hospedagem', 'Rodoviario', 'Carro']" :key="item"
+                                    class="flex items-center p-2 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer text-xs transition">
+                                    <input type="checkbox" :value="item" v-model="cancelarForm.itens" class="text-red-600 focus:ring-red-500 h-3.5 w-3.5">
+                                    <span class="ml-2 font-medium text-gray-700">{{ item }}</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1.5">Justificativa do Cancelamento <span class="text-red-500">*</span></label>
+                            <textarea v-model="cancelarForm.motivo" rows="3" placeholder="Descreva o motivo..." class="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 resize-none"></textarea>
+                        </div>
+                    </div>
+                    <div class="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 shrink-0">
+                        <button @click="mostrandoModalCancelar = false" class="px-4 py-2 border border-gray-200 text-gray-600 rounded-lg text-xs font-bold hover:bg-gray-50 transition">Fechar</button>
+                        <button @click="confirmarCancelarViagem" :disabled="!cancelarForm.motivo.trim() || !cancelarForm.itens.length || enviandoCancelar"
+                            class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition disabled:opacity-50 flex items-center gap-1">
+                            {{ enviandoCancelar ? 'Enviando...' : 'Solicitar Cancelamento' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </transition>
+
+        <!-- MODAL: SOLICITAR REMARCAÇÃO -->
+        <transition name="fade">
+            <div v-show="mostrandoModalRemarcar" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
+                <div class="relative w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 flex flex-col max-h-[90vh]">
+                    <div class="absolute top-0 left-0 w-full h-[3px] bg-blue-500"></div>
+                    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                        <h3 class="text-base font-bold text-gray-800">Solicitar Remarcação de Viagem</h3>
+                        <button @click="mostrandoModalRemarcar = false" class="text-gray-400 hover:text-gray-600 text-sm">✕</button>
+                    </div>
+                    <div class="p-6 overflow-y-auto space-y-4">
+                        <div v-if="viagemARemarcar" class="bg-gray-50 p-3 rounded-lg border text-xs text-gray-600">
+                            Protocolo: <strong class="text-gray-800">#{{ viagemARemarcar.protocolo }}</strong><br>
+                            Destino: <strong class="text-gray-800">{{ viagemARemarcar.destino_cidade }}</strong><br>
+                            Ida Atual: <strong class="text-gray-800">{{ formatarData(viagemARemarcar.data_ida) }}</strong>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1.5">Nova Data de Ida <span class="text-red-500">*</span></label>
+                            <input v-model="remarcarForm.data_ida" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1.5">Nova Data de Volta</label>
+                            <input v-model="remarcarForm.data_volta" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1.5">Justificativa da Remarcação <span class="text-red-500">*</span></label>
+                            <textarea v-model="remarcarForm.motivo" rows="3" placeholder="Descreva o motivo do reagendamento..." class="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 resize-none"></textarea>
+                        </div>
+                    </div>
+                    <div class="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 shrink-0">
+                        <button @click="mostrandoModalRemarcar = false" class="px-4 py-2 border border-gray-200 text-gray-600 rounded-lg text-xs font-bold hover:bg-gray-50 transition">Fechar</button>
+                        <button @click="confirmarRemarcarViagem" :disabled="!remarcarForm.motivo.trim() || !remarcarForm.data_ida || enviandoRemarcar"
+                            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition disabled:opacity-50 flex items-center gap-1">
+                            {{ enviandoRemarcar ? 'Enviando...' : 'Solicitar Remarcação' }}
+                        </button>
+                    </div>
                 </div>
             </div>
         </transition>
@@ -1287,17 +1457,25 @@
                     pendente: 'Pendente', aprovada: 'Aprovada', reprovada: 'Reprovada',
                     cotando: 'Em Cotação', cotacao_enviada: 'Cotação Enviada',
                     cancelada: 'Cancelada', concluida: 'Concluída',
+                    pendente_cancelamento: 'Cancelamento em Liquidação',
+                    pendente_remarcacao: 'Remarcação em Liquidação',
+                    pendente_aprovacao_cancelamento: 'Aprovação de Cancelamento',
+                    pendente_aprovacao_remarcacao: 'Aprovação de Remarcação',
                 }[s] || s);
 
                 const statusCorMini = (s) => ({
-                    pendente: 'bg-amber-100 text-amber-700',
-                    aprovada: 'bg-green-100 text-green-700',
-                    reprovada: 'bg-red-100 text-red-700',
-                    cotando: 'bg-blue-100 text-blue-700',
-                    cotacao_enviada: 'bg-indigo-100 text-indigo-700',
-                    cancelada: 'bg-gray-200 text-gray-500',
-                    concluida: 'bg-teal-100 text-teal-700',
-                }[s] || 'bg-gray-100 text-gray-500');
+                    pendente: 'bg-amber-100 text-amber-700 border-amber-200',
+                    aprovada: 'bg-green-100 text-green-700 border-green-200',
+                    reprovada: 'bg-red-100 text-red-700 border-red-200',
+                    cotando: 'bg-blue-100 text-blue-700 border-blue-200',
+                    cotacao_enviada: 'bg-indigo-100 text-indigo-700 border-indigo-200',
+                    cancelada: 'bg-gray-200 text-gray-500 border-gray-300',
+                    concluida: 'bg-teal-100 text-teal-700 border-teal-200',
+                    pendente_cancelamento: 'bg-orange-100 text-orange-700 border-orange-200',
+                    pendente_remarcacao: 'bg-cyan-100 text-cyan-700 border-cyan-200',
+                    pendente_aprovacao_cancelamento: 'bg-purple-100 text-purple-700 border-purple-200 animate-pulse',
+                    pendente_aprovacao_remarcacao: 'bg-fuchsia-100 text-fuchsia-700 border-fuchsia-200 animate-pulse',
+                }[s] || 'bg-gray-100 text-gray-500 border-gray-200');
 
                 const carregarHistorico = async () => {
                     if (!token.value) return;
@@ -1355,6 +1533,7 @@
                     if (token.value) {
                         if (tipo_solicitacao.value === 'proprio') buscarProprioUsuario();
                         carregarAutorizacoesTerceiros();
+                        carregarMeusCreditos();
                     }
                     carregarHistorico();
                 });
@@ -1997,7 +2176,7 @@
                     }
                     terceiroBuscando.value = true;
                     try {
-                        const resp = await fetch(`/api/v1/terceiros/terceiros/buscar/${terceiroBuscaMatricula.value.trim()}`, {
+                        const resp = await fetch(`/api/v1/terceiros/buscar/${terceiroBuscaMatricula.value.trim()}`, {
                             headers: { 'Authorization': `Bearer ${token.value}` },
                         });
                         const dados = await resp.json();
@@ -2036,7 +2215,7 @@
                         formData.append('terceiro_email', terceiroEncontrado.value.email);
                         formData.append('pdf_autorizacao', pdfArquivo.value);
 
-                        const resp = await fetch('/api/v1/terceiros/terceiros/solicitar', {
+                        const resp = await fetch('/api/v1/terceiros/solicitar', {
                             method: 'POST',
                             headers: { 'Authorization': `Bearer ${token.value}` },
                             body: formData,
@@ -2082,6 +2261,104 @@
                     }
                 });
 
+                // --- Gestão de Créditos & Cancelamento/Remarcação ---
+                const meusCreditos = ref([]);
+                const mostrandoModalCancelar = ref(false);
+                const mostrandoModalRemarcar = ref(false);
+                const viagemACancelar = ref(null);
+                const viagemARemarcar = ref(null);
+                const cancelarForm = reactive({ itens: [], motivo: '' });
+                const remarcarForm = reactive({ data_ida: '', data_volta: '', motivo: '' });
+                const enviandoCancelar = ref(false);
+                const enviandoRemarcar = ref(false);
+
+                const carregarMeusCreditos = async () => {
+                    if (!token.value) return;
+                    try {
+                        const r = await fetch('/api/v1/viagens/creditos/meus', {
+                            headers: { 'Authorization': 'Bearer ' + token.value }
+                        });
+                        if (r.ok) meusCreditos.value = await r.json();
+                    } catch (e) {}
+                };
+
+                const abrirModalCancelar = (sol) => {
+                    viagemACancelar.value = sol;
+                    cancelarForm.itens = [];
+                    cancelarForm.motivo = '';
+                    mostrandoModalCancelar.value = true;
+                };
+
+                const abrirModalRemarcar = (sol) => {
+                    viagemARemarcar.value = sol;
+                    remarcarForm.data_ida = '';
+                    remarcarForm.data_volta = '';
+                    remarcarForm.motivo = '';
+                    mostrandoModalRemarcar.value = true;
+                };
+
+                const confirmarCancelarViagem = async () => {
+                    if (!viagemACancelar.value) return;
+                    enviandoCancelar.value = true;
+                    try {
+                        const r = await fetch(`/api/v1/viagens/solicitacoes/${viagemACancelar.value.id}/solicitar-cancelamento`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': 'Bearer ' + token.value,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                itens_a_cancelar: cancelarForm.itens.join(','),
+                                motivo_cancelamento: cancelarForm.motivo
+                            })
+                        });
+                        if (r.ok) {
+                            mostrandoModalCancelar.value = false;
+                            alert('Solicitação de cancelamento enviada com sucesso!');
+                            await carregarHistorico();
+                            await carregarMeusCreditos();
+                        } else {
+                            const err = await r.json();
+                            alert(err.detail || 'Erro ao cancelar.');
+                        }
+                    } catch (e) {
+                        alert('Erro de conexão.');
+                    } finally {
+                        enviandoCancelar.value = false;
+                    }
+                };
+
+                const confirmarRemarcarViagem = async () => {
+                    if (!viagemARemarcar.value) return;
+                    enviandoRemarcar.value = true;
+                    try {
+                        const r = await fetch(`/api/v1/viagens/solicitacoes/${viagemARemarcar.value.id}/solicitar-remarcacao`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': 'Bearer ' + token.value,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                data_ida: remarcarForm.data_ida,
+                                data_volta: remarcarForm.data_volta || null,
+                                motivo_cancelamento: remarcarForm.motivo
+                            })
+                        });
+                        if (r.ok) {
+                            mostrandoModalRemarcar.value = false;
+                            alert('Solicitação de remarcação enviada com sucesso!');
+                            await carregarHistorico();
+                        } else {
+                            const err = await r.json();
+                            alert(err.detail || 'Erro ao remarcar.');
+                        }
+                    } catch (e) {
+                        alert('Erro de conexão.');
+                    } finally {
+                        enviandoRemarcar.value = false;
+                    }
+                };
+
                 const logout = () => {
                     localStorage.clear();
                     token.value = null;
@@ -2118,6 +2395,14 @@
                     buscarVoosDuffel, selecionarVoo, formatarHora, formatarDuracao,
                     // Autocomplete IBGE
                     acCidades, buscarCidadesIBGE, selecionarCidade, fecharAc,
+                    // Gestão de Créditos & Cancelamento/Remarcação
+                    meusCreditos, carregarMeusCreditos,
+                    mostrandoModalCancelar, mostrandoModalRemarcar,
+                    viagemACancelar, viagemARemarcar,
+                    cancelarForm, remarcarForm,
+                    enviandoCancelar, enviandoRemarcar,
+                    abrirModalCancelar, abrirModalRemarcar,
+                    confirmarCancelarViagem, confirmarRemarcarViagem,
                     // Navegacao com transicao
                     vlNavigate: (url) => (window.vlNavigate || (u => { window.location.href = u; }))(url),
                 };

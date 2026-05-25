@@ -1,7 +1,7 @@
 # Viagens Labs — Handoff Técnico
 
 > Documento de passagem de contexto para desenvolvedores e sessões de IA.  
-> Última atualização: **23/05/2026**
+> Última atualização: **25/05/2026**
 
 ---
 
@@ -259,17 +259,18 @@ Após o deploy v4, é necessário executar `setupAgencia()` no editor do Google 
 ### Backlog Técnico
 | Fase | Item | Status |
 |---|---|---|
-| 5B | Motor SLA (lembretes de aprovação/cotação atrasados) | Pendente |
+| 5B | Motor SLA (lembretes de aprovação/cotação atrasados) | **Concluído e Homologado** |
 | 6A | Portal do Desenvolvedor (`dev.html` e endpoints) | **Concluído e Homologado** |
 | 6B | Redesign de Agências (Sem login, acesso exclusivo GAS) | **Concluído e Homologado** |
 | 7A | Solicitação para Terceiros (Substituindo Delegação c/ PDF) | **Concluído e Homologado** |
 | 7B | UI/UX Premium (Painel Responsivo + Cotações Dinâmicas) | **Concluído e Homologado** |
 | 8 | Histórico com linha do tempo no portal do viajante | Pendente |
-| 9 | Exportação CSV/Excel + dashboard de gastos | Pendente |
+| 9 | Exportação CSV/Excel + dashboard de gastos (Aba Relatórios SQL) | **Concluído e Homologado** |
 | 10 | Sistema de Auditoria de Acessos & Telemetria do AD | **Concluído e Homologado** |
-| 11 | Redesenho Visual Unificado "SaaS Corporativo Premium" | *Planejado (Aprovado)* |
+| 11 | Redesenho Visual Unificado "SaaS Corporativo Premium" | **Concluído e Homologado** |
+| 12 | Cache Local BQ, Delegações AD, Proxy APIs & Cancelamento/Créditos | **Concluído e Homologado** |
 
-### 🚨 ESTABILIZAÇÃO GERAL E CORREÇÃO DE BUGS (23/05/2026) — 100% RESOLVIDA
+### 🚨 ESTABILIZAÇÃO GERAL E CORREÇÃO DE BUGS (25/05/2026) — 100% RESOLVIDA
 Todas as instabilidades recentes e pendências críticas foram resolvidas com absoluto sucesso:
 1. **Fim da Tela Preta:** A transição do avião foi mantida nos portais de ponta (viajante e setor), mas os portais técnicos (Dev e Agência) agora navegam de forma limpa via `target="_blank"`, evitando o travamento da tela preta.
 2. **Correção de ReferenceError do Vue 3:** Identificamos e renomeamos as propriedades reativas que iniciavam com `_` (como `_toISO`, `_parseDateBR`, `_isoToDisplay` e `_fmtCnpj`), que violavam as restrições de nomes do Vue 3 e quebravam o template. Agora o Portal do Setor e o Viajante carregam de forma instantânea e sem erros de console.
@@ -311,7 +312,7 @@ Todas as instabilidades recentes e pendências críticas foram resolvidas com ab
 | `90d232a` | feat: dynamicizacao de agencias, telemetria de logs, mocks BigQuery e correcoes Vue 3 |
 | `15cabd1` | Merge branch 'main' de viagens_labs (integração remota) |
 | `28c393c` | feat: implementado monitoramento unificado, middleware e telemetria operacional |
-| *(atual)* | Redesenho visual unificado SaaS premium e consolidação de layouts |
+| *(atual)* | feat: implementado cache local BQ, AD delegacoes manuais, proxy APIs e fluxo completo cancelamento/creditos |
 
 ---
 
@@ -344,3 +345,28 @@ Na atualização de **24/05/2026**, foi introduzido um sistema de auditoria glob
 ### D. Endpoints de Telemetria e Interfaces
 * **GET `/dev/logs-acesso`:** Últimos 100 acessos integrados reativamente com polling de 5 segundos no Portal Dev.
 * **GET `/setor/stats` & GET `/setor/alertas-acesso`:** KPI "Ativos Hoje" na dashboard do setor e widget de "Alertas de Onboarding (Acesso AD)" na aba de terceiros com polling automático de 8 segundos, agilizando liberações de colaboradores barrados no Active Directory.
+
+---
+
+## 12. Nova Fase (25/05/2026) — Cache Local BQ, Delegações AD, Proxy APIs & Cancelamento/Créditos
+
+Esta nova fase adiciona estabilidade estrutural, resiliência de rede e conformidade com as regras corporativas acordadas:
+
+### A. Cache Local de Colaboradores (BigQuery)
+* **Problema:** Múltiplas buscas do RH gerando tráfego excessivo e faturas altas no Google Cloud BigQuery.
+* **Solução:** Tabela `colaboradores_cache` no banco relacional local contendo todos os dados e data de admissão/aprovadores.
+* **Política de Expiração (TTL):** O backend consome os dados locais instantaneamente se a `data_atualizacao` tiver menos de 7 dias. Ao expirar ou via `force_refresh=true`, atualiza a base a partir do BQ e reseta o prazo.
+
+### B. Gestão de Delegações AD Imediatas (Dev Portal)
+* **Delegações sem Fila:** Aba "Delegações AD" no console dev permite cadastrar diretamente uma permissão do tipo `APROVADA` de um terceiro sob um viajante após validação cadastral reativa, assim como revogar acessos existentes em 1 clique.
+* **Trilha de Auditoria (Audit Trail):** Toda inserção ou remoção gera registros em `log_acessos` com marcação estrita do Desenvolvedor responsável.
+
+### C. Proxies Corporativos Seguros (BrasilAPI)
+* **Bypass de CORS:** Criadas rotas proxy seguras no backend sob `/api/v1/setor/proxy/` para intermediar consultas de CEP, CNPJ e código de Banco diretamente via BrasilAPI, isolando segredos e cabeçalhos sensíveis do frontend.
+
+### D. Fluxo de Cancelamento & Remarcação Itemizado
+* **Traveler Modals & ACLs:** Modais interativos com a regra das 24h explícita. Permite ao viajante solicitar o cancelamento/remarcação (gerenciando itens separados) com validação de ACL estrita (criador, titular ou terceiro com delegação aprovada).
+* **Liquidação das Agências (agencia.html):** A agência preenche de forma isolada as multas, reembolsos e créditos de voo associados à companhia aérea, anexando o PDF comprobatório.
+* **Revisão do Setor (setor.html):** Painel de revisão premium contendo o badge de conformidade 24h, resumo financeiro, visualizador seguro de comprovantes PDF e botões de aprovação.
+* **Gestão de Créditos de Voo:** Aba dedicada no Portal do Viajante exibindo créditos ativos classificados por Cia Aérea, e aviso visual contextual no fluxo de reservas em caso de saldos remanescentes a serem aplicados.
+

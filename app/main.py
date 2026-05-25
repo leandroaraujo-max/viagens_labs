@@ -77,6 +77,35 @@ def _migracoes_seguras():
         # Fase 6B — datas independentes para hospedagem sem aéreo
         "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS hosp_data_checkin  VARCHAR(20) DEFAULT '';",
         "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS hosp_data_checkout VARCHAR(20) DEFAULT '';",
+        # Novas Migrações para Cancelamento/Remarcação & Cache Local
+        "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS tipo_solicitacao_cancelamento VARCHAR(50);",
+        "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS itens_a_cancelar VARCHAR(200);",
+        "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS motivo_cancelamento TEXT DEFAULT '';",
+        "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS taxa_cancelamento_agencia NUMERIC;",
+        "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS valor_reembolsavel_agencia NUMERIC;",
+        "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS valor_credito_gerado NUMERIC;",
+        "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS companhia_credito VARCHAR(100);",
+        "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS documento_cancelamento_caminho VARCHAR(500);",
+        "ALTER TABLE solicitacoes ADD COLUMN IF NOT EXISTS credito_utilizado BOOLEAN DEFAULT FALSE;",
+        """CREATE TABLE IF NOT EXISTS colaboradores_cache (
+            username          VARCHAR(100) PRIMARY KEY,
+            nome              VARCHAR(200) DEFAULT '',
+            email             VARCHAR(200) DEFAULT '',
+            cargo             VARCHAR(200) DEFAULT '',
+            filial            VARCHAR(50)  DEFAULT '',
+            centro_custo      VARCHAR(200) DEFAULT '',
+            cod_centro_custo  VARCHAR(50)  DEFAULT '',
+            data_admissao     VARCHAR(50)  DEFAULT '',
+            aprovador_n1_nome VARCHAR(200) DEFAULT '',
+            aprovador_n1_email VARCHAR(200) DEFAULT '',
+            aprovador_n2_nome VARCHAR(200) DEFAULT '',
+            aprovador_n2_email VARCHAR(200) DEFAULT '',
+            foneres           VARCHAR(50)  DEFAULT '',
+            situacao          VARCHAR(50)  DEFAULT '',
+            data_atualizacao  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );""",
+        "ALTER TABLE colaboradores_cache ADD COLUMN IF NOT EXISTS cpf VARCHAR(20) DEFAULT '';",
+        "ALTER TABLE colaboradores_cache ADD COLUMN IF NOT EXISTS matricula VARCHAR(20) DEFAULT '';",
     ]
     with engine.connect() as conn:
         for sql in sqls:

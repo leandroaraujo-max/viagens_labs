@@ -651,6 +651,322 @@
         </div>
       </div>
 
+      <!-- ── ABA: Grandes Resultados (Consultas SQL) ─────────────────────── -->
+      <div v-if="abaAtiva === 'consultas_sql'">
+        <div class="mb-5">
+          <h2 class="text-xl font-bold text-white font-sans tracking-tight">Grandes Resultados</h2>
+          <p class="text-slate-500 text-xs mt-0.5 font-sans">Principais consultas SQL estruturadas para extração ágil de relatórios analíticos de alto impacto no banco de dados.</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Coluna da Esquerda: Listagem de Consultas -->
+          <div class="space-y-3">
+            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest px-1">Relatórios Disponíveis</h3>
+            <div v-for="q in consultasPredefinidas" :key="q.id"
+                 @click="selecionarConsulta(q.id)"
+                 :class="consultaAtivaId === q.id ? 'bg-indigo-600/15 border-indigo-500/60 shadow-lg text-white' : 'bg-dev-card border-dev-border text-slate-400 hover:text-slate-200 hover:bg-slate-800/20'"
+                 class="p-4 border rounded-xl transition cursor-pointer flex flex-col gap-1.5 group select-none">
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-bold transition group-hover:text-white">{{ q.nome }}</span>
+                <span class="text-xs text-indigo-400/80 font-mono">#{{ q.id }}</span>
+              </div>
+              <p class="text-xs text-slate-500 leading-normal">{{ q.desc }}</p>
+            </div>
+          </div>
+
+          <!-- Coluna da Direita: Query e Resultados -->
+          <div class="lg:col-span-2 space-y-4">
+            <!-- Detalhe da Consulta -->
+            <div class="bg-dev-card border border-dev-border rounded-xl p-5 space-y-4 glow">
+              <div class="flex justify-between items-center flex-wrap gap-2">
+                <div>
+                  <h3 class="text-sm font-bold text-white font-mono">{{ getConsultaAtiva().nome }}</h3>
+                  <p class="text-xs text-slate-400 mt-1 leading-normal">{{ getConsultaAtiva().desc }}</p>
+                </div>
+                <button @click="copiarSql(getConsultaAtiva().sql)"
+                        class="text-xs font-semibold text-indigo-400 hover:text-indigo-300 bg-indigo-500/5 hover:bg-indigo-500/10 border border-indigo-500/20 hover:border-indigo-500/40 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+                  📋 Copiar SQL
+                </button>
+              </div>
+
+              <!-- SQL Code Display -->
+              <div class="bg-[#020617] border border-dev-border rounded-lg overflow-hidden font-mono text-[11px] leading-relaxed">
+                <div class="bg-[#0f172a] px-3 py-1.5 border-b border-dev-border text-[9px] text-slate-500 flex justify-between font-mono select-none">
+                  <span>SQL QUERY STRUCTURE</span>
+                  <span class="text-indigo-400/70 font-semibold">SQLite / Postgres</span>
+                </div>
+                <pre class="p-4 text-cyan-400 overflow-x-auto whitespace-pre select-text">{{ getConsultaAtiva().sql }}</pre>
+              </div>
+
+              <!-- Botão Ação -->
+              <div class="flex justify-end pt-2">
+                <button @click="executarConsulta" :disabled="consultaCarregando"
+                        class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg text-xs transition disabled:opacity-60 flex items-center gap-2 glow">
+                  <svg v-if="consultaCarregando" class="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                  </svg>
+                  ⚡ Executar Consulta no Banco de Dados
+                </button>
+              </div>
+            </div>
+
+            <!-- Tabela de Resultados -->
+            <div class="bg-dev-card border border-dev-border rounded-xl p-5 relative min-h-[200px]">
+              <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Resultado da Extração</h3>
+
+              <div v-if="consultaCarregando" class="absolute inset-0 bg-dev-card/65 flex items-center justify-center rounded-xl">
+                <div class="animate-spin w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full"></div>
+              </div>
+
+              <div v-if="consultaErro" class="p-4 bg-red-500/10 border border-red-500/30 text-red-400 text-xs rounded-lg">
+                {{ consultaErro }}
+              </div>
+
+              <div v-else-if="!consultaResultados" class="text-center py-16 text-slate-500 text-xs leading-normal select-none">
+                Clique no botão acima para rodar a query estruturada e ver os grandes resultados analíticos.
+              </div>
+
+              <div v-else-if="consultaResultados.rows.length === 0" class="text-center py-16 text-slate-500 text-xs font-medium">
+                A consulta executou com sucesso, mas retornou 0 registros.
+              </div>
+
+              <div v-else class="overflow-x-auto border border-dev-border rounded-lg bg-dev-panel">
+                <table class="w-full text-[11px] text-left">
+                  <thead>
+                    <tr class="bg-[#0f172a] border-b border-dev-border text-slate-400 font-bold uppercase tracking-wider text-[9px] select-none">
+                      <th v-for="header in consultaResultados.headers" :key="header" class="px-4 py-3 font-mono">
+                        {{ header }}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-dev-border/50 text-slate-300 font-mono">
+                    <tr v-for="(row, rIdx) in consultaResultados.rows" :key="rIdx" class="hover:bg-slate-800/15 transition">
+                      <td v-for="header in consultaResultados.headers" :key="header" class="px-4 py-3.5 text-slate-200">
+                        {{ row[header] }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ABA: Delegações AD ──────────────────────────────────────────── -->
+      <div v-if="abaAtiva === 'delegacoes_ad'">
+        <div class="mb-5 flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <h2 class="text-xl font-bold text-white">Delegações AD (Automação Manual)</h2>
+            <p class="text-slate-500 text-xs mt-0.5">Cadastre ou remova delegações diretas no banco de dados com auditoria automática.</p>
+          </div>
+          <button @click="carregarDelegacoes" class="text-xs px-3 py-1.5 bg-dev-card border border-dev-border text-slate-400 hover:text-slate-200 rounded-lg transition">
+            Recarregar
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Formulário de cadastro -->
+          <div class="bg-dev-card border border-dev-border rounded-xl p-5 h-fit glow">
+            <h3 class="text-sm font-bold text-white mb-4">Nova Delegação Imediata</h3>
+            
+            <div class="space-y-4">
+              <!-- Solicitante (Secretária) -->
+              <div>
+                <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">Username Terceiro / Solicitante (AD)</label>
+                <input v-model="delForm.solicitante" type="text" placeholder="ex: fulana.silva"
+                       class="w-full bg-dev-panel border border-dev-border text-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 placeholder-slate-600 font-mono">
+                
+                <!-- Live Fetch Display -->
+                <div v-if="solicitanteBuscando" class="mt-2 text-[10px] text-indigo-400 font-mono animate-pulse">Buscando no BigQuery...</div>
+                <div v-else-if="solicitanteInfo" class="mt-2 p-2 bg-indigo-950/20 border border-indigo-500/20 rounded-lg text-[10px] text-slate-400 space-y-1">
+                  <p class="font-bold text-slate-200">{{ solicitanteInfo.nome }}</p>
+                  <p>{{ solicitanteInfo.cargo }}</p>
+                  <p class="font-mono text-indigo-300">{{ solicitanteInfo.email }}</p>
+                </div>
+              </div>
+
+              <!-- Viajante (Diretor) -->
+              <div>
+                <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">Username Viajante / Titular (AD)</label>
+                <input v-model="delForm.viajante" type="text" placeholder="ex: diretor.andre"
+                       class="w-full bg-dev-panel border border-dev-border text-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 placeholder-slate-600 font-mono">
+                
+                <!-- Live Fetch Display -->
+                <div v-if="viajanteBuscando" class="mt-2 text-[10px] text-indigo-400 font-mono animate-pulse">Buscando no BigQuery...</div>
+                <div v-else-if="viajanteInfo" class="mt-2 p-2 bg-indigo-950/20 border border-indigo-500/20 rounded-lg text-[10px] text-slate-400 space-y-1">
+                  <p class="font-bold text-slate-200">{{ viajanteInfo.nome }}</p>
+                  <p>{{ viajanteInfo.cargo }}</p>
+                  <p class="font-mono text-indigo-300">{{ viajanteInfo.email }}</p>
+                </div>
+              </div>
+
+              <div v-if="delFormErro" class="text-xs text-red-400">{{ delFormErro }}</div>
+              <div v-if="delFormOk" class="text-xs text-green-400">{{ delFormOk }}</div>
+
+              <button @click="salvarDelegacao" :disabled="delFormLoading || solicitanteBuscando || viajanteBuscando"
+                      class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 rounded-lg text-xs transition disabled:opacity-60">
+                {{ delFormLoading ? 'Cadastrando…' : 'Cadastrar Delegação' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Tabela de Delegações -->
+          <div class="lg:col-span-2 bg-dev-card border border-dev-border rounded-xl p-5">
+            <h3 class="text-sm font-bold text-white mb-4">Delegações Ativas no Banco</h3>
+            
+            <div v-if="delegacoesCarregando" class="flex justify-center py-10">
+              <div class="animate-spin w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full"></div>
+            </div>
+            
+            <div v-else-if="!delegacoes.length" class="text-center py-16 text-slate-500 text-xs font-mono select-none">
+              Nenhuma delegação manual cadastrada no momento.
+            </div>
+
+            <div v-else class="overflow-x-auto border border-dev-border rounded-lg bg-dev-panel">
+              <table class="w-full text-[11px] text-left">
+                <thead>
+                  <tr class="bg-[#0f172a] border-b border-dev-border text-slate-400 font-bold uppercase tracking-wider text-[9px] select-none">
+                    <th class="px-4 py-3">Terceiro (Secretária)</th>
+                    <th class="px-4 py-3">Viajante (Titular)</th>
+                    <th class="px-4 py-3">Status</th>
+                    <th class="px-4 py-3">Operador Dev</th>
+                    <th class="px-4 py-3 text-right">Ações</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-dev-border/50 text-slate-300 font-mono">
+                  <tr v-for="d in delegacoes" :key="d.id" class="hover:bg-slate-800/15 transition">
+                    <td class="px-4 py-3 font-bold text-indigo-300">
+                      {{ d.solicitante }}
+                    </td>
+                    <td class="px-4 py-3 text-slate-200">
+                      <p class="font-bold">{{ d.terceiro_nome }}</p>
+                      <p class="text-[10px] text-slate-500">{{ d.terceiro_username }} ({{ d.terceiro_email }})</p>
+                    </td>
+                    <td class="px-4 py-3">
+                      <span class="bg-green-500/10 text-green-400 border border-green-500/30 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">APROVADA</span>
+                    </td>
+                    <td class="px-4 py-3 text-slate-400">
+                      {{ d.operador }}
+                    </td>
+                    <td class="px-4 py-3 text-right">
+                      <button @click="removerDelegacao(d)" class="text-red-400 hover:text-red-300 hover:bg-red-500/10 px-2 py-1 rounded-lg border border-transparent hover:border-red-500/30 transition shrink-0 inline-flex items-center gap-1">
+                        🗑 Remover
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ABA: Grandes Resultados (SQL Relatórios) ── -->
+      <div v-if="abaAtiva === 'consultas_sql'" class="space-y-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-xl font-bold text-white">Grandes Resultados (SQL Relatórios)</h2>
+            <p class="text-slate-500 text-xs mt-0.5">Consultas analíticas predefinidas de alta performance executadas diretamente no banco de dados local.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          <!-- Lista de Consultas Predefinidas -->
+          <div class="space-y-3">
+            <div v-for="q in consultasPredefinidas" :key="q.id"
+              @click="selecionarConsulta(q.id)"
+              :class="consultaAtivaId === q.id 
+                ? 'border-indigo-500 bg-indigo-500/10 text-white' 
+                : 'border-dev-border bg-dev-card text-slate-400 hover:text-slate-200 hover:bg-slate-800/10'"
+              class="border rounded-xl p-4 cursor-pointer transition duration-200 shadow-sm flex flex-col gap-1.5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold font-mono tracking-tight uppercase"
+                      :class="consultaAtivaId === q.id ? 'text-indigo-400' : 'text-slate-500'">
+                  QUERY ID: {{ q.id }}
+                </span>
+                <span class="text-xs">⚡</span>
+              </div>
+              <h3 class="text-sm font-bold text-slate-200">{{ q.nome }}</h3>
+              <p class="text-[11px] leading-relaxed text-slate-500 mt-0.5">{{ q.desc }}</p>
+            </div>
+          </div>
+
+          <!-- Editor e Execução -->
+          <div class="xl:col-span-2 space-y-6">
+            <div class="bg-dev-card border border-dev-border rounded-xl p-5 space-y-4">
+              <div class="flex items-center justify-between flex-wrap gap-2">
+                <h3 class="text-sm font-bold text-white flex items-center gap-1.5">
+                  <span>📝</span> Código SQL da Consulta: <strong class="font-mono text-indigo-400 text-xs">{{ consultaAtivaId }}</strong>
+                </h3>
+                <div class="flex gap-2">
+                  <button @click="copiarSql(getConsultaAtiva()?.sql)"
+                          class="px-3 py-1.5 text-xs font-bold bg-dev-panel border border-dev-border rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center gap-1.5 shadow-sm">
+                    <span>📋</span> Copiar SQL
+                  </button>
+                  <button @click="executarConsulta" :disabled="consultaCarregando"
+                          class="px-4 py-1.5 text-xs font-bold bg-indigo-650 hover:bg-indigo-600 disabled:opacity-50 text-white rounded-lg transition flex items-center gap-1.5 shadow-sm">
+                    <span>🚀</span> {{ consultaCarregando ? 'Executando…' : 'Executar Query' }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- SQL Editor Preview (Read-only) -->
+              <div class="relative rounded-xl overflow-hidden border border-slate-700 bg-[#0b0f19] p-4 text-xs font-mono text-emerald-400 shadow-inner">
+                <pre class="overflow-x-auto whitespace-pre-wrap leading-relaxed select-all">{{ getConsultaAtiva()?.sql }}</pre>
+              </div>
+            </div>
+
+            <!-- Resultados -->
+            <div class="bg-dev-card border border-dev-border rounded-xl p-5 space-y-4">
+              <h3 class="text-sm font-bold text-white">Resultados da Consulta</h3>
+              
+              <div v-if="consultaCarregando" class="flex items-center justify-center py-20">
+                <div class="animate-spin w-8 h-8 border-3 border-indigo-500 border-t-transparent rounded-full"></div>
+              </div>
+
+              <div v-else-if="consultaErro" class="bg-red-500/10 border border-red-500/25 text-red-400 rounded-lg px-4 py-3 text-xs font-mono whitespace-pre-wrap">
+                ⚠ {{ consultaErro }}
+              </div>
+
+              <div v-else-if="!consultaResultados" class="text-center py-24 text-slate-500 text-xs font-mono select-none">
+                Clique em "Executar Query" para processar os dados em tempo real.
+              </div>
+
+              <!-- Resultados Tabela -->
+              <div v-else-if="consultaResultados && consultaResultados.rows" class="space-y-3">
+                <div class="flex items-center justify-between text-[10px] text-slate-500 font-mono">
+                  <span>Linhas encontradas: <strong>{{ consultaResultados.rows.length }}</strong></span>
+                  <span>Banco de Dados: <strong>SQLite / PostgreSQL</strong></span>
+                </div>
+
+                <div v-if="!consultaResultados.rows.length" class="text-center py-10 text-slate-500 text-xs font-mono bg-dev-panel border border-dev-border rounded-lg">
+                  Nenhum registro retornado para esta consulta.
+                </div>
+
+                <div v-else class="overflow-x-auto border border-dev-border rounded-lg bg-dev-panel">
+                  <table class="w-full text-[11px] text-left">
+                    <thead>
+                      <tr class="bg-[#0f172a] border-b border-dev-border text-slate-400 font-bold uppercase tracking-wider text-[9px] select-none">
+                        <th v-for="h in consultaResultados.headers" :key="h" class="px-4 py-3">{{ h }}</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-dev-border/50 text-slate-350 font-mono">
+                      <tr v-for="(row, rIdx) in consultaResultados.rows" :key="rIdx" class="hover:bg-slate-800/10 transition">
+                        <td v-for="h in consultaResultados.headers" :key="h" class="px-4 py-3 whitespace-nowrap">
+                          {{ row[h] }}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       </main>
     </div>
   </div>
@@ -704,10 +1020,12 @@ createApp({
       { id: 'solicitacoes', icon: '⊞', label: 'Solicitações' },
       { id: 'agencias',     icon: '🏢', label: 'Agências' },
       { id: 'qa_testers',   icon: '🧪', label: 'Testadores QA' },
+      { id: 'delegacoes_ad', icon: '👤', label: 'Delegações AD' },
       { id: 'logs',         icon: '⌨', label: 'Logs do Sistema' },
       { id: 'logs_acesso',  icon: '🛡', label: 'Histórico de Acessos' },
       { id: 'config',       icon: '⚙', label: 'Configuração' },
       { id: 'plataforma',   icon: '⬡', label: 'Plataforma' },
+      { id: 'consultas_sql', icon: '⚡', label: 'Grandes Resultados' },
     ];
 
     const portais = [
@@ -948,6 +1266,107 @@ createApp({
       }
     });
 
+    // ── Grandes Resultados (Consultas SQL) ─────────────────────────────
+    const consultasPredefinidas = ref([
+      {
+        id: 'custos_cc',
+        nome: 'Custos por Centro de Custo',
+        desc: 'Extrai o volume de solicitações, custos totais reembolsados e total de multas agrupados por centro de custo.',
+        sql: `SELECT 
+    cod_centro_custo AS "Código CC", 
+    centro_custo AS "Nome Centro de Custo", 
+    COUNT(id) AS "Total Viagens", 
+    COALESCE(SUM(valor_reembolsavel_agencia), 0) AS "Total Reembolsado (R$)",
+    COALESCE(SUM(taxa_cancelamento_agencia), 0) AS "Total Multas (R$)"
+FROM solicitacoes 
+GROUP BY cod_centro_custo, centro_custo 
+ORDER BY COUNT(id) DESC;`
+      },
+      {
+        id: 'market_share',
+        nome: 'Market Share de Agências',
+        desc: 'Determina a taxa de conversão e cotações vencidas de cada agência de viagem credenciada.',
+        sql: `SELECT 
+    agencia_nome AS "Agência de Viagem", 
+    COUNT(id) AS "Total Cotações Recebidas",
+    SUM(CASE WHEN status = 'APROVADO' THEN 1 ELSE 0 END) AS "Cotações Vencidas (Aprovadas)",
+    ROUND(100.0 * SUM(CASE WHEN status = 'APROVADO' THEN 1 ELSE 0 END) / NULLIF(COUNT(id), 0), 2) || '%' AS "Taxa de Conversão"
+FROM cotacoes 
+GROUP BY agencia_nome 
+ORDER BY SUM(CASE WHEN status = 'APROVADO' THEN 1 ELSE 0 END) DESC;`
+      },
+      {
+        id: 'auditoria_delegacoes',
+        nome: 'Auditoria de Delegações Dev',
+        desc: 'Histórico auditado de inserções e exclusões manuais de assessores/terceiros executados pelo time de Dev.',
+        sql: `SELECT 
+    username AS "Usuário Dev", 
+    nome AS "Nome do Dev", 
+    perfil AS "Perfil", 
+    observacao AS "Ação Auditada", 
+    data_criacao AS "Data e Hora"
+FROM log_acessos 
+WHERE observacao LIKE '%Delegação manual%' 
+ORDER BY data_criacao DESC;`
+      },
+      {
+        id: 'creditos_cia',
+        nome: 'Créditos Acumulados por Cia',
+        desc: 'Montante total de reembolsos gerados e créditos ativos que podem ser utilizados em novas solicitações.',
+        sql: `SELECT 
+    companhia_credito AS "Companhia Aérea", 
+    COUNT(id) AS "Quantidade de Créditos",
+    COALESCE(SUM(valor_credito_gerado), 0) AS "Total Créditos Acumulados (R$)"
+FROM solicitacoes 
+WHERE tipo_solicitacao_cancelamento = 'CANCELAR' 
+  AND credito_utilizado = FALSE 
+GROUP BY companhia_credito 
+ORDER BY COALESCE(SUM(valor_credito_gerado), 0) DESC;`
+      }
+    ]);
+    const consultaAtivaId = ref('custos_cc');
+    const consultaResultados = ref(null);
+    const consultaCarregando = ref(false);
+    const consultaErro = ref('');
+
+    function selecionarConsulta(id) {
+      consultaAtivaId.value = id;
+      consultaResultados.value = null;
+      consultaErro.value = '';
+    }
+
+    function getConsultaAtiva() {
+      return consultasPredefinidas.value.find(q => q.id === consultaAtivaId.value);
+    }
+
+    function copiarSql(text) {
+      navigator.clipboard.writeText(text);
+      alert('SQL copiado para a área de transferência!');
+    }
+
+    async function executarConsulta() {
+      consultaCarregando.value = true;
+      consultaErro.value = '';
+      consultaResultados.value = null;
+      try {
+        const res = await fetch(`${API}/dev/consultas/executar`, {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify({ query_id: consultaAtivaId.value })
+        });
+        const dados = await res.json();
+        if (!res.ok) {
+          consultaErro.value = dados.detail || 'Erro ao executar consulta.';
+          return;
+        }
+        consultaResultados.value = dados;
+      } catch (e) {
+        consultaErro.value = 'Falha de conexão ao executar consulta.';
+      } finally {
+        consultaCarregando.value = false;
+      }
+    }
+
     // ── Testadores QA ──────────────────────────────────────────────────
     const qaTesters = ref([]);
     const qaTestersCarregando = ref(false);
@@ -955,6 +1374,125 @@ createApp({
     const qaFormErro = ref('');
     const qaFormOk = ref(false);
     const qaFormLoading = ref(false);
+
+    // Watch QA Tester username to pre-fill email
+    let qaSearchTimer = null;
+    Vue.watch(() => qaForm.username, (newVal) => {
+      clearTimeout(qaSearchTimer);
+      const username = newVal.trim();
+      if (!username) return;
+      qaSearchTimer = setTimeout(async () => {
+        try {
+          const res = await fetch(`${API}/viagens/colaborador/${username}`, { headers: authHeaders() });
+          if (res.ok) {
+            const d = await res.json();
+            if (d.sucesso && d.dados.email) {
+              qaForm.email = d.dados.email;
+            }
+          }
+        } catch {}
+      }, 400);
+    });
+
+    // ── Delegações AD ──────────────────────────────────────────────────
+    const delegacoes = ref([]);
+    const delegacoesCarregando = ref(false);
+    const delForm = reactive({ solicitante: '', viajante: '' });
+    const delFormErro = ref('');
+    const delFormOk = ref('');
+    const delFormLoading = ref(false);
+
+    // Live search info
+    const solicitanteInfo = ref(null);
+    const solicitanteBuscando = ref(false);
+    const viajanteInfo = ref(null);
+    const viajanteBuscando = ref(false);
+
+    let solSearchTimer = null;
+    Vue.watch(() => delForm.solicitante, (newVal) => {
+      clearTimeout(solSearchTimer);
+      solicitanteInfo.value = null;
+      const username = newVal.trim();
+      if (!username) return;
+      solicitanteBuscando.value = true;
+      solSearchTimer = setTimeout(async () => {
+        try {
+          const res = await fetch(`${API}/viagens/colaborador/${username}`, { headers: authHeaders() });
+          if (res.ok) {
+            const d = await res.json();
+            if (d.sucesso) {
+              solicitanteInfo.value = d.dados;
+            }
+          }
+        } catch {} finally {
+          solicitanteBuscando.value = false;
+        }
+      }, 400);
+    });
+
+    let viajSearchTimer = null;
+    Vue.watch(() => delForm.viajante, (newVal) => {
+      clearTimeout(viajSearchTimer);
+      viajanteInfo.value = null;
+      const username = newVal.trim();
+      if (!username) return;
+      viajanteBuscando.value = true;
+      viajSearchTimer = setTimeout(async () => {
+        try {
+          const res = await fetch(`${API}/viagens/colaborador/${username}`, { headers: authHeaders() });
+          if (res.ok) {
+            const d = await res.json();
+            if (d.sucesso) {
+              viajanteInfo.value = d.dados;
+            }
+          }
+        } catch {} finally {
+          viajanteBuscando.value = false;
+        }
+      }, 400);
+    });
+
+    async function carregarDelegacoes() {
+      delegacoesCarregando.value = true;
+      try {
+        const res = await fetch(`${API}/dev/delegacoes`, { headers: authHeaders() });
+        if (res.ok) {
+          delegacoes.value = await res.json();
+        }
+      } finally {
+        delegacoesCarregando.value = false;
+      }
+    }
+
+    async function salvarDelegacao() {
+      if (!delForm.solicitante || !delForm.viajante) {
+        delFormErro.value = 'Preencha ambos os campos.'; return;
+      }
+      delFormLoading.value = true; delFormErro.value = ''; delFormOk.value = '';
+      try {
+        const res = await fetch(`${API}/dev/delegacoes`, {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify({ solicitante: delForm.solicitante, viajante: delForm.viajante })
+        });
+        const d = await res.json();
+        if (!res.ok) { delFormErro.value = d.detail || 'Erro ao cadastrar.'; return; }
+        delFormOk.value = '✓ Delegação cadastrada e aprovada com sucesso!';
+        delForm.solicitante = ''; delForm.viajante = '';
+        solicitanteInfo.value = null; viajanteInfo.value = null;
+        await carregarDelegacoes();
+      } finally {
+        delFormLoading.value = false;
+      }
+    }
+
+    async function removerDelegacao(d) {
+      if (!confirm(`Excluir delegação manual de "${d.solicitante}" para "${d.terceiro_username}"?`)) return;
+      const res = await fetch(`${API}/dev/delegacoes/${d.id}`, { method: 'DELETE', headers: authHeaders() });
+      if (res.ok) {
+        await carregarDelegacoes();
+      }
+    }
 
     async function carregarQATesters() {
       qaTestersCarregando.value = true;
@@ -1088,6 +1626,10 @@ createApp({
       } else {
         clearInterval(logsAcessoInterval.value);
       }
+
+      if (aba === 'delegacoes_ad') {
+        carregarDelegacoes();
+      }
     });
 
     return {
@@ -1104,6 +1646,13 @@ createApp({
       logsAcesso, logsAcessoCarregando, logsAcessoInterval, carregarLogsAcesso, formatarDataHora,
       excluirModal, solicitarExcluir, confirmarExclusaoCascade,
       vlNavigate: (url) => (window.vlNavigate || (u => { window.location.href = u; }))(url),
+      // SQL queries tab
+      consultasPredefinidas, consultaAtivaId, consultaResultados, consultaCarregando, consultaErro,
+      selecionarConsulta, getConsultaAtiva, copiarSql, executarConsulta,
+      // Delegações AD tab
+      delegacoes, delegacoesCarregando, delForm, delFormErro, delFormOk, delFormLoading,
+      solicitanteInfo, solicitanteBuscando, viajanteInfo, viajanteBuscando,
+      carregarDelegacoes, salvarDelegacao, removerDelegacao,
     };
   }
 }).mount('#app');
