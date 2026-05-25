@@ -645,8 +645,13 @@
             </div>
           </div>
           <!-- Terminal container -->
-          <div class="p-5 font-mono text-[11px] leading-relaxed text-[#34d399] overflow-y-auto h-[55vh] bg-[#020617] whitespace-pre-wrap select-text selection:bg-[#34d399]/20 selection:text-white" style="text-shadow: 0 0 4px rgba(52,211,153,0.15)">
-            {{ logConteudo || 'Initializing debug session... No log streams recorded.' }}
+          <div class="p-5 font-mono text-[11px] leading-relaxed overflow-y-auto h-[55vh] bg-[#020617] select-text selection:bg-indigo-500/30 selection:text-white space-y-1.5 scrollbar-thin">
+            <template v-if="logsFormatados.length">
+              <div v-for="(line, idx) in logsFormatados" :key="idx" v-html="line" class="border-b border-dev-border/5 pb-1 flex items-start gap-2.5 hover:bg-slate-800/10 px-1 py-0.5 rounded transition"></div>
+            </template>
+            <div v-else class="text-slate-500 italic select-none">
+              Initializing debug session... No log streams recorded.
+            </div>
           </div>
         </div>
       </div>
@@ -1552,6 +1557,176 @@ ORDER BY COALESCE(SUM(valor_credito_gerado), 0) DESC;`
       logConteudo.value = '';
     }
 
+    const logsFormatados = computed(() => {
+      if (!logConteudo.value) return [];
+      const linhas = logConteudo.value.split('\n');
+      return linhas.map(linha => {
+        const lTrim = linha.trim();
+        if (!lTrim) return '';
+
+        // 1. Nginx Error Log: 2026/05/25 15:00:10 [crit] 3360#18116: *7498 GetFileAttributesEx()...
+        const mNginxErr = lTrim.match(/^(\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2}) \[([a-z]+)\] (.*)$/);
+        if (mNginxErr) {
+          const [_, timestamp, nivel, msg] = mNginxErr;
+          let badgeClass = 'bg-slate-500/10 text-slate-400 border border-slate-500/20';
+          let textClass = 'text-slate-300';
+          if (nivel === 'crit' || nivel === 'alert' || nivel === 'emerg' || nivel === 'error' || nivel === 'err') {
+            badgeClass = 'bg-red-500/10 text-red-400 border border-red-500/20 font-bold';
+            textClass = 'text-red-400/90 font-medium';
+          } else if (nivel === 'warn' || nivel === 'warning') {
+            badgeClass = 'bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold';
+            textClass = 'text-amber-400/90';
+          } else if (nivel === 'info' || nivel === 'notice') {
+            badgeClass = 'bg-blue-500/10 text-blue-400 border border-blue-500/20';
+            textClass = 'text-blue-300/90';
+          } else if (nivel === 'debug') {
+            badgeClass = 'bg-slate-600/10 text-slate-500 border border-slate-500/10';
+            textClass = 'text-slate-400/80';
+          }
+          return `<span class="text-slate-500 select-none shrink-0 font-semibold font-mono">${timestamp}</span>` +
+                 `<span class="px-1.5 py-0.5 rounded text-[9px] uppercase font-mono tracking-wider shrink-0 select-none ${badgeClass}">${nivel}</span>` +
+                 `<span class="font-mono text-xs break-all ${textClass}">${msg}</span>`;
+        }
+
+        // 2. FastAPI Log (Novo formato com colchetes): 2026-05-25 18:30:15 [INFO] Minha mensagem
+        const mFastApi = lTrim.match(/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) \[([A-Z]+)\] (.*)$/);
+        if (mFastApi) {
+          const [_, timestamp, nivel, msg] = mFastApi;
+          let badgeClass = 'bg-slate-500/10 text-slate-400 border border-slate-500/20';
+          let textClass = 'text-slate-300';
+          const n = nivel.toUpperCase();
+          if (n === 'ERROR' || n === 'CRITICAL' || n === 'FATAL') {
+            badgeClass = 'bg-red-500/10 text-red-400 border border-red-500/20 font-bold';
+            textClass = 'text-red-400/90 font-medium';
+          } else if (n === 'WARNING' || n === 'WARN') {
+            badgeClass = 'bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold';
+            textClass = 'text-amber-400/90';
+          } else if (n === 'INFO') {
+            badgeClass = 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+            textClass = 'text-emerald-300/90';
+          } else if (n === 'DEBUG') {
+            badgeClass = 'bg-slate-600/10 text-slate-500 border border-slate-500/10';
+            textClass = 'text-slate-400/80';
+          }
+          return `<span class="text-slate-500 select-none shrink-0 font-semibold font-mono">${timestamp}</span>` +
+                 `<span class="px-1.5 py-0.5 rounded text-[9px] uppercase font-mono tracking-wider shrink-0 select-none ${badgeClass}">${n}</span>` +
+                 `<span class="font-mono text-xs break-all ${textClass}">${msg}</span>`;
+        }
+
+        // 3. WinSW / Wrapper Log com vírgula nos milissegundos: 2026-05-23 18:32:02,471 DEBUG - Minha mensagem
+        const mWinSW = lTrim.match(/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3})\s+([A-Z]+)\s+-\s+(.*)$/);
+        if (mWinSW) {
+          const [_, timestamp, nivel, msg] = mWinSW;
+          let badgeClass = 'bg-slate-500/10 text-slate-400 border border-slate-500/20';
+          let textClass = 'text-slate-300';
+          const n = nivel.toUpperCase();
+          if (n === 'ERROR' || n === 'CRITICAL' || n === 'FATAL') {
+            badgeClass = 'bg-red-500/10 text-red-400 border border-red-500/20 font-bold';
+            textClass = 'text-red-400/90 font-medium';
+          } else if (n === 'WARNING' || n === 'WARN') {
+            badgeClass = 'bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold';
+            textClass = 'text-amber-400/90';
+          } else if (n === 'INFO') {
+            badgeClass = 'bg-blue-500/10 text-blue-400 border border-blue-500/20';
+            textClass = 'text-blue-300/90';
+          } else if (n === 'DEBUG') {
+            badgeClass = 'bg-slate-600/10 text-slate-500 border border-slate-500/10';
+            textClass = 'text-slate-400/80';
+          }
+          return `<span class="text-slate-500 select-none shrink-0 font-semibold font-mono">${timestamp.split(',')[0]}</span>` +
+                 `<span class="px-1.5 py-0.5 rounded text-[9px] uppercase font-mono tracking-wider shrink-0 select-none ${badgeClass}">${n}</span>` +
+                 `<span class="font-mono text-xs break-all ${textClass}">${msg}</span>`;
+        }
+
+        // 4. Nginx Access Log: 10.8.2.40 - - [25/May/2026:19:05:27 -0300] "GET /api/v1/... HTTP/1.1" 200 51877 ...
+        const mNginxAcc = lTrim.match(/^([\d\.]+) - - \[(.*?)\] "(.*?)" (\d+) (\d+)(?: "(.*?)" "(.*?)")?$/);
+        if (mNginxAcc) {
+          const [_, ip, rawTime, req, status, size, referer, ua] = mNginxAcc;
+          
+          let displayTime = rawTime;
+          try {
+            const parts = rawTime.split(':');
+            const datePart = parts[0]; 
+            const h = parts[1], min = parts[2], s = parts[3].split(' ')[0];
+            const dParts = datePart.split('/');
+            const meses = { Jan:'01', Feb:'02', Mar:'03', Apr:'04', May:'05', Jun:'06', Jul:'07', Aug:'08', Sep:'09', Oct:'10', Nov:'11', Dec:'12' };
+            displayTime = `${dParts[2]}-${meses[dParts[1]] || '05'}-${dParts[0].padStart(2, '0')} ${h}:${min}:${s}`;
+          } catch(e) {}
+
+          const st = parseInt(status, 10);
+          let badgeClass = 'bg-blue-500/10 text-blue-400 border border-blue-500/20';
+          let textClass = 'text-slate-300';
+          if (st >= 500) {
+            badgeClass = 'bg-red-500/10 text-red-400 border border-red-500/20 font-bold';
+            textClass = 'text-red-400/90 font-medium';
+          } else if (st >= 400) {
+            badgeClass = 'bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold';
+            textClass = 'text-amber-400/80';
+          } else if (st >= 300) {
+            badgeClass = 'bg-sky-500/10 text-sky-400 border border-sky-500/20';
+            textClass = 'text-slate-400';
+          } else if (st >= 200) {
+            badgeClass = 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+            textClass = 'text-emerald-300/90';
+          }
+
+          return `<span class="text-slate-500 select-none shrink-0 font-semibold font-mono">${displayTime}</span>` +
+                 `<span class="px-1.5 py-0.5 rounded text-[9px] uppercase font-mono tracking-wider shrink-0 select-none ${badgeClass}">HTTP ${status}</span>` +
+                 `<span class="text-indigo-400 select-none font-mono text-xs shrink-0">${ip}</span>` +
+                 `<span class="font-mono text-xs break-all ${textClass}">${req}</span>`;
+        }
+
+        // 5. Uvicorn formato legado sem timestamp embutido na linha
+        const mLegacyUvicorn = lTrim.match(/^([A-Z]+):\s+(.*)$/);
+        if (mLegacyUvicorn) {
+          const [_, nivel, msg] = mLegacyUvicorn;
+          let badgeClass = 'bg-slate-500/10 text-slate-400 border border-slate-500/20';
+          let textClass = 'text-slate-300';
+          const n = nivel.toUpperCase();
+          if (n === 'ERROR' || n === 'CRITICAL' || n === 'FATAL') {
+            badgeClass = 'bg-red-500/10 text-red-400 border border-red-500/20 font-bold';
+            textClass = 'text-red-400/90';
+          } else if (n === 'WARNING' || n === 'WARN') {
+            badgeClass = 'bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold';
+            textClass = 'text-amber-400/90';
+          } else if (n === 'INFO') {
+            badgeClass = 'bg-blue-500/10 text-blue-400 border border-blue-500/20';
+            textClass = 'text-emerald-400';
+          }
+          return `<span class="text-slate-500 select-none shrink-0 font-semibold font-mono">—</span>` +
+                 `<span class="px-1.5 py-0.5 rounded text-[9px] uppercase font-mono tracking-wider shrink-0 select-none ${badgeClass}">${n}</span>` +
+                 `<span class="font-mono text-xs break-all ${textClass}">${msg}</span>`;
+        }
+
+        // 6. Linha de texto comum (fallback) - analisar por palavras-chave
+        let badgeClass = 'bg-slate-500/10 text-slate-400 border border-slate-500/20';
+        let textClass = 'text-[#34d399]/90'; 
+        let n = 'LOG';
+        const uLine = lTrim.toUpperCase();
+        if (uLine.includes('ERROR') || uLine.includes('ERR:') || uLine.includes('CRIT') || uLine.includes('FAIL') || uLine.includes('EXCEPTION')) {
+          badgeClass = 'bg-red-500/10 text-red-400 border border-red-500/20 font-bold';
+          textClass = 'text-red-400/90';
+          n = 'ERR';
+        } else if (uLine.includes('WARN') || uLine.includes('WARNING')) {
+          badgeClass = 'bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold';
+          textClass = 'text-amber-400/90';
+          n = 'WRN';
+        } else if (uLine.includes('DEBUG') || uLine.includes('TRAC')) {
+          badgeClass = 'bg-slate-600/10 text-slate-500 border border-slate-500/10';
+          textClass = 'text-slate-400/80';
+          n = 'DBG';
+        } else if (uLine.includes('INFO') || uLine.includes('SUCCESS') || uLine.includes('STARTING') || uLine.includes('STOPPING')) {
+          badgeClass = 'bg-blue-500/10 text-blue-400 border border-blue-500/20';
+          textClass = 'text-slate-300';
+          n = 'INF';
+        }
+
+        return `<span class="text-slate-500 select-none shrink-0 font-semibold font-mono">—</span>` +
+               `<span class="px-1.5 py-0.5 rounded text-[9px] uppercase font-mono tracking-wider shrink-0 select-none ${badgeClass}">${n}</span>` +
+               `<span class="font-mono text-xs break-all ${textClass}">${lTrim}</span>`;
+      }).filter(Boolean);
+    });
+
     // ── Logs de Acesso e Auditoria ────────────────────────────────────
     const logsAcesso = ref([]);
     const logsAcessoCarregando = ref(false);
@@ -1642,7 +1817,7 @@ ORDER BY COALESCE(SUM(valor_credito_gerado), 0) DESC;`
       config, configCarregando, configGrupos, carregarConfig,
       corStatus, corBarraStatus, formatarData, formatarTempo, formatarCnpj,
       qaTesters, qaTestersCarregando, qaForm, qaFormErro, qaFormOk, qaFormLoading, carregarQATesters, salvarQATester, removerQATester,
-      logServico, logLinhas, logPausado, logConteudo, logCaminho, logCarregando, carregarLogs, limparLogsConsole,
+      logServico, logLinhas, logPausado, logConteudo, logCaminho, logCarregando, carregarLogs, limparLogsConsole, logsFormatados,
       logsAcesso, logsAcessoCarregando, logsAcessoInterval, carregarLogsAcesso, formatarDataHora,
       excluirModal, solicitarExcluir, confirmarExclusaoCascade,
       vlNavigate: (url) => (window.vlNavigate || (u => { window.location.href = u; }))(url),
