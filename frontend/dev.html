@@ -604,6 +604,7 @@
                     class="bg-dev-card border border-dev-border text-xs text-slate-300 px-3 py-1.5 rounded-lg focus:outline-none focus:border-indigo-500 bg-dev-panel">
               <option value="app_out">FastAPI (viagenslabs_service.out.log)</option>
               <option value="app_err">FastAPI Errors (viagenslabs_service.err.log)</option>
+              <option value="db_queries">Banco de Dados (viagenslabs_db.log)</option>
               <option value="nginx_access">Nginx Access (access.log)</option>
               <option value="nginx_error">Nginx Error (error.log)</option>
               <option value="nginx_service_err">Nginx Service Wrapper (viagenslabs_service.wrapper.log)</option>
@@ -1718,9 +1719,17 @@ ORDER BY COALESCE(SUM(valor_credito_gerado), 0) DESC;`
             badgeClass = 'bg-slate-600/10 text-slate-500 border border-slate-500/10';
             textClass = 'text-slate-400/80';
           }
+
+          let msgFormatted = msg;
+          if (logServico.value === 'db_queries' || msg.trim().startsWith('SELECT') || msg.trim().startsWith('INSERT') || msg.trim().startsWith('UPDATE') || msg.trim().startsWith('DELETE') || msg.trim().startsWith('COMMIT') || msg.trim().startsWith('ROLLBACK') || msg.trim().startsWith('BEGIN')) {
+            msgFormatted = msgFormatted
+              .replace(/\b(SELECT|INSERT|UPDATE|DELETE|FROM|WHERE|JOIN|LEFT|RIGHT|ON|GROUP BY|ORDER BY|LIMIT|OFFSET|HAVING|AND|OR|IN|AS|COMMIT|ROLLBACK|BEGIN|IMPLICIT)\b/g, '<span class="text-cyan-400 font-bold">$1</span>')
+              .replace(/\b(NULL|TRUE|FALSE)\b/g, '<span class="text-amber-400 font-bold">$1</span>');
+          }
+
           return `<span class="text-slate-500 select-none shrink-0 font-semibold font-mono">${timestamp}</span>` +
                  `<span class="px-1.5 py-0.5 rounded text-[9px] uppercase font-mono tracking-wider shrink-0 select-none ${badgeClass}">${n}</span>` +
-                 `<span class="font-mono text-xs break-all ${textClass}">${msg}</span>`;
+                 `<span class="font-mono text-xs break-all ${textClass}">${msgFormatted}</span>`;
         }
 
         // 3. WinSW / Wrapper Log com vírgula nos milissegundos: 2026-05-23 18:32:02,471 DEBUG - Minha mensagem

@@ -28,6 +28,10 @@ LOG_FILES = {
         r"c:\Projetos\viagens_labs\logs\viagenslabs_service.err.log",
         r"C:\Projetos\viagens_labs\logs\viagenslabs_service.err.log",
     ],
+    "db_queries": [
+        r"c:\Projetos\viagens_labs\logs\viagenslabs_db.log",
+        r"C:\Projetos\viagens_labs\logs\viagenslabs_db.log",
+    ],
     "nginx_access": [
         r"C:\nginx\logs\access.log",
         r"c:\nginx\logs\access.log",

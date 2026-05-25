@@ -12,7 +12,26 @@ logging.basicConfig(
     handlers=[logging.StreamHandler(sys.stdout)]
 )
 logger = logging.getLogger("viagenslabs")
-logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
+
+# Configuração do Logger de Banco de Dados separado
+import os
+db_log_dir = r"c:\Projetos\viagens_labs\logs"
+if not os.path.exists(db_log_dir):
+    db_log_dir = os.path.join(os.path.dirname(__file__), "..", "logs")
+os.makedirs(db_log_dir, exist_ok=True)
+db_log_file = os.path.join(db_log_dir, "viagenslabs_db.log")
+
+db_logger = logging.getLogger("sqlalchemy.engine")
+db_logger.setLevel(logging.INFO)
+db_logger.propagate = False # Evita poluir o viagenslabs_service.out.log principal
+
+# Adiciona o handler de arquivo dedicado ao logger de banco de dados
+db_handler = logging.FileHandler(db_log_file, encoding="utf-8")
+db_handler.setFormatter(logging.Formatter(
+    fmt="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+))
+db_logger.addHandler(db_handler)
 
 from app.infrastructure.database import Base, engine
 from app.infrastructure.orm import models
