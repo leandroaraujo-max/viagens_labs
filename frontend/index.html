@@ -476,7 +476,7 @@
                                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div>
                                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Data de Ida <span class="text-red-500">*</span></label>
-                                                <input type="date" :value="formViagem.data_ida ? toISO(formViagem.data_ida)?.split('T')[0] : ''"
+                                                <input type="date" :value="formViagem.data_ida ? toISO(formViagem.data_ida)?.split('T')[0] : ''" :min="hojeISO"
                                                     @change="e => formViagem.data_ida = isoToDisplay(e.target.value)"
                                                     class="w-full px-4 py-2.5 rounded-lg border text-sm focus:border-labs-blue focus:ring-1 focus:ring-labs-blue"
                                                     :class="formViagem.data_ida ? 'border-green-400 bg-green-50/10' : 'border-gray-300'">
@@ -486,7 +486,7 @@
                                                     Data de Volta
                                                     <span v-if="formViagem.tipo_servico.includes('Aereo') && formPreferencias.aereo_tipo_trecho === 'ambos'" class="text-red-500">*</span>
                                                 </label>
-                                                <input type="date" :value="formViagem.data_volta ? toISO(formViagem.data_volta)?.split('T')[0] : ''"
+                                                <input type="date" :value="formViagem.data_volta ? toISO(formViagem.data_volta)?.split('T')[0] : ''" :min="formViagem.data_ida ? toISO(formViagem.data_ida)?.split('T')[0] : hojeISO"
                                                     @change="e => formViagem.data_volta = isoToDisplay(e.target.value)"
                                                     class="w-full px-4 py-2.5 rounded-lg border text-sm focus:border-labs-blue focus:ring-1 focus:ring-labs-blue"
                                                     :class="formViagem.data_volta ? 'border-green-400 bg-green-50/10' : 'border-gray-300'">
@@ -1512,10 +1512,12 @@
                 // --- Computados ---
                 const voosFiltrados = computed(() => {
                     const de = formPreferencias.value.aereo_periodo_preferido;
+                    if (!duffelVoos.value) return [];
                     if (!de) return duffelVoos.value;
                     return duffelVoos.value.filter(v => {
-                        if (!v.saida) return false;
+                        if (!v || !v.saida || typeof v.saida !== 'string') return false;
                         const hr = parseInt(v.saida.slice(11, 13), 10);
+                        if (isNaN(hr)) return false;
                         if (de === 'manha') return hr >= 6 && hr < 12;
                         if (de === 'tarde') return hr >= 12 && hr < 18;
                         if (de === 'noite') return hr >= 18 || hr < 6;
@@ -1525,10 +1527,12 @@
 
                 const voosVoltaFiltrados = computed(() => {
                     const de = formPreferencias.value.aereo_periodo_preferido;
+                    if (!duffelVoosVolta.value) return [];
                     if (!de) return duffelVoosVolta.value;
                     return duffelVoosVolta.value.filter(v => {
-                        if (!v.saida) return false;
+                        if (!v || !v.saida || typeof v.saida !== 'string') return false;
                         const hr = parseInt(v.saida.slice(11, 13), 10);
+                        if (isNaN(hr)) return false;
                         if (de === 'manha') return hr >= 6 && hr < 12;
                         if (de === 'tarde') return hr >= 12 && hr < 18;
                         if (de === 'noite') return hr >= 18 || hr < 6;
@@ -1541,6 +1545,14 @@
                     if (!dataIda) return null;
                     const diffDias = Math.floor((dataIda - new Date()) / (1000 * 60 * 60 * 24));
                     return diffDias < 15 ? 'Emergencial' : 'Comum';
+                });
+
+                const hojeISO = computed(() => {
+                    const d = new Date();
+                    const y = d.getFullYear();
+                    const m = String(d.getMonth() + 1).padStart(2, '0');
+                    const r = String(d.getDate()).padStart(2, '0');
+                    return `${y}-${m}-${r}`;
                 });
 
                 const passo2Valido = computed(() => {
@@ -1932,6 +1944,32 @@
                     }
                 });
 
+                watch(() => formViagem.value.data_ida, (newIda) => {
+                    if (!newIda || newIda.length < 10) return;
+                    const dateIda = parseDateBR(newIda);
+                    if (!dateIda) return;
+                    
+                    if (formViagem.value.data_volta && formViagem.value.data_volta.length === 10) {
+                        const dateVolta = parseDateBR(formViagem.value.data_volta);
+                        if (dateVolta && dateVolta < dateIda) {
+                            formViagem.value.data_volta = newIda; // Molda automaticamente a volta igual à ida
+                        }
+                    }
+                });
+
+                watch(() => formViagem.value.data_volta, (newVolta) => {
+                    if (!newVolta || newVolta.length < 10) return;
+                    const dateVolta = parseDateBR(newVolta);
+                    if (!dateVolta) return;
+                    
+                    if (formViagem.value.data_ida && formViagem.value.data_ida.length === 10) {
+                        const dateIda = parseDateBR(formViagem.value.data_ida);
+                        if (dateIda && dateVolta < dateIda) {
+                            formViagem.value.data_volta = formViagem.value.data_ida; // Não permite volta menor que ida
+                        }
+                    }
+                });
+
                 const carregarPerfilViajante = async (username) => {                    if (!username) return;
                     try {
                         const resp = await fetch(`/api/v1/viagens/perfil/${username}`, {
@@ -2064,6 +2102,10 @@
                     duffelVooSelecionadoVolta.value = null;
                     duffelBuscando.value = true;
                     const tipo = formPreferencias.value.aereo_tipo_trecho;
+                    
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 12000); // 12 segundos de limite
+                    
                     try {
                         const f = formViagem.value;
                         const bodyIda = {
@@ -2078,8 +2120,21 @@
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token.value}` },
                             body: JSON.stringify(bodyIda),
+                            signal: controller.signal
                         });
-                        const dados = await resp.json();
+                        
+                        let dados = {};
+                        try {
+                            dados = await resp.json();
+                        } catch (jsonErr) {
+                            if (!resp.ok) {
+                                duffelErro.value = `Erro ${resp.status}: Falha ao consultar o serviço de busca de voos.`;
+                            } else {
+                                duffelErro.value = 'Resposta inválida do servidor.';
+                            }
+                            return;
+                        }
+                        
                         if (!resp.ok) { duffelErro.value = dados.detail || 'Erro na busca de voos.'; return; }
                         if (!dados.opcoes || dados.opcoes.length === 0) {
                             duffelErro.value = 'Nenhum voo de ida encontrado. Preencha a preferência manualmente no próximo passo.';
@@ -2101,16 +2156,26 @@
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token.value}` },
                                 body: JSON.stringify(bodyVolta),
+                                signal: controller.signal
                             });
                             if (respV.ok) {
-                                const dadosV = await respV.json();
-                                duffelVoosVolta.value = dadosV.opcoes || [];
-                                // _sortByPeriodo(duffelVoosVolta);
+                                let dadosV = {};
+                                try {
+                                    dadosV = await respV.json();
+                                    duffelVoosVolta.value = dadosV.opcoes || [];
+                                } catch (jsonVErr) {
+                                    console.warn('[Duffel] falha ao ler json do voo de volta');
+                                }
                             }
                         }
                     } catch (e) {
-                        duffelErro.value = 'Erro de conexão ao buscar voos.';
+                        if (e.name === 'AbortError') {
+                            duffelErro.value = 'A busca de voos demorou muito para responder (limite de 12s excedido).';
+                        } else {
+                            duffelErro.value = 'Erro de conexão ao buscar voos.';
+                        }
                     } finally {
+                        clearTimeout(timeoutId);
                         duffelBuscando.value = false;
                     }
                 };
@@ -2404,7 +2469,7 @@
                     buscarHoteisGoogle, selecionarHotelGoogle,
                     distanciaViagem, distanciaCalculando,
                     formViagem, formPreferencias, servicosDisponiveis,
-                    classificacaoAereo, passo2Valido,
+                    hojeISO, classificacaoAereo, passo2Valido,
                     enviandoSolicitacao, erroEnvio, protocoloGerado, classificacaoGerada,
                     enviarSolicitacao, novasolicitacao,
                     // Histórico

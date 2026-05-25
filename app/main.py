@@ -1,6 +1,17 @@
+import logging
+import sys
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+
+# Configura o root logger para ter timestamps na saída padrão
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
+logger = logging.getLogger("viagenslabs")
 
 from app.infrastructure.database import Base, engine
 from app.infrastructure.orm import models
@@ -115,25 +126,36 @@ def _migracoes_seguras():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("Conectando ao banco e validando estrutura de tabelas...")
+    # Intercepta os logs do Uvicorn para forçar o uso do formato com timestamp
+    for name in ["uvicorn", "uvicorn.error", "uvicorn.access"]:
+        l = logging.getLogger(name)
+        l.setLevel(logging.INFO)
+        for h in l.handlers:
+            h.setFormatter(logging.Formatter(
+                fmt="%(asctime)s [%(levelname)s] %(message)s",
+                datefmt="%Y-%m-%d %H:%M:%S"
+            ))
+            
+    logger.info("Conectando ao banco e validando estrutura de tabelas...")
     Base.metadata.create_all(bind=engine)
     _migracoes_seguras()
-    print("Estrutura do banco de dados pronta.")
+    logger.info("Estrutura do banco de dados pronta.")
     # Inicia SLA scheduler em thread daemon
     try:
         from app.infrastructure.sla_scheduler import iniciar_scheduler
         from app.infrastructure.database import SessionLocal
         iniciar_scheduler(SessionLocal)
-        print("SLA Scheduler iniciado.")
+        logger.info("SLA Scheduler iniciado.")
     except Exception as exc:
-        print(f"[WARN] SLA Scheduler não iniciado: {exc}")
+        logger.warning(f"SLA Scheduler não iniciado: {exc}")
     # Inicia GAS relay scheduler (polling de decisões externas)
     try:
         from app.infrastructure.aprovacao_relay_scheduler import iniciar_relay_scheduler
         from app.infrastructure.database import SessionLocal
         iniciar_relay_scheduler(SessionLocal)
+        logger.info("GAS Relay Scheduler iniciado.")
     except Exception as exc:
-        print(f"[WARN] GAS Relay Scheduler não iniciado: {exc}")
+        logger.warning(f"GAS Relay Scheduler não iniciado: {exc}")
     yield
 
 def create_app() -> FastAPI:
@@ -173,7 +195,7 @@ def create_app() -> FastAPI:
                     perfil = payload.get("perfil", "N/A")
                 except Exception:
                     pass
-            print(f"[AUDITORIA - NAVEGAÇÃO] Usuário: {username} | Perfil: {perfil} | Método: {request.method} | Rota: {path}")
+            logger.info(f"[AUDITORIA - NAVEGAÇÃO] Usuário: {username} | Perfil: {perfil} | Método: {request.method} | Rota: {path}")
         
         response = await call_next(request)
         return response
@@ -221,4 +243,9 @@ app = create_app()
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    from uvicorn.config import LOGGING_CONFIG
+    LOGGING_CONFIG["formatters"]["default"]["fmt"] = "%(asctime)s [%(levelname)s] %(message)s"
+    LOGGING_CONFIG["formatters"]["access"]["fmt"] = "%(asctime)s [%(levelname)s] %(client_addr)s - \"%(request_line)s\" %(status_code)s"
+    LOGGING_CONFIG["formatters"]["default"]["datefmt"] = "%Y-%m-%d %H:%M:%S"
+    LOGGING_CONFIG["formatters"]["access"]["datefmt"] = "%Y-%m-%d %H:%M:%S"
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_config=LOGGING_CONFIG)
