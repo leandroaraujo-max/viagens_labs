@@ -1722,8 +1722,12 @@ ORDER BY COALESCE(SUM(valor_credito_gerado), 0) DESC;`
 
           let msgFormatted = msg;
           if (logServico.value === 'db_queries' || msg.trim().startsWith('SELECT') || msg.trim().startsWith('INSERT') || msg.trim().startsWith('UPDATE') || msg.trim().startsWith('DELETE') || msg.trim().startsWith('COMMIT') || msg.trim().startsWith('ROLLBACK') || msg.trim().startsWith('BEGIN')) {
+            // Quebra de linha e indentação inteligente para formatar a query SQL de forma legível
             msgFormatted = msgFormatted
-              .replace(/\b(SELECT|INSERT|UPDATE|DELETE|FROM|WHERE|JOIN|LEFT|RIGHT|ON|GROUP BY|ORDER BY|LIMIT|OFFSET|HAVING|AND|OR|IN|AS|COMMIT|ROLLBACK|BEGIN|IMPLICIT)\b/g, '<span class="text-cyan-400 font-bold">$1</span>')
+              .replace(/\b(FROM|WHERE|LEFT JOIN|INNER JOIN|RIGHT JOIN|JOIN|GROUP BY|ORDER BY|LIMIT|OFFSET|HAVING|UNION|INSERT INTO|VALUES|UPDATE|SET)\b/g, '<br>&nbsp;&nbsp;$1')
+              .replace(/\b(AND|OR)\b/g, '<br>&nbsp;&nbsp;&nbsp;&nbsp;$1')
+              // Colorização de palavras-chaves
+              .replace(/\b(SELECT|INSERT|UPDATE|DELETE|FROM|WHERE|JOIN|LEFT|RIGHT|ON|GROUP BY|ORDER BY|LIMIT|OFFSET|HAVING|AND|OR|IN|AS|COMMIT|ROLLBACK|BEGIN|IMPLICIT|SET|VALUES|INSERT INTO|UNION)\b/g, '<span class="text-cyan-400 font-bold">$1</span>')
               .replace(/\b(NULL|TRUE|FALSE)\b/g, '<span class="text-amber-400 font-bold">$1</span>');
           }
 
