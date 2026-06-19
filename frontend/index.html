@@ -1116,6 +1116,8 @@
                                                             <span class="text-red-500">*</span></label>
                                                         <input type="date"
                                                             :value="formPreferencias.hosp_data_checkin ? toISO(formPreferencias.hosp_data_checkin)?.split('T')[0] : ''"
+                                                            :min="toISO(formViagem.data_ida)?.split('T')[0] || hojeISO"
+                                                            :max="toISO(formViagem.data_volta)?.split('T')[0] || null"
                                                             @change="e => formPreferencias.hosp_data_checkin = isoToDisplay(e.target.value)"
                                                             class="w-full px-3 py-2.5 rounded-lg border text-sm focus:border-labs-blue"
                                                             :class="formPreferencias.hosp_data_checkin ? 'border-green-400 bg-green-50/10' : 'border-gray-300'">
@@ -1126,6 +1128,8 @@
                                                             <span class="text-red-500">*</span></label>
                                                         <input type="date"
                                                             :value="formPreferencias.hosp_data_checkout ? toISO(formPreferencias.hosp_data_checkout)?.split('T')[0] : ''"
+                                                            :min="toISO(formPreferencias.hosp_data_checkin || formViagem.data_ida)?.split('T')[0] || hojeISO"
+                                                            :max="toISO(formViagem.data_volta)?.split('T')[0] || null"
                                                             @change="e => formPreferencias.hosp_data_checkout = isoToDisplay(e.target.value)"
                                                             class="w-full px-3 py-2.5 rounded-lg border text-sm focus:border-labs-blue"
                                                             :class="formPreferencias.hosp_data_checkout ? 'border-green-400 bg-green-50/10' : 'border-gray-300'">
@@ -1215,6 +1219,8 @@
                                                             de Retirada</label>
                                                         <input type="date"
                                                             :value="formPreferencias.carro_data_retirada ? toISO(formPreferencias.carro_data_retirada)?.split('T')[0] : ''"
+                                                            :min="toISO(formViagem.data_ida)?.split('T')[0] || hojeISO"
+                                                            :max="toISO(formViagem.data_volta)?.split('T')[0] || null"
                                                             @change="e => formPreferencias.carro_data_retirada = isoToDisplay(e.target.value)"
                                                             class="w-full px-3 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue text-sm">
                                                     </div>
@@ -1225,6 +1231,8 @@
                                                             de Entrega</label>
                                                         <input type="date"
                                                             :value="formPreferencias.carro_data_devolucao ? toISO(formPreferencias.carro_data_devolucao)?.split('T')[0] : ''"
+                                                            :min="toISO(formPreferencias.carro_data_retirada || formViagem.data_ida)?.split('T')[0] || hojeISO"
+                                                            :max="toISO(formViagem.data_volta)?.split('T')[0] || null"
                                                             @change="e => formPreferencias.carro_data_devolucao = isoToDisplay(e.target.value)"
                                                             class="w-full px-3 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue text-sm">
                                                     </div>
@@ -2506,6 +2514,80 @@
                     }
                 });
 
+                const ajustarPeriodoServico = (campoInicio, campoFim) => {
+                    const dataIda = parseDateBR(formViagem.value.data_ida);
+                    const dataVolta = parseDateBR(formViagem.value.data_volta);
+
+                    let dataInicio = parseDateBR(formPreferencias.value[campoInicio]);
+                    let dataFim = parseDateBR(formPreferencias.value[campoFim]);
+
+                    if (dataInicio && dataIda && dataInicio < dataIda) {
+                        formPreferencias.value[campoInicio] = formViagem.value.data_ida;
+                        dataInicio = parseDateBR(formPreferencias.value[campoInicio]);
+                    }
+
+                    if (dataInicio && dataVolta && dataInicio > dataVolta) {
+                        formPreferencias.value[campoInicio] = formViagem.value.data_volta;
+                        dataInicio = parseDateBR(formPreferencias.value[campoInicio]);
+                    }
+
+                    if (dataFim && dataIda && dataFim < dataIda) {
+                        formPreferencias.value[campoFim] = formPreferencias.value[campoInicio] || formViagem.value.data_ida;
+                        dataFim = parseDateBR(formPreferencias.value[campoFim]);
+                    }
+
+                    if (dataFim && dataVolta && dataFim > dataVolta) {
+                        formPreferencias.value[campoFim] = formViagem.value.data_volta;
+                        dataFim = parseDateBR(formPreferencias.value[campoFim]);
+                    }
+
+                    if (dataInicio && dataFim && dataFim < dataInicio) {
+                        formPreferencias.value[campoFim] = formPreferencias.value[campoInicio];
+                    }
+                };
+
+                const validarPeriodoServico = (campoInicio, campoFim, rotulo) => {
+                    const inicio = formPreferencias.value[campoInicio];
+                    const fim = formPreferencias.value[campoFim];
+                    const dataIda = parseDateBR(formViagem.value.data_ida);
+                    const dataVolta = parseDateBR(formViagem.value.data_volta);
+                    const dataInicio = parseDateBR(inicio);
+                    const dataFim = parseDateBR(fim);
+
+                    if (dataInicio && dataIda && dataInicio < dataIda) {
+                        return `${rotulo}: a data inicial não pode ser anterior à data de ida da viagem.`;
+                    }
+                    if (dataInicio && dataVolta && dataInicio > dataVolta) {
+                        return `${rotulo}: a data inicial não pode ser posterior à data de volta da viagem.`;
+                    }
+                    if (dataInicio && dataFim && dataFim < dataInicio) {
+                        return `${rotulo}: a data final não pode ser menor que a data inicial.`;
+                    }
+                    if (dataFim && dataIda && dataFim < dataIda) {
+                        return `${rotulo}: a data final não pode ser anterior à data de ida da viagem.`;
+                    }
+                    if (dataFim && dataVolta && dataFim > dataVolta) {
+                        return `${rotulo}: a data final não pode ser posterior à data de volta da viagem.`;
+                    }
+                    return '';
+                };
+
+                watch(() => formPreferencias.value.hosp_data_checkin, () => {
+                    ajustarPeriodoServico('hosp_data_checkin', 'hosp_data_checkout');
+                });
+
+                watch(() => formPreferencias.value.hosp_data_checkout, () => {
+                    ajustarPeriodoServico('hosp_data_checkin', 'hosp_data_checkout');
+                });
+
+                watch(() => formPreferencias.value.carro_data_retirada, () => {
+                    ajustarPeriodoServico('carro_data_retirada', 'carro_data_devolucao');
+                });
+
+                watch(() => formPreferencias.value.carro_data_devolucao, () => {
+                    ajustarPeriodoServico('carro_data_retirada', 'carro_data_devolucao');
+                });
+
                 const carregarPerfilViajante = async (username) => {
                     if (!username) return;
                     try {
@@ -2583,6 +2665,16 @@
                     // Validação: quarto individual por saúde exige observações
                     if (formPreferencias.value.quarto_excecao_saude && !formPreferencias.value.observacoes_viajante.trim()) {
                         erroEnvio.value = 'Por favor, preencha o campo Observações com a justificativa da condição de saúde para quarto individual.';
+                        return;
+                    }
+                    const erroHospedagem = validarPeriodoServico('hosp_data_checkin', 'hosp_data_checkout', 'Hospedagem');
+                    if (erroHospedagem) {
+                        erroEnvio.value = erroHospedagem;
+                        return;
+                    }
+                    const erroCarro = validarPeriodoServico('carro_data_retirada', 'carro_data_devolucao', 'Veículo');
+                    if (erroCarro) {
+                        erroEnvio.value = erroCarro;
                         return;
                     }
                     enviandoSolicitacao.value = true;
