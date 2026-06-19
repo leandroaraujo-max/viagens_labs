@@ -2785,6 +2785,7 @@
                 const terceiroBuscando = ref(false);
 
                 const pdfArquivo = ref(null);
+                const LIMITE_PDF_TERCEIRO_BYTES = 10 * 1024 * 1024;
                 const terceiroSubmetendo = ref(false);
                 const terceiroMensagemSucesso = ref('');
                 const terceiroErroSubmissao = ref('');
@@ -2812,10 +2813,32 @@
                 };
 
                 const lidarComUploadPDF = (e) => {
-                    const arquivo = e.target.files[0];
-                    if (arquivo) {
-                        pdfArquivo.value = arquivo;
+                    terceiroErroSubmissao.value = '';
+                    terceiroMensagemSucesso.value = '';
+
+                    const input = e?.target;
+                    const arquivo = input?.files?.[0];
+
+                    if (!arquivo) {
+                        pdfArquivo.value = null;
+                        return;
                     }
+
+                    if (arquivo.type && arquivo.type !== 'application/pdf') {
+                        pdfArquivo.value = null;
+                        if (input) input.value = '';
+                        terceiroErroSubmissao.value = 'Arquivo inválido. Anexe um PDF de autorização em formato .pdf.';
+                        return;
+                    }
+
+                    if (arquivo.size > LIMITE_PDF_TERCEIRO_BYTES) {
+                        pdfArquivo.value = null;
+                        if (input) input.value = '';
+                        terceiroErroSubmissao.value = 'O PDF excede o limite de 10 MB. Reduza o arquivo e tente novamente.';
+                        return;
+                    }
+
+                    pdfArquivo.value = arquivo;
                 };
 
                 const submeterTicketTerceiro = async () => {
@@ -2827,6 +2850,10 @@
                     }
                     if (!pdfArquivo.value) {
                         terceiroErroSubmissao.value = 'Por favor, selecione o arquivo PDF de autorização assinado.';
+                        return;
+                    }
+                    if (pdfArquivo.value.size > LIMITE_PDF_TERCEIRO_BYTES) {
+                        terceiroErroSubmissao.value = 'O PDF excede o limite de 10 MB. Reduza o arquivo e tente novamente.';
                         return;
                     }
                     terceiroSubmetendo.value = true;
@@ -2842,10 +2869,33 @@
                             headers: { 'Authorization': `Bearer ${token.value}` },
                             body: formData,
                         });
-                        const dados = await resp.json();
-                        if (!resp.ok) throw new Error(dados.detail || 'Erro ao submeter ticket.');
 
-                        terceiroMensagemSucesso.value = dados.mensagem || 'Ticket enviado com sucesso! Aguarde a aprovação do setor de viagens.';
+                        const contentType = resp.headers.get('content-type') || '';
+                        let dados = null;
+                        let textoResposta = '';
+
+                        if (contentType.includes('application/json')) {
+                            dados = await resp.json();
+                        } else {
+                            textoResposta = await resp.text();
+                        }
+
+                        if (!resp.ok) {
+                            const respostaIndicaArquivoGrande =
+                                resp.status === 413 ||
+                                /too large|entity too large|request entity too large|payload too large/i.test(textoResposta);
+
+                            if (respostaIndicaArquivoGrande) {
+                                throw new Error('O PDF excede o limite de 10 MB. Reduza o arquivo e tente novamente.');
+                            }
+
+                            throw new Error(
+                                dados?.detail ||
+                                'Não foi possível enviar o PDF. Verifique se o arquivo é válido e possui no máximo 10 MB.'
+                            );
+                        }
+
+                        terceiroMensagemSucesso.value = dados?.mensagem || 'Ticket enviado com sucesso! Aguarde a aprovação do setor de viagens.';
                         // Limpa inputs
                         terceiroBuscaMatricula.value = '';
                         terceiroEncontrado.value = null;
