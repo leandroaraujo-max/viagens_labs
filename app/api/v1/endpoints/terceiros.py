@@ -11,6 +11,7 @@ from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_db_session, require_auth, require_setor
@@ -160,6 +161,32 @@ def listar_todos_tickets(
     return [_fmt(a) for a in itens]
 
 
+@router.get("/terceiros/admin/{autorizacao_id}/pdf")
+def obter_pdf_autorizacao_terceiro(
+    autorizacao_id: int,
+    db: Session = Depends(get_db_session),
+    _: tuple = Depends(require_setor),
+):
+    """Retorna o PDF assinado de uma autorização de terceiros para o portal do setor."""
+    aut = db.query(AutorizacaoTerceiroModel).filter(
+        AutorizacaoTerceiroModel.id == autorizacao_id
+    ).first()
+    if not aut:
+        raise HTTPException(status_code=404, detail="Autorização não encontrada.")
+
+    if not aut.pdf_path:
+        raise HTTPException(status_code=404, detail="PDF da autorização não encontrado.")
+
+    base_dir = os.path.abspath(_PDF_DIR)
+    file_path = os.path.abspath(aut.pdf_path)
+    if not file_path.startswith(base_dir):
+        raise HTTPException(status_code=403, detail="Acesso não autorizado ao documento.")
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="PDF da autorização não encontrado.")
+
+    return FileResponse(file_path, media_type="application/pdf", filename=os.path.basename(file_path))
+
+
 # ── Setor: aprovar ou reprovar ────────────────────────────────────────────────
 
 @router.patch("/terceiros/admin/{autorizacao_id}/decisao")
@@ -212,6 +239,7 @@ def _fmt(a: AutorizacaoTerceiroModel) -> dict:
         "terceiro_nome":        a.terceiro_nome,
         "terceiro_email":       a.terceiro_email,
         "pdf_path":             a.pdf_path,
+        "pdf_url":              f"/api/v1/terceiros/admin/{a.id}/pdf",
         "status":               a.status,
         "observacao_setor":     a.observacao_setor,
         "operador_setor":       a.operador_setor,
