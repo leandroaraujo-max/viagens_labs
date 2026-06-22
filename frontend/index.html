@@ -2819,6 +2819,11 @@
                     }
                 };
 
+                const formatarData = (iso) => {
+                    if (!iso) return '—';
+                    return new Date(iso).toLocaleDateString('pt-BR');
+                };
+
                 const formatarHora = (iso) => {
                     if (!iso) return '—';
                     return iso.slice(11, 16);
@@ -3152,7 +3157,7 @@
                     // Duffel
                     duffelVoos, duffelVoosVolta, duffelBuscando, duffelErro,
                     duffelVooSelecionado, duffelVooSelecionadoVolta, podeBuscarVoos,
-                    buscarVoosDuffel, selecionarVoo, formatarHora, formatarDuracao,
+                    buscarVoosDuffel, selecionarVoo, formatarHora, formatarDuracao, formatarData,
                     // Autocomplete IBGE
                     acCidades, buscarCidadesIBGE, selecionarCidade, fecharAc,
                     // Gestão de Créditos & Cancelamento/Remarcação
