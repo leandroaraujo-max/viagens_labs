@@ -1,10 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Painel do Setor â€” ViagensLabs</title>
+  <title>Painel do Setor — ViagensLabs</title>
   <!-- Fundo escuro aplicado antes de qualquer script para evitar flash branco -->
   <style>
     html,
@@ -40,7 +40,7 @@
       display: none;
     }
 
-    /* Fundo com foto aÃ©rea igual ao portal do viajante */
+    /* Fundo com foto aérea igual ao portal do viajante */
     .bg-setor {
       background-image:
         linear-gradient(135deg, rgba(15, 23, 42, 0.92) 0%, rgba(0, 55, 180, 0.80) 100%),
@@ -101,7 +101,7 @@
       min-width: 3px;
     }
 
-    /* TransiÃ§Ãµes de fade */
+    /* Transições de fade */
     .fade-enter-active,
     .fade-leave-active {
       transition: opacity .3s ease;
@@ -129,7 +129,7 @@
     <!-- SIDEBAR LATERAL FIXA -->
     <aside :class="menuRecolhido ? 'w-20' : 'w-64'"
       class="bg-[#0a0f1e] text-slate-300 flex flex-col shrink-0 border-r border-slate-800/40 min-h-screen transition-all duration-300 z-30 relative shadow-2xl">
-      <!-- Logo e TÃ­tulo -->
+      <!-- Logo e Título -->
       <div class="p-5 flex flex-col items-center border-b border-slate-800/40 gap-2 select-none">
         <img src="/img/luizalabs-logo.png" alt="Luizalabs" :class="menuRecolhido ? 'h-6' : 'h-8'"
           class="object-contain shrink-0" onerror="this.style.display='none'">
@@ -139,7 +139,7 @@
         </div>
       </div>
 
-      <!-- NavegaÃ§Ã£o Vertical (Abas) -->
+      <!-- Navegação Vertical (Abas) -->
       <nav class="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
         <button v-for="item in menuItens" :key="item.id"
           @click="aba = item.id; if (item.id === 'indicadores') calcularIndicadores(); if (item.id === 'casamentos') carregarCasamentos(); if (item.id === 'terceiros') carregarTicketsTerceiros(); if (item.id === 'agencias') carregarAgencias();"
@@ -152,36 +152,36 @@
             class="bg-blue-600/20 text-blue-450 text-[9px] font-bold px-1.5 py-0.5 rounded-full">{{ item.count }}</span>
         </button>
 
-        <!-- Portais rÃ¡pidos para retornar -->
+        <!-- Portais rápidos para retornar -->
         <div class="pt-4 border-t border-slate-800/40 mt-4 space-y-1.5">
           <p v-if="!menuRecolhido" class="text-[10px] text-slate-500 font-bold uppercase tracking-wider px-3">Portais
           </p>
           <a href="#" @click.prevent="vlNavigate('/index.html')"
             class="flex items-center gap-3 px-3 py-2 text-xs text-slate-400 hover:text-slate-200 hover:bg-slate-800/20 rounded-lg transition-all">
-            <span class="text-base shrink-0">âœˆï¸</span>
+            <span class="text-base shrink-0">✈️</span>
             <span v-if="!menuRecolhido">Portal do Viajante</span>
           </a>
           <a v-if="perfilUsuario === 'dev'" href="#" @click.prevent="vlNavigate('/dev.html')"
             class="flex items-center gap-3 px-3 py-2 text-xs text-slate-400 hover:text-slate-200 hover:bg-slate-800/20 rounded-lg transition-all">
-            <span class="text-base shrink-0">ðŸ§ª</span>
+            <span class="text-base shrink-0">🧪</span>
             <span v-if="!menuRecolhido">Portal Dev</span>
           </a>
         </div>
       </nav>
 
-      <!-- RodapÃ© da Sidebar -->
+      <!-- Rodapé da Sidebar -->
       <div class="p-4 border-t border-slate-800/40 flex flex-col gap-3 shrink-0">
         <button @click="menuRecolhido = !menuRecolhido"
           class="w-full flex items-center justify-center gap-2 px-3 py-2 bg-slate-800/20 border border-slate-800/40 hover:bg-slate-800/30 text-slate-400 hover:text-slate-200 rounded-lg text-[10px] font-mono transition">
           <span>{{ menuRecolhido ? 'â–¶' : 'â—€ Recolher menu' }}</span>
         </button>
         <div v-if="!menuRecolhido" class="text-center text-[10px] text-slate-500 font-mono">
-          Â© 2026 LuizaLabs Viagens
+          © 2026 LuizaLabs Viagens
         </div>
       </div>
     </aside>
 
-    <!-- ÃREA DE CONTEÃšDO PRINCIPAL -->
+    <!-- ÁREA DE CONTEÚDO PRINCIPAL -->
     <div class="flex-grow flex flex-col min-w-0 min-h-screen">
       <header
         class="bg-white border-b border-gray-200/80 px-6 py-3 flex items-center justify-between sticky top-0 z-20 shadow-xs">
@@ -208,10 +208,10 @@
         </div>
       </header>
 
-      <!-- â”€â”€ ÃREA DE CONTEÃšDO â”€â”€ -->
+      <!-- ── ÁREA DE CONTEÚDO ── -->
       <main class="w-full p-6 flex-grow">
 
-        <!-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ ABA SOLICITAÃ‡Ã•ES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+        <!-- ─────────────────────── ABA SOLICITAÇÕES ─────────────────────── -->
         <template v-if="aba === 'solicitacoes'">
 
           <div class="glass-panel card-accent-blue p-5 mb-5">
@@ -222,31 +222,31 @@
                 <select v-model="filtros.status" @change="carregarSolicitacoes"
                   class="w-full text-sm border border-labs-border rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-labs-blue focus:border-labs-blue focus:outline-none bg-white shadow-sm transition">
                   <option value="">Todos os status</option>
-                  <option value="AGUARDANDO_N1">Ag. AprovaÃ§Ã£o N1</option>
-                  <option value="AGUARDANDO_N2">Ag. AprovaÃ§Ã£o N2</option>
-                  <option value="PENDENTE_PRE_APROVACAO_SETOR">PrÃ©-Aprovar</option>
-                  <option value="AGUARDANDO_COTACAO">Ag. CotaÃ§Ã£o</option>
+                  <option value="AGUARDANDO_N1">Ag. Aprovação N1</option>
+                  <option value="AGUARDANDO_N2">Ag. Aprovação N2</option>
+                  <option value="PENDENTE_PRE_APROVACAO_SETOR">Pré-Aprovar</option>
+                  <option value="AGUARDANDO_COTACAO">Ag. Cotação</option>
                   <option value="COTACAO_ENVIADA">Cot. Enviada</option>
-                  <option value="PENDENTE_APROVACAO_SETOR_COTACAO">Decidir AgÃªncia</option>
-                  <option value="CONCLUIDA">ConcluÃ­da</option>
+                  <option value="PENDENTE_APROVACAO_SETOR_COTACAO">Decidir Agência</option>
+                  <option value="CONCLUIDA">Concluída</option>
                   <option value="REPROVADA">Reprovada</option>
                 </select>
               </div>
               <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1.5">PerÃ­odo</label>
+                <label class="block text-xs font-semibold text-gray-600 mb-1.5">Período</label>
                 <select v-model="filtros.periodo" @change="carregarSolicitacoes"
                   class="w-full text-sm border border-labs-border rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-labs-blue focus:border-labs-blue focus:outline-none bg-white shadow-sm transition">
-                  <option value="">Todos os perÃ­odos</option>
-                  <option value="7">Ãšltimos 7 dias</option>
-                  <option value="30">Ãšltimos 30 dias</option>
-                  <option value="90">Ãšltimos 90 dias</option>
+                  <option value="">Todos os períodos</option>
+                  <option value="7">Últimos 7 dias</option>
+                  <option value="30">Últimos 30 dias</option>
+                  <option value="90">Últimos 90 dias</option>
                 </select>
               </div>
               <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1.5">AgÃªncia Vencedora</label>
+                <label class="block text-xs font-semibold text-gray-600 mb-1.5">Agência Vencedora</label>
                 <select v-model="filtros.agencia" @change="carregarSolicitacoes"
                   class="w-full text-sm border border-labs-border rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-labs-blue focus:border-labs-blue focus:outline-none bg-white shadow-sm transition">
-                  <option value="">Todas as agÃªncias</option>
+                  <option value="">Todas as agências</option>
                   <option v-for="ag in agencias" :key="ag.id" :value="ag.agencia_nome">{{ ag.agencia_nome }}</option>
                 </select>
               </div>
@@ -260,11 +260,11 @@
                         d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0" />
                     </svg>
                     <input v-model="filtros.busca" @input="debounceCarregar" type="text"
-                      placeholder="Protocolo, viajanteâ€¦"
+                      placeholder="Protocolo, viajante…"
                       class="w-full text-sm border border-labs-border rounded-lg pl-9 pr-3 py-2.5 focus:ring-2 focus:ring-labs-blue focus:border-labs-blue focus:outline-none shadow-sm transition" />
                   </div>
-                  <!-- BotÃ£o Atualizar -->
-                  <button @click="carregarSolicitacoes" :disabled="carregando" title="Atualizar solicitaÃ§Ãµes"
+                  <!-- Botão Atualizar -->
+                  <button @click="carregarSolicitacoes" :disabled="carregando" title="Atualizar solicitações"
                     class="flex items-center justify-center w-10 h-10 border border-labs-border rounded-lg bg-white hover:bg-labs-gray text-gray-500 hover:text-labs-blue transition disabled:opacity-50">
                     <svg class="w-4 h-4" :class="{' animate-spin': carregando}" fill="none" stroke="currentColor"
                       viewBox="0 0 24 24">
@@ -283,7 +283,7 @@
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
             </svg>
-            <span class="text-sm font-medium text-gray-500">Carregando solicitaÃ§Ãµesâ€¦</span>
+            <span class="text-sm font-medium text-gray-500">Carregando solicitações…</span>
           </div>
 
           <!-- Tabela -->
@@ -308,7 +308,7 @@
                       Tipo</th>
                     <th class="text-left px-4 py-3 font-semibold text-gray-500 text-xs uppercase tracking-wide">Status
                     </th>
-                    <th class="text-right px-4 py-3 font-semibold text-gray-500 text-xs uppercase tracking-wide">AÃ§Ãµes
+                    <th class="text-right px-4 py-3 font-semibold text-gray-500 text-xs uppercase tracking-wide">Ações
                     </th>
                   </tr>
                 </thead>
@@ -323,11 +323,12 @@
                     <td class="px-4 py-3 text-gray-700 text-xs font-medium">{{ s.solicitante_username }}</td>
                     <td class="px-4 py-3 text-gray-700 text-xs hidden md:table-cell">{{ s.destino_cidade }}<span
                         class="text-gray-400">/{{ s.destino_estado }}</span></td>
-                    <td class="px-4 py-3 text-gray-500 text-xs whitespace-nowrap hidden lg:table-cell">{{ fmtData(s.data_ida) }}</td>
+                    <td class="px-4 py-3 text-gray-500 text-xs whitespace-nowrap hidden lg:table-cell">{{
+                      fmtData(s.data_ida) }}</td>
                     <td class="px-4 py-3 hidden lg:table-cell">
                       <span
                         class="text-xs bg-blue-50 text-labs-blue border border-blue-100 rounded-md px-2 py-0.5 font-medium whitespace-nowrap">
-                        {{ s.tipo_servico.replace(/,/g,' Â· ') }}
+                        {{ s.tipo_servico.replace(/,/g,' · ') }}
                       </span>
                     </td>
                     <td class="px-4 py-3">
@@ -339,7 +340,7 @@
                     <td class="px-4 py-3 text-right">
                       <div class="flex items-center justify-end gap-1">
                         <template v-if="s.status === 'PENDENTE_PRE_APROVACAO_SETOR'">
-                          <button @click="confirmarAcao(s, 'PRE_APROVAR')" title="PrÃ©-Aprovar"
+                          <button @click="confirmarAcao(s, 'PRE_APROVAR')" title="Pré-Aprovar"
                             class="inline-flex items-center gap-1 text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white rounded px-2 py-1 font-semibold transition shadow-sm">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
@@ -367,13 +368,13 @@
                           </button>
                         </template>
                         <template v-else-if="s.status === 'PENDENTE_APROVACAO_SETOR_COTACAO'">
-                          <button @click="abrirDetalhe(s)" title="Ver cotaÃ§Ãµes"
+                          <button @click="abrirDetalhe(s)" title="Ver cotações"
                             class="inline-flex items-center gap-1 text-[11px] bg-purple-600 hover:bg-purple-700 text-white rounded px-2 py-1 font-semibold transition shadow-sm">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
                             </svg>
-                            CotaÃ§Ãµes
+                            Cotações
                           </button>
                         </template>
                         <button @click="abrirDetalhe(s)" title="Ver detalhes"
@@ -403,36 +404,36 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                 d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
-            <p class="text-sm font-medium">Nenhuma solicitaÃ§Ã£o encontrada.</p>
+            <p class="text-sm font-medium">Nenhuma solicitação encontrada.</p>
           </div>
         </template>
 
-        <!-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ ABA INDICADORES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+        <!-- ─────────────────────── ABA INDICADORES ─────────────────────── -->
         <template v-if="aba === 'indicadores'">
 
-          <!-- Barra de Controle de BI & ExportaÃ§Ãµes -->
+          <!-- Barra de Controle de BI & Exportações -->
           <div class="glass-panel card-accent-blue p-4 mb-6 flex flex-wrap items-center justify-between gap-4">
             <div>
-              <h2 class="text-sm font-bold text-gray-800">ExportaÃ§Ãµes e RelatÃ³rios BI</h2>
-              <p class="text-xs text-gray-400">Baixe os dados operacionais consolidados em formato CSV para anÃ¡lise
+              <h2 class="text-sm font-bold text-gray-800">Exportações e Relatórios BI</h2>
+              <p class="text-xs text-gray-400">Baixe os dados operacionais consolidados em formato CSV para análise
                 externa.</p>
             </div>
             <div class="flex flex-wrap gap-2">
               <button @click="exportarSolicitacoes"
                 class="px-3 py-2 text-xs font-semibold bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg border border-blue-200 transition flex items-center gap-1.5 shadow-sm">
-                <span>ðŸ“¥</span> SolicitaÃ§Ãµes
+                <span>📥</span> Solicitações
               </button>
               <button @click="exportarStatus"
                 class="px-3 py-2 text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-lg border border-emerald-200 transition flex items-center gap-1.5 shadow-sm">
-                <span>ðŸ“¥</span> Por Status
+                <span>📥</span> Por Status
               </button>
               <button @click="exportarCentroCusto"
                 class="px-3 py-2 text-xs font-semibold bg-purple-50 hover:bg-purple-100 text-purple-600 rounded-lg border border-purple-200 transition flex items-center gap-1.5 shadow-sm">
-                <span>ðŸ“¥</span> Por Centro de Custo
+                <span>📥</span> Por Centro de Custo
               </button>
               <button @click="exportarVolumeMensal"
                 class="px-3 py-2 text-xs font-semibold bg-amber-50 hover:bg-amber-100 text-amber-600 rounded-lg border border-amber-200 transition flex items-center gap-1.5 shadow-sm">
-                <span>ðŸ“¥</span> Volume Mensal
+                <span>📥</span> Volume Mensal
               </button>
             </div>
           </div>
@@ -451,27 +452,29 @@
                 <span class="text-xl shrink-0">{{ kpiCardConfig(kpi.label).icon }}</span>
                 <div class="text-2xl font-extrabold tracking-tight leading-none">{{ kpi.valor }}</div>
               </div>
-              <div class="text-[11px] font-bold uppercase tracking-wider opacity-85 mt-2 leading-tight z-10">{{ kpi.label }}</div>
+              <div class="text-[11px] font-bold uppercase tracking-wider opacity-85 mt-2 leading-tight z-10">{{
+                kpi.label }}</div>
             </div>
           </div>
 
-          <!-- GrÃ¡ficos -->
+          <!-- Gráficos -->
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-            <!-- DistribuiÃ§Ã£o por status -->
+            <!-- Distribuição por status -->
             <div class="glass-panel card-accent-blue p-6">
               <h3 class="text-sm font-bold text-labs-dark mb-5 flex items-center gap-2">
                 <svg class="w-4 h-4 text-labs-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
-                DistribuiÃ§Ã£o por Status
+                Distribuição por Status
               </h3>
               <div v-if="distribuicaoStatus.length" class="space-y-4">
                 <div v-for="item in distribuicaoStatus" :key="item.label">
                   <div class="flex justify-between text-xs font-medium text-gray-600 mb-1.5">
                     <span>{{ item.label }}</span>
-                    <span>{{ item.count }} <span class="text-gray-400 font-normal font-mono">({{ item.pct }}%)</span></span>
+                    <span>{{ item.count }} <span class="text-gray-400 font-normal font-mono">({{ item.pct
+                        }}%)</span></span>
                   </div>
                   <div class="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
                     <div :class="['bar-fill h-2.5 rounded-full', item.cor]" :style="`width:${item.pct}%`"></div>
@@ -485,7 +488,7 @@
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                     d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
                 </svg>
-                <p class="text-xs font-semibold">Sem dados de distribuiÃ§Ã£o disponÃ­veis.</p>
+                <p class="text-xs font-semibold">Sem dados de distribuição disponíveis.</p>
               </div>
             </div>
 
@@ -496,7 +499,7 @@
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                Volume Mensal â€” Ãšltimos 6 Meses
+                Volume Mensal — Últimos 6 Meses
               </h3>
               <div v-if="volumeMensal.some(m => m.total > 0)" class="flex items-end gap-3 h-36">
                 <div v-for="m in volumeMensal" :key="m.mes"
@@ -512,7 +515,7 @@
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                     d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                <p class="text-xs font-semibold">Nenhuma viagem agendada nos Ãºltimos 6 meses.</p>
+                <p class="text-xs font-semibold">Nenhuma viagem agendada nos últimos 6 meses.</p>
               </div>
             </div>
           </div>
@@ -524,17 +527,18 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
-              SolicitaÃ§Ãµes por Centro de Custo
+              Solicitações por Centro de Custo
             </h3>
             <div v-if="centroCustoRanking.length" class="space-y-3">
               <div v-for="(item, idx) in centroCustoRanking" :key="item.cod || item.nome"
                 class="flex items-center gap-3">
-                <span class="w-5 text-xs font-bold text-gray-300 text-right flex-shrink-0 font-mono">{{ idx + 1 }}</span>
+                <span class="w-5 text-xs font-bold text-gray-300 text-right flex-shrink-0 font-mono">{{ idx + 1
+                  }}</span>
                 <div class="flex-1 min-w-0">
                   <div class="flex justify-between items-center text-xs font-medium text-gray-700 mb-1">
                     <span class="truncate">
                       <span v-if="item.cod" class="font-mono text-labs-blue mr-1.5">{{ item.cod }}</span>
-                      <span>{{ item.nome || 'â€”' }}</span>
+                      <span>{{ item.nome || '—' }}</span>
                     </span>
                     <span class="ml-3 font-bold text-labs-dark flex-shrink-0 font-mono">{{ item.count }}</span>
                   </div>
@@ -550,15 +554,15 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                   d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
-              <p class="text-xs font-semibold">NÃ£o hÃ¡ dados de centros de custo para consolidar.</p>
+              <p class="text-xs font-semibold">Não há dados de centros de custo para consolidar.</p>
             </div>
           </div>
         </template>
 
-        <!-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ ABA CASAMENTOS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+        <!-- ─────────────────────── ABA CASAMENTOS ─────────────────────── -->
         <template v-if="aba === 'casamentos'">
           <div class="glass-panel card-accent-purple p-6">
-            <h2 class="text-base font-bold text-gray-800 mb-1">ðŸ”— Casamentos Detectados</h2>
+            <h2 class="text-base font-bold text-gray-800 mb-1">🔗 Casamentos Detectados</h2>
             <p class="text-xs text-gray-400 mb-5">Pares de viagem que podem ser otimizados juntos. Vincule ou ignore
               cada match.</p>
 
@@ -589,78 +593,80 @@
                     <button @click="abrirDetalhe({id: c.solicitacao_a_id}); agirCasamentoVer = c"
                       title="Ver detalhes do casamento"
                       class="px-3 py-1.5 text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg font-semibold transition">
-                      ðŸ” Detalhes
+                      🔍 Detalhes
                     </button>
                     <button @click="agirCasamento(c.id, 'vincular')"
                       class="px-4 py-1.5 text-xs bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition">
-                      ðŸ”— Vincular
+                      🔗 Vincular
                     </button>
                     <button @click="agirCasamento(c.id, 'ignorar')"
                       class="px-4 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-semibold transition">
-                      âœ• Ignorar
+                      ✕ Ignorar
                     </button>
                   </div>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                   <div class="bg-blue-50 rounded-lg p-3">
-                    <p class="text-xs text-blue-400 font-semibold mb-1">SolicitaÃ§Ã£o A</p>
+                    <p class="text-xs text-blue-400 font-semibold mb-1">Solicitação A</p>
                     <p class="font-mono font-bold text-blue-700">{{ c.protocolo_a }}</p>
                   </div>
                   <div class="bg-purple-50 rounded-lg p-3">
-                    <p class="text-xs text-purple-400 font-semibold mb-1">SolicitaÃ§Ã£o B</p>
+                    <p class="text-xs text-purple-400 font-semibold mb-1">Solicitação B</p>
                     <p class="font-mono font-bold text-purple-700">{{ c.protocolo_b }}</p>
                   </div>
                 </div>
                 <p v-if="c.servicos_comuns" class="mt-2 text-xs text-gray-500">
-                  <strong>ServiÃ§os em comum:</strong> {{ c.servicos_comuns }}
+                  <strong>Serviços em comum:</strong> {{ c.servicos_comuns }}
                 </p>
               </div>
             </div>
           </div>
         </template>
 
-        <!-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ ABA AGÃŠNCIAS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+        <!-- ─────────────────────── ABA AGÊNCIAS ─────────────────────── -->
         <template v-if="aba === 'agencias'">
           <div class="glass-panel p-6" style="border-top: 3px solid #0055ff;">
             <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
               <div>
-                <h2 class="text-base font-bold text-gray-800 mb-0.5">AgÃªncias de Viagens</h2>
-                <p class="text-xs text-gray-400">AgÃªncias participam do fluxo via e-mail e portal GAS â€” sem login.</p>
+                <h2 class="text-base font-bold text-gray-800 mb-0.5">Agências de Viagens</h2>
+                <p class="text-xs text-gray-400">Agências participam do fluxo via e-mail e portal GAS — sem login.</p>
               </div>
               <button @click="abrirModalAgencia(null)"
                 class="flex items-center gap-2 px-4 py-2 bg-labs-blue hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition shadow-sm">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                 </svg>
-                Nova AgÃªncia
+                Nova Agência
               </button>
             </div>
 
             <div v-if="agenciaMsgOk"
-              class="mb-4 bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 text-sm">{{ agenciaMsgOk }}</div>
+              class="mb-4 bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 text-sm">{{
+              agenciaMsgOk }}</div>
             <div v-if="agenciaMsgErr"
               class="mb-4 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">{{ agenciaMsgErr }}
             </div>
 
             <div v-if="agencias.length === 0" class="text-center py-16 text-gray-400 text-sm">
-              Nenhuma agÃªncia cadastrada. Clique em "Nova AgÃªncia" para comeÃ§ar.
+              Nenhuma agência cadastrada. Clique em "Nova Agência" para começar.
             </div>
 
-            <!-- Cards responsivos das agÃªncias -->
+            <!-- Cards responsivos das agências -->
             <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div v-for="ag in agencias" :key="ag.id" class="border rounded-xl p-5 bg-white hover:shadow-md transition"
                 :class="ag.ativo ? 'border-gray-200' : 'border-red-100 bg-red-50/30'">
-                <!-- CabeÃ§alho do card -->
+                <!-- Cabeçalho do card -->
                 <div class="flex items-start justify-between gap-3 mb-3">
                   <div>
                     <div class="flex items-center gap-2 flex-wrap mb-1.5">
                       <span class="font-bold text-gray-900 text-sm">{{ ag.agencia_nome }}</span>
                       <span
                         :class="ag.ativo ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-600 border-red-200'"
-                        class="text-[10px] font-bold px-2 py-0.5 rounded-full border shadow-sm">{{ ag.ativo ? 'Ativa' : 'Inativa' }}</span>
+                        class="text-[10px] font-bold px-2 py-0.5 rounded-full border shadow-sm">{{ ag.ativo ? 'Ativa' :
+                        'Inativa' }}</span>
                     </div>
-                    <p class="text-xs text-gray-600 mt-1.5 font-semibold">{{ ag.razao_social || 'â€”' }}</p>
-                    <p class="text-xs text-gray-500 font-mono">{{ ag.cnpj ? fmtCnpj(ag.cnpj) : 'CNPJ nÃ£o informado' }}
+                    <p class="text-xs text-gray-600 mt-1.5 font-semibold">{{ ag.razao_social || '—' }}</p>
+                    <p class="text-xs text-gray-500 font-mono">{{ ag.cnpj ? fmtCnpj(ag.cnpj) : 'CNPJ não informado' }}
                     </p>
                   </div>
                   <div class="flex items-center gap-1.5 shrink-0">
@@ -715,21 +721,21 @@
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                     </svg>
-                    {{ ag.banco_nome }} Â· Ag {{ ag.agencia_bancaria }} Â· CC {{ ag.conta_bancaria }}
+                    {{ ag.banco_nome }} · Ag {{ ag.agencia_bancaria }} · CC {{ ag.conta_bancaria }}
                   </div>
                   <div v-if="ag.data_criacao" class="text-gray-400">
                     Cadastro: {{ fmtData(ag.data_criacao) }}
                   </div>
                 </div>
 
-                <!-- BotÃ£o Ativar/Desativar AgÃªncia (Saas Premium Style) -->
+                <!-- Botão Ativar/Desativar Agência (Saas Premium Style) -->
                 <div class="mt-4 pt-3 border-t border-gray-100 flex justify-end">
                   <button @click="toggleAgencia(ag)"
                     class="w-full py-2 text-xs font-bold rounded-xl border transition-all duration-200 shadow-sm"
                     :class="ag.ativo 
                   ? 'border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300 bg-rose-50/15' 
                   : 'border-emerald-200 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-300 bg-emerald-50/15'">
-                    {{ ag.ativo ? 'ðŸ›‘ Desativar AgÃªncia' : 'âœ… Ativar AgÃªncia' }}
+                    {{ ag.ativo ? '🛑 Desativar Agência' : '✅ Ativar Agência' }}
                   </button>
                 </div>
               </div>
@@ -737,14 +743,14 @@
           </div>
         </template>
 
-        <!-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ ABA ACESSO TERCEIROS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+        <!-- ─────────────────────── ABA ACESSO TERCEIROS ─────────────────────── -->
         <template v-if="aba === 'terceiros'">
-          <!-- Tickets de AutorizaÃ§Ã£o para Terceiros no topo -->
+          <!-- Tickets de Autorização para Terceiros no topo -->
           <div class="glass-panel card-accent-blue p-6 mb-6">
             <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
               <div>
-                <h2 class="text-base font-bold text-gray-800 mb-0.5">Tickets de AutorizaÃ§Ã£o para Terceiros</h2>
-                <p class="text-xs text-gray-400 font-medium">Aprove ou reprove os pedidos de acesso e delegaÃ§Ã£o feitos
+                <h2 class="text-base font-bold text-gray-800 mb-0.5">Tickets de Autorização para Terceiros</h2>
+                <p class="text-xs text-gray-400 font-medium">Aprove ou reprove os pedidos de acesso e delegação feitos
                   pelos viajantes.</p>
               </div>
               <div>
@@ -756,6 +762,10 @@
                   <option value="REPROVADA">Reprovados</option>
                 </select>
               </div>
+            </div>
+
+            <div v-if="pdfErro" class="mb-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+              {{ pdfErro }}
             </div>
 
             <div v-if="ticketsTerceiros.length === 0" class="text-center py-16 text-gray-400 text-sm font-medium">
@@ -771,7 +781,7 @@
                     <th class="text-left px-4 py-3">Terceiro</th>
                     <th class="text-left px-4 py-3">Documento</th>
                     <th class="text-left px-4 py-3">Status</th>
-                    <th class="text-right px-4 py-3">DecisÃ£o / ObservaÃ§Ã£o</th>
+                    <th class="text-right px-4 py-3">Decisão / Observação</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -783,14 +793,14 @@
                       <div class="text-[10px] text-gray-400">{{ t.terceiro_email }}</div>
                     </td>
                     <td class="px-4 py-3">
-                      <a :href="t.pdf_url || ('/' + t.pdf_path)" target="_blank" rel="noopener noreferrer"
+                      <button type="button" @click="abrirPdfAssinado(t)"
                         class="inline-flex items-center gap-1.5 text-xs text-labs-blue hover:text-labs-dark hover:underline font-semibold">
                         <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                         Ver PDF Assinado
-                      </a>
+                      </button>
                     </td>
                     <td class="px-4 py-3">
                       <span
@@ -803,7 +813,7 @@
                     <td class="px-4 py-3 text-right">
                       <div v-if="t.status === 'PENDENTE'"
                         class="flex flex-col sm:flex-row items-center justify-end gap-2">
-                        <input v-model="ticketObs[t.id]" type="text" placeholder="ObservaÃ§Ãµes..."
+                        <input v-model="ticketObs[t.id]" type="text" placeholder="Observações..."
                           class="px-2.5 py-1 text-xs border border-labs-border rounded-lg focus:outline-none focus:ring-1 focus:ring-labs-blue w-full sm:w-40 bg-white">
                         <div class="flex gap-1 shrink-0">
                           <button @click="decidirTicket(t.id, 'APROVADA', ticketObs[t.id])"
@@ -817,8 +827,9 @@
                         </div>
                       </div>
                       <div v-else class="text-left text-gray-500 text-[11px] font-medium max-w-xs ml-auto">
-                        <p><strong>Decidido por:</strong> {{ t.operador_setor }} Â· {{ fmtData(t.data_decisao) }}</p>
-                        <p v-if="t.observacao_setor" class="mt-0.5 italic"><strong>Obs:</strong> {{ t.observacao_setor }}</p>
+                        <p><strong>Decidido por:</strong> {{ t.operador_setor }} · {{ fmtData(t.data_decisao) }}</p>
+                        <p v-if="t.observacao_setor" class="mt-0.5 italic"><strong>Obs:</strong> {{ t.observacao_setor
+                          }}</p>
                       </div>
                     </td>
                   </tr>
@@ -830,11 +841,11 @@
           <!-- Alertas de Onboarding (Acesso AD) descem e viram lista linha a linha -->
           <div v-if="alertasAcesso.length > 0" class="glass-panel card-accent-purple p-6">
             <div class="flex items-center gap-2.5 mb-4">
-              <span class="text-lg">ðŸ›¡ï¸</span>
+              <span class="text-lg">🛡️</span>
               <div>
                 <h2 class="text-base font-bold text-gray-800 mb-0.5">Alertas de Onboarding (Acesso AD)</h2>
                 <p class="text-xs text-gray-400 font-medium leading-normal">
-                  Os seguintes colaboradores tentaram acessar a ferramenta nas Ãºltimas 48h, mas foram bloqueados por
+                  Os seguintes colaboradores tentaram acessar a ferramenta nas últimas 48h, mas foram bloqueados por
                   falta de grupo no Active Directory (AD).
                 </p>
               </div>
@@ -855,7 +866,8 @@
                     <td class="px-4 py-3 text-gray-500 font-mono">{{ fmtDataHora(al.data_criacao) }}</td>
                     <td class="px-4 py-3 font-semibold text-gray-800 font-mono">{{ al.username }}</td>
                     <td class="px-4 py-3 text-gray-400 font-mono">{{ al.ip_origem }}</td>
-                    <td class="px-4 py-3 text-gray-600 font-sans leading-relaxed text-left whitespace-pre-wrap">{{ al.observacao }}</td>
+                    <td class="px-4 py-3 text-gray-600 font-sans leading-relaxed text-left whitespace-pre-wrap">{{
+                      al.observacao }}</td>
                     <td class="px-4 py-3 text-center">
                       <span
                         class="inline-flex items-center text-[9px] font-semibold bg-red-50 text-red-650 border border-red-100 rounded-md px-1.5 py-0.5 shadow-sm">
@@ -870,17 +882,18 @@
         </template>
 
 
-      </main><!-- fim Ã¡rea de conteÃºdo -->
+      </main><!-- fim área de conteúdo -->
     </div><!-- fim body layout -->
 
-    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• MODAL AGÃŠNCIA â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <!-- ═══════════════════════ MODAL AGÊNCIA ═══════════════════════ -->
     <div v-if="modalAgenciaAberto"
       class="fixed inset-0 z-50 overflow-y-auto bg-labs-dark/70 backdrop-blur-sm flex items-start justify-center p-4 pt-6"
       @click.self="fecharModalAgencia">
       <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden border border-white/20 mb-8">
         <!-- Header -->
         <div class="bg-labs-blue px-6 py-4 flex items-center justify-between">
-          <h3 class="text-white font-bold text-sm">{{ agenciaEditando ? 'Editar AgÃªncia' : 'Cadastrar AgÃªncia de Viagens' }}</h3>
+          <h3 class="text-white font-bold text-sm">{{ agenciaEditando ? 'Editar Agência' : 'Cadastrar Agência de
+            Viagens' }}</h3>
           <button @click="fecharModalAgencia" class="text-white/70 hover:text-white transition">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -889,11 +902,11 @@
         </div>
         <div class="p-6 space-y-6">
 
-          <!-- â”€â”€ Dados Gerais â”€â”€ -->
+          <!-- ── Dados Gerais ── -->
           <div>
             <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Dados Gerais</p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <!-- CNPJ com busca automÃ¡tica -->
+              <!-- CNPJ com busca automática -->
               <div class="sm:col-span-2">
                 <label class="block text-xs font-semibold text-gray-600 mb-1">CNPJ *</label>
                 <div class="flex gap-2">
@@ -902,7 +915,7 @@
                     class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-labs-blue/30 font-mono" />
                   <button @click="buscarCnpj" :disabled="cnpjBuscando"
                     class="px-4 py-2 text-xs font-semibold bg-labs-blue hover:bg-blue-700 text-white rounded-lg transition disabled:opacity-50 whitespace-nowrap">
-                    {{ cnpjBuscando ? 'Buscandoâ€¦' : 'Consultar' }}
+                    {{ cnpjBuscando ? 'Buscando…' : 'Consultar' }}
                   </button>
                 </div>
                 <p v-if="cnpjErro" class="text-red-500 text-xs mt-1">{{ cnpjErro }}</p>
@@ -911,16 +924,16 @@
                 <label class="block text-xs font-semibold text-gray-600 mb-1">Nome Fantasia / Apelido *</label>
                 <input v-model="agenciaForm.agencia_nome" type="text" placeholder="ex: Tastur"
                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-labs-blue/30" />
-                <p class="text-[10px] text-gray-400 mt-1">Nome curto/fantasia usado nos grÃ¡ficos, dashboards e links de
-                  cotaÃ§Ã£o (ex: Tastur, Kontrip).</p>
+                <p class="text-[10px] text-gray-400 mt-1">Nome curto/fantasia usado nos gráficos, dashboards e links de
+                  cotação (ex: Tastur, Kontrip).</p>
               </div>
               <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">RazÃ£o Social</label>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Razão Social</label>
                 <input v-model="agenciaForm.razao_social" type="text"
                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-labs-blue/30" />
               </div>
               <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">InscriÃ§Ã£o Estadual</label>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Inscrição Estadual</label>
                 <input v-model="agenciaForm.inscricao_estadual" type="text"
                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-labs-blue/30" />
               </div>
@@ -932,9 +945,9 @@
             </div>
           </div>
 
-          <!-- â”€â”€ EndereÃ§o â”€â”€ -->
+          <!-- ── Endereço ── -->
           <div>
-            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">EndereÃ§o</p>
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Endereço</p>
             <div class="grid grid-cols-1 sm:grid-cols-6 gap-4">
               <div class="sm:col-span-2">
                 <label class="block text-xs font-semibold text-gray-600 mb-1">CEP</label>
@@ -947,7 +960,7 @@
                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-labs-blue/30" />
               </div>
               <div class="sm:col-span-1">
-                <label class="block text-xs font-semibold text-gray-600 mb-1">NÂ°</label>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">N°</label>
                 <input v-model="agenciaForm.numero" type="text"
                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-labs-blue/30" />
               </div>
@@ -974,12 +987,12 @@
             </div>
           </div>
 
-          <!-- â”€â”€ Dados BancÃ¡rios â”€â”€ -->
+          <!-- ── Dados Bancários ── -->
           <div>
-            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Dados BancÃ¡rios</p>
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Dados Bancários</p>
             <div class="grid grid-cols-1 sm:grid-cols-6 gap-4">
               <div class="sm:col-span-3">
-                <label class="block text-xs font-semibold text-gray-600 mb-1">CÃ³digo do Banco</label>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Código do Banco</label>
                 <div class="flex gap-2">
                   <input v-model="agenciaForm.banco_codigo"
                     @input="agenciaForm.banco_codigo = agenciaForm.banco_codigo.replace(/\D/g,'').slice(0,3)"
@@ -987,7 +1000,7 @@
                     class="flex-1 min-w-0 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-labs-blue/30 font-mono" />
                   <button @click="buscarBanco" :disabled="bancoBuscando"
                     class="shrink-0 px-3 py-2 text-xs font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition disabled:opacity-50 whitespace-nowrap">
-                    {{ bancoBuscando ? 'â€¦' : 'Buscar' }}
+                    {{ bancoBuscando ? '…' : 'Buscar' }}
                   </button>
                 </div>
               </div>
@@ -997,12 +1010,12 @@
                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-labs-blue/30" />
               </div>
               <div class="sm:col-span-2">
-                <label class="block text-xs font-semibold text-gray-600 mb-1">AgÃªncia (com dÃ­gito)</label>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Agência (com dígito)</label>
                 <input v-model="agenciaForm.agencia_bancaria" type="text" placeholder="0001-5"
                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-labs-blue/30 font-mono" />
               </div>
               <div class="sm:col-span-2">
-                <label class="block text-xs font-semibold text-gray-600 mb-1">Conta (com dÃ­gito)</label>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Conta (com dígito)</label>
                 <input v-model="agenciaForm.conta_bancaria" type="text" placeholder="12345-6"
                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-labs-blue/30 font-mono" />
               </div>
@@ -1011,7 +1024,7 @@
                 <select v-model="agenciaForm.tipo_conta"
                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-labs-blue/30 bg-white">
                   <option value="CC">Conta Corrente</option>
-                  <option value="CP">Conta PoupanÃ§a</option>
+                  <option value="CP">Conta Poupança</option>
                 </select>
               </div>
               <div class="sm:col-span-3">
@@ -1020,19 +1033,19 @@
                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-labs-blue/30 font-mono" />
               </div>
               <div class="sm:col-span-3">
-                <label class="block text-xs font-semibold text-gray-600 mb-1">RazÃ£o Social do Titular</label>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Razão Social do Titular</label>
                 <input v-model="agenciaForm.titularidade_razao_social" type="text"
                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-labs-blue/30" />
               </div>
 
-              <!-- Campo Ativo/Inativo no FormulÃ¡rio Modal -->
+              <!-- Campo Ativo/Inativo no Formulário Modal -->
               <div class="sm:col-span-6 flex items-center pt-2">
                 <label class="inline-flex items-center cursor-pointer select-none">
                   <input v-model="agenciaForm.ativo" type="checkbox" class="sr-only peer">
                   <div
                     class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-labs-blue">
                   </div>
-                  <span class="ms-3 text-xs font-bold text-gray-600">AgÃªncia parceira ativa para receber cotaÃ§Ãµes por
+                  <span class="ms-3 text-xs font-bold text-gray-600">Agência parceira ativa para receber cotações por
                     e-mail</span>
                 </label>
               </div>
@@ -1049,13 +1062,13 @@
           </button>
           <button @click="salvarAgencia" :disabled="agenciaFormLoading"
             class="px-6 py-2 text-sm font-semibold bg-labs-blue hover:bg-blue-700 text-white rounded-lg transition disabled:opacity-50">
-            {{ agenciaFormLoading ? 'Salvandoâ€¦' : (agenciaEditando ? 'Salvar AlteraÃ§Ãµes' : 'Cadastrar AgÃªncia') }}
+            {{ agenciaFormLoading ? 'Salvando…' : (agenciaEditando ? 'Salvar Alterações' : 'Cadastrar Agência') }}
           </button>
         </div>
       </div>
     </div>
 
-    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• MODAL DETALHE â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <!-- ═══════════════════════ MODAL DETALHE ═══════════════════════ -->
     <div v-if="modalAberto"
       class="fixed inset-0 z-50 flex items-start justify-center p-4 pt-8 bg-labs-dark/70 backdrop-blur-sm overflow-y-auto"
       @click.self="fecharModal">
@@ -1089,18 +1102,19 @@
         <!-- Corpo -->
         <div class="px-6 py-5 space-y-5 overflow-y-auto max-h-[62vh]">
 
-          <!-- Painel de RevisÃ£o de Cancelamento / RemarcaÃ§Ã£o (SaaS Premium Style) -->
+          <!-- Painel de Revisão de Cancelamento / Remarcação (SaaS Premium Style) -->
           <div
             v-if="detalhe.status === 'PENDENTE_APROVACAO_CANCELAMENTO' || detalhe.status === 'PENDENTE_APROVACAO_REMARCACAO'"
             class="border rounded-2xl p-5 bg-rose-50/20 border-rose-200 shadow-sm space-y-4">
             <div class="flex items-center justify-between border-b border-rose-100 pb-3 flex-wrap gap-2">
               <div class="flex items-center gap-2">
-                <span class="text-xl">âš ï¸</span>
+                <span class="text-xl">⚠️</span>
                 <div>
                   <h3 class="text-xs font-bold text-rose-800 uppercase tracking-wider">
-                    RevisÃ£o de {{ detalhe.status === 'PENDENTE_APROVACAO_CANCELAMENTO' ? 'Cancelamento' : 'RemarcaÃ§Ã£o' }}
+                    Revisão de {{ detalhe.status === 'PENDENTE_APROVACAO_CANCELAMENTO' ? 'Cancelamento' : 'Remarcação'
+                    }}
                   </h3>
-                  <p class="text-[10px] text-gray-400 mt-0.5">Confirme as taxas e reembolsos informados pela agÃªncia
+                  <p class="text-[10px] text-gray-400 mt-0.5">Confirme as taxas e reembolsos informados pela agência
                     antes de aprovar.</p>
                 </div>
               </div>
@@ -1108,11 +1122,11 @@
               <div class="shrink-0">
                 <span v-if="isWithin24h(detalhe.data_criacao, detalhe.data_atualizacao)"
                   class="bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm">
-                  ðŸ›¡ï¸ Dentro das 24h (Sem Custos)
+                  🛡️ Dentro das 24h (Sem Custos)
                 </span>
                 <span v-else
                   class="bg-rose-100 text-rose-800 border border-rose-200 text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm">
-                  âš ï¸ Fora das 24h (Sujeito a Taxas)
+                  ⚠️ Fora das 24h (Sujeito a Taxas)
                 </span>
               </div>
             </div>
@@ -1120,7 +1134,8 @@
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
               <div>
                 <span class="text-gray-400 block mb-0.5">Tipo</span>
-                <strong class="text-gray-700 uppercase">{{ detalhe.tipo_solicitacao_cancelamento || 'CANCELAR' }}</strong>
+                <strong class="text-gray-700 uppercase">{{ detalhe.tipo_solicitacao_cancelamento || 'CANCELAR'
+                  }}</strong>
               </div>
               <div>
                 <span class="text-gray-400 block mb-0.5">Itens a Cancelar</span>
@@ -1128,24 +1143,28 @@
               </div>
               <div class="col-span-2">
                 <span class="text-gray-400 block mb-0.5">Motivo Informado</span>
-                <p class="text-gray-700 italic font-medium">"{{ detalhe.motivo_cancelamento || 'Sem justificativa informada' }}"</p>
+                <p class="text-gray-700 italic font-medium">"{{ detalhe.motivo_cancelamento || 'Sem justificativa
+                  informada' }}"</p>
               </div>
             </div>
 
             <div
               class="bg-white border border-rose-100 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs shadow-inner">
               <div>
-                <span class="text-gray-400 block mb-0.5">Taxa de Cancelamento (AgÃªncia)</span>
-                <strong class="text-red-650 text-sm font-mono">R$ {{ fmtValor(detalhe.taxa_cancelamento_agencia) }}</strong>
+                <span class="text-gray-400 block mb-0.5">Taxa de Cancelamento (Agência)</span>
+                <strong class="text-red-650 text-sm font-mono">R$ {{ fmtValor(detalhe.taxa_cancelamento_agencia)
+                  }}</strong>
               </div>
               <div>
-                <span class="text-gray-400 block mb-0.5">Valor ReembolsÃ¡vel</span>
-                <strong class="text-emerald-600 text-sm font-mono">R$ {{ fmtValor(detalhe.valor_reembolsavel_agencia) }}</strong>
+                <span class="text-gray-400 block mb-0.5">Valor Reembolsável</span>
+                <strong class="text-emerald-600 text-sm font-mono">R$ {{ fmtValor(detalhe.valor_reembolsavel_agencia)
+                  }}</strong>
               </div>
               <div>
-                <span class="text-gray-400 block mb-0.5">CrÃ©dito Gerado</span>
+                <span class="text-gray-400 block mb-0.5">Crédito Gerado</span>
                 <strong class="text-blue-600 text-sm font-mono">R$ {{ fmtValor(detalhe.valor_credito_gerado) }} <span
-                    class="text-[10px] text-gray-500 font-sans" v-if="detalhe.companhia_credito">({{ detalhe.companhia_credito }})</span></strong>
+                    class="text-[10px] text-gray-500 font-sans" v-if="detalhe.companhia_credito">({{
+                    detalhe.companhia_credito }})</span></strong>
               </div>
             </div>
 
@@ -1153,8 +1172,8 @@
             <div v-if="detalhe.documento_cancelamento_caminho"
               class="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs">
               <div class="flex items-center gap-2">
-                <span class="text-base">ðŸ“„</span>
-                <span class="font-medium text-gray-600">Comprovante de LiquidaÃ§Ã£o da AgÃªncia</span>
+                <span class="text-base">📄</span>
+                <span class="font-medium text-gray-600">Comprovante de Liquidação da Agência</span>
               </div>
               <a :href="'/api/v1/setor/solicitacoes/documento/' + detalhe.documento_cancelamento_caminho.split('/').pop()"
                 target="_blank" rel="noopener noreferrer"
@@ -1163,15 +1182,15 @@
               </a>
             </div>
 
-            <!-- AÃ§Ãµes rÃ¡pidas no painel -->
+            <!-- Ações rápidas no painel -->
             <div class="flex justify-end gap-2 border-t border-rose-100 pt-3 flex-wrap">
               <button @click="decidirCancelamento(detalhe, 'APROVAR')"
                 class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2 rounded-lg shadow-sm transition">
-                âœ“ Aprovar Cancelamento
+                ✓ Aprovar Cancelamento
               </button>
               <button @click="decidirCancelamento(detalhe, 'REPROVAR')"
                 class="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-bold px-4 py-2 rounded-lg transition">
-                âœ• Negar Cancelamento
+                ✕ Negar Cancelamento
               </button>
             </div>
           </div>
@@ -1183,16 +1202,17 @@
               <strong class="text-labs-dark">{{ detalhe.solicitante_username }}</strong>
             </div>
             <div>
-              <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide block mb-1">ServiÃ§os</span>
-              <span class="text-gray-700">{{ (detalhe.tipo_servico || '').replace(/,/g,' Â· ') }}</span>
+              <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide block mb-1">Serviços</span>
+              <span class="text-gray-700">{{ (detalhe.tipo_servico || '').replace(/,/g,' · ') }}</span>
             </div>
             <div>
               <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide block mb-1">Origem</span>
-              <span class="text-gray-700">{{ detalhe.origem_cidade || 'â€”' }}</span>
+              <span class="text-gray-700">{{ detalhe.origem_cidade || '—' }}</span>
             </div>
             <div>
               <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide block mb-1">Destino</span>
-              <span class="font-semibold text-labs-dark">{{ detalhe.destino_cidade }}/{{ detalhe.destino_estado }}</span>
+              <span class="font-semibold text-labs-dark">{{ detalhe.destino_cidade }}/{{ detalhe.destino_estado
+                }}</span>
             </div>
             <div>
               <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide block mb-1">Ida</span>
@@ -1200,21 +1220,21 @@
             </div>
             <div>
               <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide block mb-1">Volta</span>
-              <span class="text-gray-700">{{ detalhe.data_volta ? fmtData(detalhe.data_volta) : 'â€”' }}</span>
+              <span class="text-gray-700">{{ detalhe.data_volta ? fmtData(detalhe.data_volta) : '—' }}</span>
             </div>
             <div class="col-span-2 bg-labs-gray rounded-xl p-3 border border-labs-border">
               <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide block mb-1">Motivo</span>
               <span class="text-gray-700">{{ detalhe.motivo_viagem }}</span>
             </div>
             <div v-if="detalhe.observacoes_viajante" class="col-span-2">
-              <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide block mb-1">ObservaÃ§Ãµes</span>
+              <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide block mb-1">Observações</span>
               <span class="text-gray-500 italic">{{ detalhe.observacoes_viajante }}</span>
             </div>
             <div v-if="detalhe.agencia_vencedora"
               class="col-span-2 bg-emerald-50 border border-emerald-200 rounded-xl p-3">
-              <span class="text-xs font-semibold text-emerald-600 uppercase tracking-wide block mb-1">âœ“ AgÃªncia
+              <span class="text-xs font-semibold text-emerald-600 uppercase tracking-wide block mb-1">✓ Agência
                 Vencedora</span>
-              <span class="font-extrabold text-emerald-700 text-base">ðŸ† {{ detalhe.agencia_vencedora }}</span>
+              <span class="font-extrabold text-emerald-700 text-base">🏆 {{ detalhe.agencia_vencedora }}</span>
             </div>
           </div>
 
@@ -1233,7 +1253,7 @@
                 <span class="font-semibold text-labs-dark">{{ detalhe.viajante_nome }}</span>
               </div>
               <div v-if="detalhe.viajante_matricula">
-                <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide block mb-0.5">MatrÃ­cula</span>
+                <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide block mb-0.5">Matrícula</span>
                 <span class="text-gray-700">{{ detalhe.viajante_matricula }}</span>
               </div>
               <div v-if="detalhe.viajante_cpf">
@@ -1252,7 +1272,8 @@
                 <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide block mb-0.5">Centro de
                   Custo</span>
                 <span class="text-gray-700">{{ detalhe.viajante_centro_custo }}<span
-                    v-if="detalhe.viajante_cod_centro_custo" class="text-gray-400 ml-1">({{ detalhe.viajante_cod_centro_custo }})</span></span>
+                    v-if="detalhe.viajante_cod_centro_custo" class="text-gray-400 ml-1">({{
+                    detalhe.viajante_cod_centro_custo }})</span></span>
               </div>
               <div v-if="detalhe.viajante_email" class="col-span-2">
                 <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide block mb-0.5">E-mail</span>
@@ -1267,43 +1288,47 @@
                 <span class="text-gray-700">{{ detalhe.viajante_data_nascimento }}</span>
               </div>
               <div v-if="detalhe.viajante_data_admissao">
-                <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide block mb-0.5">AdmissÃ£o</span>
+                <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide block mb-0.5">Admissão</span>
                 <span class="text-gray-700">{{ detalhe.viajante_data_admissao }}</span>
               </div>
             </div>
           </div>
 
-          <!-- Cadeia de AprovaÃ§Ã£o -->
+          <!-- Cadeia de Aprovação -->
           <div v-if="detalhe.aprovador_n1_email" class="mt-4">
             <div class="flex items-center gap-2 border-t border-labs-border pt-4 mb-3">
               <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
-              <h3 class="text-xs font-bold text-labs-dark uppercase tracking-wider">Cadeia de AprovaÃ§Ã£o</h3>
+              <h3 class="text-xs font-bold text-labs-dark uppercase tracking-wider">Cadeia de Aprovação</h3>
             </div>
             <div class="grid grid-cols-1 gap-2 text-sm">
               <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-3">
                 <span class="text-xs font-bold text-indigo-500 block mb-1">Aprovador N1</span>
-                <span class="font-semibold text-labs-dark">{{ detalhe.aprovador_n1_nome || detalhe.aprovador_n1_email }}</span>
-                <span v-if="detalhe.aprovador_n1_nome" class="text-xs text-gray-500 block">{{ detalhe.aprovador_n1_email }}</span>
+                <span class="font-semibold text-labs-dark">{{ detalhe.aprovador_n1_nome || detalhe.aprovador_n1_email
+                  }}</span>
+                <span v-if="detalhe.aprovador_n1_nome" class="text-xs text-gray-500 block">{{ detalhe.aprovador_n1_email
+                  }}</span>
               </div>
               <div v-if="detalhe.aprovador_n2_email" class="bg-indigo-50 border border-indigo-100 rounded-xl p-3">
                 <span class="text-xs font-bold text-indigo-400 block mb-1">Aprovador N2</span>
-                <span class="font-semibold text-labs-dark">{{ detalhe.aprovador_n2_nome || detalhe.aprovador_n2_email }}</span>
-                <span v-if="detalhe.aprovador_n2_nome" class="text-xs text-gray-500 block">{{ detalhe.aprovador_n2_email }}</span>
+                <span class="font-semibold text-labs-dark">{{ detalhe.aprovador_n2_nome || detalhe.aprovador_n2_email
+                  }}</span>
+                <span v-if="detalhe.aprovador_n2_nome" class="text-xs text-gray-500 block">{{ detalhe.aprovador_n2_email
+                  }}</span>
               </div>
             </div>
           </div>
 
-          <!-- PreferÃªncias AÃ©reas -->
-          <div v-if="detalhe.tipo_servico && detalhe.tipo_servico.includes('AÃ©reo')" class="mt-4">
+          <!-- Preferências Aéreas -->
+          <div v-if="detalhe.tipo_servico && detalhe.tipo_servico.includes('Aéreo')" class="mt-4">
             <div class="flex items-center gap-2 border-t border-labs-border pt-4 mb-3">
               <svg class="w-4 h-4 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
               </svg>
-              <h3 class="text-xs font-bold text-labs-dark uppercase tracking-wider">PreferÃªncias AÃ©reas</h3>
+              <h3 class="text-xs font-bold text-labs-dark uppercase tracking-wider">Preferências Aéreas</h3>
             </div>
             <div class="grid grid-cols-2 gap-3 text-sm bg-sky-50 border border-sky-100 rounded-xl p-4">
               <div v-if="detalhe.aereo_tipo_trecho">
@@ -1311,7 +1336,7 @@
                 <span class="text-gray-700">{{ detalhe.aereo_tipo_trecho }}</span>
               </div>
               <div v-if="detalhe.aereo_periodo_preferido">
-                <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide block mb-0.5">PerÃ­odo</span>
+                <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide block mb-0.5">Período</span>
                 <span class="text-gray-700">{{ detalhe.aereo_periodo_preferido }}</span>
               </div>
               <div v-if="detalhe.assento_especial">
@@ -1325,33 +1350,35 @@
               <div v-if="detalhe.preferencia_voo" class="col-span-2">
                 <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide block mb-0.5">Voo de Ida
                   Consultado</span>
-                <span class="text-gray-700 font-mono text-xs bg-white rounded p-2 block whitespace-pre-wrap">{{ detalhe.preferencia_voo }}</span>
+                <span class="text-gray-700 font-mono text-xs bg-white rounded p-2 block whitespace-pre-wrap">{{
+                  detalhe.preferencia_voo }}</span>
               </div>
               <div v-if="detalhe.preferencia_voo_volta" class="col-span-2">
                 <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide block mb-0.5">Voo de Volta
                   Consultado</span>
-                <span class="text-gray-700 font-mono text-xs bg-white rounded p-2 block whitespace-pre-wrap">{{ detalhe.preferencia_voo_volta }}</span>
+                <span class="text-gray-700 font-mono text-xs bg-white rounded p-2 block whitespace-pre-wrap">{{
+                  detalhe.preferencia_voo_volta }}</span>
               </div>
             </div>
           </div>
 
-          <!-- PreferÃªncias RodoviÃ¡rias -->
-          <div v-if="detalhe.tipo_servico && detalhe.tipo_servico.includes('RodoviÃ¡rio')" class="mt-4">
+          <!-- Preferências Rodoviárias -->
+          <div v-if="detalhe.tipo_servico && detalhe.tipo_servico.includes('Rodoviário')" class="mt-4">
             <div class="flex items-center gap-2 border-t border-labs-border pt-4 mb-3">
               <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
               </svg>
-              <h3 class="text-xs font-bold text-labs-dark uppercase tracking-wider">PreferÃªncias RodoviÃ¡rias</h3>
+              <h3 class="text-xs font-bold text-labs-dark uppercase tracking-wider">Preferências Rodoviárias</h3>
             </div>
             <div class="grid grid-cols-2 gap-3 text-sm bg-emerald-50 border border-emerald-100 rounded-xl p-4">
               <div v-if="detalhe.rodov_periodo_preferido">
-                <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide block mb-0.5">PerÃ­odo</span>
+                <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide block mb-0.5">Período</span>
                 <span class="text-gray-700">{{ detalhe.rodov_periodo_preferido }}</span>
               </div>
               <div v-if="detalhe.rodov_tipo_onibus">
                 <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide block mb-0.5">Tipo de
-                  Ã”nibus</span>
+                  Ônibus</span>
                 <span class="text-gray-700">{{ detalhe.rodov_tipo_onibus }}</span>
               </div>
               <div v-if="detalhe.rodov_tipo_trecho">
@@ -1361,14 +1388,14 @@
             </div>
           </div>
 
-          <!-- PreferÃªncias de Hospedagem -->
+          <!-- Preferências de Hospedagem -->
           <div v-if="detalhe.tipo_servico && detalhe.tipo_servico.includes('Hotel')" class="mt-4">
             <div class="flex items-center gap-2 border-t border-labs-border pt-4 mb-3">
               <svg class="w-4 h-4 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
               </svg>
-              <h3 class="text-xs font-bold text-labs-dark uppercase tracking-wider">PreferÃªncias de Hospedagem</h3>
+              <h3 class="text-xs font-bold text-labs-dark uppercase tracking-wider">Preferências de Hospedagem</h3>
             </div>
             <div class="grid grid-cols-2 gap-3 text-sm bg-violet-50 border border-violet-100 rounded-xl p-4">
               <div v-if="detalhe.preferencia_hotel_nome" class="col-span-2">
@@ -1379,31 +1406,31 @@
               <div v-if="detalhe.quarto_excecao_saude" class="col-span-2">
                 <span
                   class="inline-flex items-center gap-1 bg-violet-100 text-violet-700 text-xs font-semibold px-3 py-1 rounded-full">
-                  âš• Quarto Individual â€” ExceÃ§Ã£o de SaÃºde
+                  ⚕ Quarto Individual — Exceção de Saúde
                 </span>
               </div>
             </div>
           </div>
 
-          <!-- PreferÃªncias de VeÃ­culo -->
+          <!-- Preferências de Veículo -->
           <div v-if="detalhe.tipo_servico && detalhe.tipo_servico.includes('Carro')" class="mt-4">
             <div class="flex items-center gap-2 border-t border-labs-border pt-4 mb-3">
               <svg class="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
               </svg>
-              <h3 class="text-xs font-bold text-labs-dark uppercase tracking-wider">PreferÃªncias de VeÃ­culo</h3>
+              <h3 class="text-xs font-bold text-labs-dark uppercase tracking-wider">Preferências de Veículo</h3>
             </div>
             <div class="grid grid-cols-2 gap-3 text-sm bg-orange-50 border border-orange-100 rounded-xl p-4">
               <div>
                 <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide block mb-0.5">Retirada</span>
-                <span class="text-gray-700">{{ detalhe.carro_data_retirada || 'â€”' }}<span
-                    v-if="detalhe.carro_hora_retirada"> Ã s {{ detalhe.carro_hora_retirada }}</span></span>
+                <span class="text-gray-700">{{ detalhe.carro_data_retirada || '—' }}<span
+                    v-if="detalhe.carro_hora_retirada"> às {{ detalhe.carro_hora_retirada }}</span></span>
               </div>
               <div>
-                <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide block mb-0.5">DevoluÃ§Ã£o</span>
-                <span class="text-gray-700">{{ detalhe.carro_data_devolucao || 'â€”' }}<span
-                    v-if="detalhe.carro_hora_devolucao"> Ã s {{ detalhe.carro_hora_devolucao }}</span></span>
+                <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide block mb-0.5">Devolução</span>
+                <span class="text-gray-700">{{ detalhe.carro_data_devolucao || '—' }}<span
+                    v-if="detalhe.carro_hora_devolucao"> às {{ detalhe.carro_hora_devolucao }}</span></span>
               </div>
               <div v-if="detalhe.carro_cidade_retirada">
                 <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide block mb-0.5">Cidade
@@ -1412,20 +1439,20 @@
               </div>
               <div v-if="detalhe.carro_cidade_devolucao">
                 <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide block mb-0.5">Cidade
-                  DevoluÃ§Ã£o</span>
+                  Devolução</span>
                 <span class="text-gray-700">{{ detalhe.carro_cidade_devolucao }}</span>
               </div>
             </div>
           </div>
 
-          <!-- CotaÃ§Ãµes comparativas -->
+          <!-- Cotações comparativas -->
           <div v-if="detalhe.todas_cotacoes && detalhe.todas_cotacoes.length > 0">
             <div class="flex items-center gap-2 border-t border-labs-border pt-4 mb-4">
               <svg class="w-4 h-4 text-labs-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
               </svg>
-              <h3 class="text-xs font-bold text-labs-dark uppercase tracking-wider">CotaÃ§Ãµes das AgÃªncias</h3>
+              <h3 class="text-xs font-bold text-labs-dark uppercase tracking-wider">Cotações das Agências</h3>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div v-for="slot in slotsCotacao" :key="slot.agencia">
@@ -1436,25 +1463,32 @@
                     <span class="font-bold text-labs-dark text-sm">{{ slot.agencia }}</span>
                     <span v-if="detalhe.agencia_vencedora === slot.agencia"
                       class="text-xs bg-emerald-600 text-white px-2.5 py-0.5 rounded-full font-semibold">
-                      âœ“ Vencedora
+                      ✓ Vencedora
                     </span>
                   </div>
                   <div class="space-y-2 text-xs text-gray-600">
                     <div v-if="slot.cot.aereo_companhia" class="flex justify-between">
-                      <span>âœˆ {{ slot.cot.aereo_companhia }}<span v-if="slot.cot.aereo_numero_voo"> Â· {{ slot.cot.aereo_numero_voo }}</span></span>
-                      <span v-if="slot.cot.aereo_valor" class="font-semibold text-labs-dark">R$ {{ fmtValor(slot.cot.aereo_valor) }}</span>
+                      <span>✈ {{ slot.cot.aereo_companhia }}<span v-if="slot.cot.aereo_numero_voo"> · {{
+                          slot.cot.aereo_numero_voo }}</span></span>
+                      <span v-if="slot.cot.aereo_valor" class="font-semibold text-labs-dark">R$ {{
+                        fmtValor(slot.cot.aereo_valor) }}</span>
                     </div>
                     <div v-if="slot.cot.hotel_nome" class="flex justify-between">
-                      <span>ðŸ¨ {{ slot.cot.hotel_nome }}<span v-if="slot.cot.hotel_categoria"> ({{ slot.cot.hotel_categoria }})</span></span>
-                      <span v-if="slot.cot.hotel_valor_diaria" class="font-semibold text-labs-dark">R$ {{ fmtValor(slot.cot.hotel_valor_diaria) }}/diÃ¡ria</span>
+                      <span>🏨 {{ slot.cot.hotel_nome }}<span v-if="slot.cot.hotel_categoria"> ({{
+                          slot.cot.hotel_categoria }})</span></span>
+                      <span v-if="slot.cot.hotel_valor_diaria" class="font-semibold text-labs-dark">R$ {{
+                        fmtValor(slot.cot.hotel_valor_diaria) }}/diária</span>
                     </div>
                     <div v-if="slot.cot.rodov_empresa" class="flex justify-between">
-                      <span>ðŸšŒ {{ slot.cot.rodov_empresa }}</span>
-                      <span v-if="slot.cot.rodov_valor" class="font-semibold text-labs-dark">R$ {{ fmtValor(slot.cot.rodov_valor) }}</span>
+                      <span>🚌 {{ slot.cot.rodov_empresa }}</span>
+                      <span v-if="slot.cot.rodov_valor" class="font-semibold text-labs-dark">R$ {{
+                        fmtValor(slot.cot.rodov_valor) }}</span>
                     </div>
                     <div v-if="slot.cot.carro_locadora" class="flex justify-between">
-                      <span>ðŸš— {{ slot.cot.carro_locadora }}<span v-if="slot.cot.carro_modelo"> Â· {{ slot.cot.carro_modelo }}</span></span>
-                      <span v-if="slot.cot.carro_valor_diaria" class="font-semibold text-labs-dark">R$ {{ fmtValor(slot.cot.carro_valor_diaria) }}/dia</span>
+                      <span>🚗 {{ slot.cot.carro_locadora }}<span v-if="slot.cot.carro_modelo"> · {{
+                          slot.cot.carro_modelo }}</span></span>
+                      <span v-if="slot.cot.carro_valor_diaria" class="font-semibold text-labs-dark">R$ {{
+                        fmtValor(slot.cot.carro_valor_diaria) }}/dia</span>
                     </div>
                     <div v-if="slot.cot.observacoes"
                       class="text-gray-400 italic border-t border-gray-200 pt-1.5 mt-1.5">
@@ -1471,7 +1505,7 @@
                 <div v-else
                   class="rounded-xl border border-dashed border-gray-200 bg-white p-4 flex flex-col items-center justify-center text-center h-full min-h-[90px]">
                   <span class="text-xs font-semibold text-gray-500">{{ slot.agencia }}</span>
-                  <span class="text-xs text-gray-300 mt-1">Aguardando cotaÃ§Ã£oâ€¦</span>
+                  <span class="text-xs text-gray-300 mt-1">Aguardando cotação…</span>
                 </div>
               </div>
             </div>
@@ -1489,11 +1523,11 @@
             <template v-if="detalhe.status === 'PENDENTE_PRE_APROVACAO_SETOR'">
               <button @click="executarAcao(detalhe, 'PRE_APROVAR')" :disabled="acaoCarregando"
                 class="text-sm bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg px-5 py-2.5 font-bold shadow-sm hover:shadow transition-all">
-                âœ“ PrÃ©-Aprovar
+                ✓ Pré-Aprovar
               </button>
               <button @click="executarAcao(detalhe, 'PRE_REPROVAR')" :disabled="acaoCarregando"
                 class="text-sm bg-red-50 hover:bg-red-100 disabled:opacity-50 text-red-700 border border-red-200 rounded-lg px-5 py-2.5 font-bold transition-all">
-                âœ• Reprovar
+                ✕ Reprovar
               </button>
             </template>
 
@@ -1501,11 +1535,11 @@
               v-else-if="detalhe.status === 'PENDENTE_APROVACAO_CANCELAMENTO' || detalhe.status === 'PENDENTE_APROVACAO_REMARCACAO'">
               <button @click="decidirCancelamento(detalhe, 'APROVAR')" :disabled="acaoCarregando"
                 class="text-sm bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg px-5 py-2.5 font-bold shadow-sm hover:shadow transition-all">
-                âœ“ Aprovar Cancelamento
+                ✓ Aprovar Cancelamento
               </button>
               <button @click="decidirCancelamento(detalhe, 'REPROVAR')" :disabled="acaoCarregando"
                 class="text-sm bg-rose-50 hover:bg-rose-100 disabled:opacity-50 text-rose-700 border border-rose-200 rounded-lg px-5 py-2.5 font-bold transition-all">
-                âœ• Negar Cancelamento
+                ✕ Negar Cancelamento
               </button>
             </template>
 
@@ -1514,19 +1548,19 @@
                 <button v-if="slot.cot" @click="executarAcao(detalhe, 'APROVAR_' + slot.agencia.toUpperCase())"
                   :disabled="acaoCarregando"
                   class="text-sm bg-labs-blue hover:bg-labs-dark disabled:opacity-50 text-white rounded-lg px-5 py-2.5 font-bold shadow-sm hover:shadow transition-all">
-                  ðŸ† Escolher {{ slot.agencia }}
+                  🏆 Escolher {{ slot.agencia }}
                 </button>
               </template>
               <button @click="executarAcao(detalhe, 'REPROVAR')" :disabled="acaoCarregando"
                 class="text-sm bg-red-50 hover:bg-red-100 disabled:opacity-50 text-red-700 border border-red-200 rounded-lg px-5 py-2.5 font-bold transition-all">
-                âœ• Reprovar
+                ✕ Reprovar
               </button>
             </template>
 
             <template v-else-if="detalhe.status === 'AGUARDANDO_COTACAO' || detalhe.status === 'COTACAO_ENVIADA'">
               <button @click="executarAcao(detalhe, 'REENVIAR_AGENCIAS')" :disabled="acaoCarregando"
                 class="text-sm bg-blue-50 hover:bg-blue-100 text-labs-blue border border-blue-200 rounded-lg px-5 py-2.5 font-bold transition-all">
-                â†º Reenviar E-mails
+                ↺ Reenviar E-mails
               </button>
             </template>
 
@@ -1539,19 +1573,19 @@
       </div>
     </div>
 
-    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• MODAL CONFIRMAÃ‡ÃƒO RÃPIDA â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <!-- ═══════════════════ MODAL CONFIRMAÇÃO RÁPIDA ═══════════════════ -->
     <div v-if="confirmacao.aberto"
       class="fixed inset-0 z-50 flex items-center justify-center bg-labs-dark/70 backdrop-blur-sm p-4"
       @click.self="confirmacao.aberto = false">
       <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
         <div class="h-1 w-full bg-labs-blue"></div>
         <div class="p-6">
-          <h3 class="font-extrabold text-labs-dark mb-2 tracking-tight">Confirmar AÃ§Ã£o</h3>
+          <h3 class="font-extrabold text-labs-dark mb-2 tracking-tight">Confirmar Ação</h3>
           <p class="text-sm text-gray-600 mb-1">
             <strong class="font-semibold text-labs-dark">{{ acaoLabel(confirmacao.acao) }}</strong>
           </p>
           <p class="text-sm text-gray-500 mb-5">
-            SolicitaÃ§Ã£o: <strong class="font-mono font-bold text-labs-blue">{{ confirmacao.sol?.protocolo }}</strong>
+            Solicitação: <strong class="font-mono font-bold text-labs-blue">{{ confirmacao.sol?.protocolo }}</strong>
           </p>
           <div v-if="acaoErro" class="mb-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
             {{ acaoErro }}
@@ -1563,7 +1597,7 @@
             </button>
             <button @click="executarAcao(confirmacao.sol, confirmacao.acao)" :disabled="acaoCarregando"
               class="text-sm bg-labs-blue hover:bg-labs-dark disabled:opacity-50 text-white rounded-lg px-5 py-2 font-bold shadow-sm hover:shadow transition-all">
-              {{ acaoCarregando ? 'Aguardeâ€¦' : 'Confirmar' }}
+              {{ acaoCarregando ? 'Aguarde…' : 'Confirmar' }}
             </button>
           </div>
         </div>
@@ -1590,19 +1624,19 @@
         const menuRecolhido = ref(false);
 
         const menuItens = computed(() => [
-          { id: 'solicitacoes', label: 'SolicitaÃ§Ãµes', icon: 'ðŸ“‹' },
-          { id: 'indicadores', label: 'Indicadores', icon: 'ðŸ“Š' },
-          { id: 'casamentos', label: 'Casamentos', icon: 'ðŸ”—', count: casamentosCount.value },
-          { id: 'agencias', label: 'AgÃªncias', icon: 'ðŸ¢' },
-          { id: 'terceiros', label: 'Acesso Terceiros', icon: 'ðŸ›¡ï¸', count: ticketsTerceirosPendentesCount.value }
+          { id: 'solicitacoes', label: 'Solicitações', icon: '📋' },
+          { id: 'indicadores', label: 'Indicadores', icon: '📊' },
+          { id: 'casamentos', label: 'Casamentos', icon: '🔗', count: casamentosCount.value },
+          { id: 'agencias', label: 'Agências', icon: '🏢' },
+          { id: 'terceiros', label: 'Acesso Terceiros', icon: '🛡️', count: ticketsTerceirosPendentesCount.value }
         ]);
 
         const menuLabel = computed(() => {
           const labels = {
-            solicitacoes: 'SolicitaÃ§Ãµes de Viagem',
+            solicitacoes: 'Solicitações de Viagem',
             indicadores: 'Painel de Indicadores (BI)',
-            casamentos: 'OtimizaÃ§Ã£o de Casamentos',
-            agencias: 'GestÃ£o de AgÃªncias',
+            casamentos: 'Otimização de Casamentos',
+            agencias: 'Gestão de Agências',
             terceiros: 'Controle de Acesso de Terceiros'
           };
           return labels[aba.value] || 'Painel do Setor';
@@ -1610,27 +1644,27 @@
 
         const menuDesc = computed(() => {
           const descs = {
-            solicitacoes: 'Gerencie e prÃ©-aprove as solicitaÃ§Ãµes de viagens corporativas do LuizaLabs.',
-            indicadores: 'Monitore mÃ©tricas, gastos, distribuiÃ§Ã£o por status e centros de custo.',
-            casamentos: 'Analise e gerencie os pares de viagens passÃ­veis de coabitaÃ§Ã£o/otimizaÃ§Ã£o.',
-            agencias: 'Cadastre e gerencie agÃªncias parceiras credenciadas para cotaÃ§Ãµes.',
-            terceiros: 'Aprove/reprove tickets de delegaÃ§Ã£o de acesso AD para consultores/terceiros.'
+            solicitacoes: 'Gerencie e pré-aprove as solicitações de viagens corporativas do LuizaLabs.',
+            indicadores: 'Monitore métricas, gastos, distribuição por status e centros de custo.',
+            casamentos: 'Analise e gerencie os pares de viagens passíveis de coabitação/otimização.',
+            agencias: 'Cadastre e gerencie agências parceiras credenciadas para cotações.',
+            terceiros: 'Aprove/reprove tickets de delegação de acesso AD para consultores/terceiros.'
           };
           return descs[aba.value] || '';
         });
 
         const kpiCardConfig = (label) => {
           const config = {
-            'Total': { bg: 'bg-gradient-to-br from-slate-50 to-slate-100/50 border-slate-200 text-slate-700', icon: 'ðŸ“Š' },
-            'ConcluÃ­das': { bg: 'bg-gradient-to-br from-emerald-50 to-emerald-100/30 border-emerald-200 text-emerald-700', icon: 'âœ…' },
-            'Reprovadas': { bg: 'bg-gradient-to-br from-red-50 to-red-100/30 border-red-200 text-red-700', icon: 'âŒ' },
-            'PrÃ©-Aprovar': { bg: 'bg-gradient-to-br from-yellow-50 to-yellow-100/30 border-yellow-200 text-yellow-700', icon: 'â³' },
-            'Ativos Hoje': { bg: 'bg-gradient-to-br from-indigo-50 to-indigo-100/30 border-indigo-200 text-indigo-700', icon: 'ðŸ‘¥' },
-            'Ag. CotaÃ§Ã£o': { bg: 'bg-gradient-to-br from-blue-50 to-blue-100/30 border-blue-200 text-blue-700', icon: 'âœˆï¸' },
-            'Decidir': { bg: 'bg-gradient-to-br from-purple-50 to-purple-100/30 border-purple-200 text-purple-700', icon: 'ðŸ†' },
+            'Total': { bg: 'bg-gradient-to-br from-slate-50 to-slate-100/50 border-slate-200 text-slate-700', icon: '📊' },
+            'Concluídas': { bg: 'bg-gradient-to-br from-emerald-50 to-emerald-100/30 border-emerald-200 text-emerald-700', icon: '✅' },
+            'Reprovadas': { bg: 'bg-gradient-to-br from-red-50 to-red-100/30 border-red-200 text-red-700', icon: '❌' },
+            'Pré-Aprovar': { bg: 'bg-gradient-to-br from-yellow-50 to-yellow-100/30 border-yellow-200 text-yellow-700', icon: '⏳' },
+            'Ativos Hoje': { bg: 'bg-gradient-to-br from-indigo-50 to-indigo-100/30 border-indigo-200 text-indigo-700', icon: '👥' },
+            'Ag. Cotação': { bg: 'bg-gradient-to-br from-blue-50 to-blue-100/30 border-blue-200 text-blue-700', icon: '✈️' },
+            'Decidir': { bg: 'bg-gradient-to-br from-purple-50 to-purple-100/30 border-purple-200 text-purple-700', icon: '🏆' },
             'Emergenciais': { bg: 'bg-gradient-to-br from-rose-50 to-rose-100/30 border-rose-200 text-rose-700', icon: 'âš¡' },
           };
-          return config[label] || { bg: 'bg-gradient-to-br from-sky-50 to-sky-100/30 border-sky-200 text-sky-700', icon: 'ðŸ¢' };
+          return config[label] || { bg: 'bg-gradient-to-br from-sky-50 to-sky-100/30 border-sky-200 text-sky-700', icon: '🏢' };
         };
 
         const filtros = reactive({ status: '', periodo: '', agencia: '', busca: '' });
@@ -1640,6 +1674,7 @@
         const detalhe = ref({});
         const acaoCarregando = ref(false);
         const acaoErro = ref('');
+        const pdfErro = ref('');
 
         const confirmacao = reactive({ aberto: false, sol: null, acao: '' });
 
@@ -1662,7 +1697,7 @@
           });
 
           if (listaAgencias.length === 0) {
-            // Sem agÃªncias cadastradas e sem cotaÃ§Ãµes â€” lista vazia, nÃ£o usa fallback legado
+            // Sem agências cadastradas e sem cotações — lista vazia, não usa fallback legado
             return [];
           }
 
@@ -1675,9 +1710,9 @@
           });
         });
 
-        // â”€â”€ Auth guard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Auth guard ────────────────────────────────────────────────────────────
         onMounted(() => {
-          // Sinaliza ao sistema de transiÃ§Ã£o que o Vue montou com sucesso
+          // Sinaliza ao sistema de transição que o Vue montou com sucesso
           if (typeof window._vlReady === 'function') window._vlReady();
 
           const perfil = localStorage.getItem('perfil');
@@ -1691,7 +1726,7 @@
           carregarStatsAdicionais();
         });
 
-        // â”€â”€ API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── API ───────────────────────────────────────────────────────────────────
         const carregarSolicitacoes = async () => {
           carregando.value = true;
           try {
@@ -1706,7 +1741,7 @@
             if (resp.status === 401 || resp.status === 403) { sair(); return; }
             solicitacoes.value = await resp.json();
           } catch (e) {
-            console.error('[Setor] Falha ao carregar solicitaÃ§Ãµes:', e);
+            console.error('[Setor] Falha ao carregar solicitações:', e);
           } finally {
             carregando.value = false;
           }
@@ -1736,6 +1771,45 @@
           acaoErro.value = '';
         };
 
+        const abrirPdfAssinado = async (ticket) => {
+          pdfErro.value = '';
+
+          if (!ticket?.pdf_url && !ticket?.pdf_path) {
+            pdfErro.value = 'PDF não disponível para esta autorização.';
+            return;
+          }
+
+          const url = ticket.pdf_url || `/${ticket.pdf_path}`;
+          const novaAba = window.open('about:blank', '_blank');
+          if (!novaAba) {
+            pdfErro.value = 'Permita pop-ups para abrir o PDF assinado.';
+            return;
+          }
+
+          try {
+            const resp = await fetch(url, {
+              headers: { Authorization: `Bearer ${token.value}` },
+            });
+
+            if (resp.status === 401 || resp.status === 403) {
+              throw new Error('Não foi possível autenticar a visualização do PDF. Faça login novamente.');
+            }
+
+            if (!resp.ok) {
+              const dados = await resp.json().catch(() => ({}));
+              throw new Error(dados.detail || 'Falha ao carregar o PDF.');
+            }
+
+            const blob = await resp.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            novaAba.location.href = blobUrl;
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+          } catch (e) {
+            novaAba.close();
+            pdfErro.value = e.message || 'Falha ao abrir o PDF assinado.';
+          }
+        };
+
         const confirmarAcao = (sol, acao) => {
           acaoErro.value = '';
           confirmacao.sol = sol;
@@ -1756,7 +1830,7 @@
               body: JSON.stringify({ acao, observacao: '' }),
             });
             const dados = await resp.json();
-            if (!resp.ok) throw new Error(dados.detail || 'Erro ao executar aÃ§Ã£o.');
+            if (!resp.ok) throw new Error(dados.detail || 'Erro ao executar ação.');
 
             confirmacao.aberto = false;
             await carregarSolicitacoes();
@@ -1782,7 +1856,7 @@
               body: JSON.stringify({ acao, observacao }),
             });
             const dados = await resp.json();
-            if (!resp.ok) throw new Error(dados.detail || 'Erro ao decidir cancelamento/remarcaÃ§Ã£o.');
+            if (!resp.ok) throw new Error(dados.detail || 'Erro ao decidir cancelamento/remarcação.');
 
             confirmacao.aberto = false;
             await carregarSolicitacoes();
@@ -1795,7 +1869,7 @@
           }
         };
 
-        // â”€â”€ Indicadores â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Indicadores ───────────────────────────────────────────────────────────
         const calcularIndicadores = () => {
           const lista = solicitacoes.value;
           const total = lista.length;
@@ -1807,16 +1881,16 @@
           const emerg = lista.filter(s => s.classificacao === 'Emergencial').length;
           const novosKpis = [
             { label: 'Total', valor: total, cor: 'text-gray-700' },
-            { label: 'ConcluÃ­das', valor: conc, cor: 'text-green-600' },
+            { label: 'Concluídas', valor: conc, cor: 'text-green-600' },
             { label: 'Reprovadas', valor: repr, cor: 'text-red-500' },
-            { label: 'PrÃ©-Aprovar', valor: preApr, cor: 'text-yellow-600' },
+            { label: 'Pré-Aprovar', valor: preApr, cor: 'text-yellow-600' },
             { label: 'Ativos Hoje', valor: ativosHoje.value, cor: 'text-indigo-600 font-bold' },
-            { label: 'Ag. CotaÃ§Ã£o', valor: agCot, cor: 'text-blue-600' },
+            { label: 'Ag. Cotação', valor: agCot, cor: 'text-blue-600' },
             { label: 'Decidir', valor: decidir, cor: 'text-purple-600' },
             { label: 'Emergenciais', valor: emerg, cor: 'text-red-600' },
           ];
 
-          // Adiciona dinamicamente as agÃªncias registradas no banco de dados!
+          // Adiciona dinamicamente as agências registradas no banco de dados!
           const coresAg = ['text-indigo-600', 'text-pink-600', 'text-amber-600', 'text-cyan-600', 'text-teal-600', 'text-violet-600'];
           agencias.value.forEach((ag, idx) => {
             const count = lista.filter(s => s.agencia_vencedora === ag.agencia_nome).length;
@@ -1830,7 +1904,7 @@
 
           kpis.value = novosKpis;
 
-          // DistribuiÃ§Ã£o por status
+          // Distribuição por status
           const grupos = {};
           lista.forEach(s => { grupos[s.status] = (grupos[s.status] || 0) + 1; });
           distribuicaoStatus.value = Object.entries(grupos)
@@ -1842,7 +1916,7 @@
               cor: statusBarCor(status),
             }));
 
-          // Volume mensal â€” Ãºltimos 6 meses (contagem por data_ida)
+          // Volume mensal — últimos 6 meses (contagem por data_ida)
           const meses = {};
           const agora = new Date();
           for (let i = 5; i >= 0; i--) {
@@ -1873,7 +1947,7 @@
             .slice(0, 10);
         };
 
-        // â”€â”€ ExportaÃ§Ã£o CSV â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Exportação CSV ────────────────────────────────────────────────────────
         const _csvEscape = (v) => {
           const s = (v === null || v === undefined) ? '' : String(v);
           return s.includes(',') || s.includes('"') || s.includes('\n')
@@ -1897,10 +1971,10 @@
 
         const exportarSolicitacoes = () => {
           const cabecalho = [
-            'Protocolo', 'Solicitante', 'Viajante', 'MatrÃ­cula', 'Centro de Custo',
-            'CÃ³d. Centro de Custo', 'Cargo', 'Filial', 'Origem', 'Destino', 'UF Destino',
-            'Data Ida', 'Data Volta', 'Tipo ServiÃ§o', 'ClassificaÃ§Ã£o', 'Status',
-            'AgÃªncia Vencedora', 'Motivo', 'Data CriaÃ§Ã£o',
+            'Protocolo', 'Solicitante', 'Viajante', 'Matrícula', 'Centro de Custo',
+            'Cód. Centro de Custo', 'Cargo', 'Filial', 'Origem', 'Destino', 'UF Destino',
+            'Data Ida', 'Data Volta', 'Tipo Serviço', 'Classificação', 'Status',
+            'Agência Vencedora', 'Motivo', 'Data Criação',
           ];
           const linhas = solicitacoes.value.map(s => [
             s.protocolo,
@@ -1933,48 +2007,48 @@
         };
 
         const exportarCentroCusto = () => {
-          const cabecalho = ['PosiÃ§Ã£o', 'CÃ³digo CC', 'Nome CC', 'SolicitaÃ§Ãµes'];
+          const cabecalho = ['Posição', 'Código CC', 'Nome CC', 'Solicitações'];
           const linhas = centroCustoRanking.value.map((i, idx) => [idx + 1, i.cod, i.nome, i.count]);
           _baixarCSV([cabecalho, ...linhas], `centros_custo_${_hoje()}.csv`);
         };
 
         const exportarVolumeMensal = () => {
-          const cabecalho = ['MÃªs', 'Total de SolicitaÃ§Ãµes'];
+          const cabecalho = ['Mês', 'Total de Solicitações'];
           const linhas = volumeMensal.value.map(m => [m.mes, m.total]);
           _baixarCSV([cabecalho, ...linhas], `volume_mensal_${_hoje()}.csv`);
         };
 
-        // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Helpers ───────────────────────────────────────────────────────────────
         const sair = () => {
           localStorage.clear();
           vlNavigate('/index.html');
         };
 
         const fmtData = (iso) => {
-          if (!iso) return 'â€”';
+          if (!iso) return '—';
           try { return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }); }
           catch { return iso; }
         };
 
         const fmtValor = (v) => {
-          if (v === null || v === undefined) return 'â€”';
+          if (v === null || v === undefined) return '—';
           return Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         };
 
         const STATUS_LABELS = {
-          AGUARDANDO_N1: 'Ag. AprovaÃ§Ã£o N1',
-          AGUARDANDO_N2: 'Ag. AprovaÃ§Ã£o N2',
-          PENDENTE_PRE_APROVACAO_SETOR: 'PrÃ©-Aprovar',
-          AGUARDANDO_COTACAO: 'Ag. CotaÃ§Ã£o',
+          AGUARDANDO_N1: 'Ag. Aprovação N1',
+          AGUARDANDO_N2: 'Ag. Aprovação N2',
+          PENDENTE_PRE_APROVACAO_SETOR: 'Pré-Aprovar',
+          AGUARDANDO_COTACAO: 'Ag. Cotação',
           COTACAO_ENVIADA: 'Cot. Enviada',
-          PENDENTE_APROVACAO_SETOR_COTACAO: 'Decidir AgÃªncia',
-          CONCLUIDA: 'ConcluÃ­da',
+          PENDENTE_APROVACAO_SETOR_COTACAO: 'Decidir Agência',
+          CONCLUIDA: 'Concluída',
           REPROVADA: 'Reprovada',
           CADEIA_INCOMPLETA: 'Cadeia Incompleta',
-          PENDENTE_CANCELAMENTO: 'Ag. AgÃªncia (Cancelamento)',
-          PENDENTE_REMARCACAO: 'Ag. AgÃªncia (RemarcaÃ§Ã£o)',
+          PENDENTE_CANCELAMENTO: 'Ag. Agência (Cancelamento)',
+          PENDENTE_REMARCACAO: 'Ag. Agência (Remarcação)',
           PENDENTE_APROVACAO_CANCELAMENTO: 'Revisar Cancelamento',
-          PENDENTE_APROVACAO_REMARCACAO: 'Revisar RemarcaÃ§Ã£o',
+          PENDENTE_APROVACAO_REMARCACAO: 'Revisar Remarcação',
           CANCELADA: 'Cancelada',
         };
         const statusLabel = (s) => STATUS_LABELS[s] || s;
@@ -2019,15 +2093,15 @@
         };
 
         const ACAO_LABELS = {
-          PRE_APROVAR: 'PrÃ©-Aprovar',
-          PRE_REPROVAR: 'Reprovar (prÃ©-aprovaÃ§Ã£o)',
+          PRE_APROVAR: 'Pré-Aprovar',
+          PRE_REPROVAR: 'Reprovar (pré-aprovação)',
           REPROVAR: 'Reprovar',
-          REENVIAR_AGENCIAS: 'Reenviar E-mails Ã s AgÃªncias',
+          REENVIAR_AGENCIAS: 'Reenviar E-mails às Agências',
         };
-        // Para aÃ§Ãµes dinÃ¢micas APROVAR_<AGENCIA>, o label Ã© gerado no botÃ£o ("Escolher {{ slot.agencia }}")
+        // Para ações dinâmicas APROVAR_<AGENCIA>, o label é gerado no botão ("Escolher {{ slot.agencia }}")
         const acaoLabel = (a) => ACAO_LABELS[a] || a;
 
-        // â”€â”€ Casamentos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Casamentos ─────────────────────────────────────────────────────────────
         const casamentos = ref([]);
         const casamentosCount = ref(0);
         const casamentoMsgOk = ref('');
@@ -2057,10 +2131,10 @@
             const dados = await res.json();
             if (!res.ok) { casamentoMsgErr.value = dados.detail || 'Erro.'; return; }
             casamentoMsgOk.value = acao === 'vincular'
-              ? `âœ” Casamento vinculado! Grupo: ${dados.grupo_viagem}`
-              : 'âœ” Match ignorado.';
+              ? `✔ Casamento vinculado! Grupo: ${dados.grupo_viagem}`
+              : '✔ Match ignorado.';
             await carregarCasamentos();
-          } catch (e) { casamentoMsgErr.value = 'Erro de conexÃ£o.'; }
+          } catch (e) { casamentoMsgErr.value = 'Erro de conexão.'; }
         };
 
         const tipoCasamentoCor = (tipo) => ({
@@ -2069,7 +2143,7 @@
           PARCIAL_B: 'bg-yellow-100 text-yellow-800',
         }[tipo] || 'bg-gray-100 text-gray-600');
 
-        // â”€â”€ Tickets de Acesso Terceiros â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Tickets de Acesso Terceiros ───────────────────────────────────────────
         const ticketsTerceiros = ref([]);
         const ticketsTerceirosPendentesCount = ref(0);
         const filtroTerceirosStatus = ref('PENDENTE');
@@ -2085,7 +2159,7 @@
               ticketsTerceiros.value = await res.json();
             }
 
-            // Carrega tambÃ©m a contagem de pendentes para o badge da barra lateral
+            // Carrega também a contagem de pendentes para o badge da barra lateral
             const resP = await fetch('/api/v1/terceiros/admin/todos?status_filtro=PENDENTE', {
               headers: { Authorization: `Bearer ${token.value}` }
             });
@@ -2110,19 +2184,19 @@
               body: formData
             });
             if (res.ok) {
-              // Limpa campo de observaÃ§Ãµes para este ticket
+              // Limpa campo de observações para este ticket
               delete ticketObs.value[id];
               await carregarTicketsTerceiros();
             } else {
               const dados = await res.json();
-              alert('Erro ao processar decisÃ£o do ticket: ' + (dados.detail || 'Erro desconhecido.'));
+              alert('Erro ao processar decisão do ticket: ' + (dados.detail || 'Erro desconhecido.'));
             }
           } catch (e) {
-            console.error('Erro de conexÃ£o ao decidir ticket:', e);
+            console.error('Erro de conexão ao decidir ticket:', e);
           }
         };
 
-        // â”€â”€ AgÃªncias â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Agências ───────────────────────────────────────────────────────────────
         const agencias = ref([]);
         const agenciaMsgOk = ref('');
         const agenciaMsgErr = ref('');
@@ -2159,14 +2233,14 @@
 
         const buscarCnpj = async () => {
           const cnpj = agenciaForm.value.cnpj.replace(/\D/g, '');
-          if (cnpj.length !== 14) { cnpjErro.value = 'CNPJ deve ter 14 dÃ­gitos.'; return; }
+          if (cnpj.length !== 14) { cnpjErro.value = 'CNPJ deve ter 14 dígitos.'; return; }
           cnpjErro.value = '';
           cnpjBuscando.value = true;
           try {
             const res = await fetch(`/api/v1/setor/proxy/cnpj/${cnpj}`, {
               headers: { Authorization: `Bearer ${token.value}` },
             });
-            if (!res.ok) { cnpjErro.value = 'CNPJ nÃ£o encontrado ou erro na consulta.'; return; }
+            if (!res.ok) { cnpjErro.value = 'CNPJ não encontrado ou erro na consulta.'; return; }
             const d = await res.json();
             agenciaForm.value.razao_social = d.razao_social || '';
             agenciaForm.value.agencia_nome = agenciaForm.value.agencia_nome || d.nome_fantasia || '';
@@ -2222,9 +2296,9 @@
             const res = await fetch('/api/v1/setor/agencias', {
               headers: { Authorization: `Bearer ${token.value}` },
             });
-            if (!res.ok) { agenciaMsgErr.value = 'Erro ao carregar agÃªncias.'; return; }
+            if (!res.ok) { agenciaMsgErr.value = 'Erro ao carregar agências.'; return; }
             agencias.value = await res.json();
-          } catch (e) { agenciaMsgErr.value = 'Erro de conexÃ£o.'; }
+          } catch (e) { agenciaMsgErr.value = 'Erro de conexão.'; }
         };
 
         const abrirModalAgencia = (ag) => {
@@ -2263,10 +2337,10 @@
               body: JSON.stringify(payload),
             });
             if (!res.ok) { const d = await res.json(); agenciaFormErr.value = d.detail || 'Erro ao salvar.'; return; }
-            agenciaMsgOk.value = ed ? 'âœ” AgÃªncia atualizada.' : 'âœ” AgÃªncia cadastrada com sucesso.';
+            agenciaMsgOk.value = ed ? '✔ Agência atualizada.' : '✔ Agência cadastrada com sucesso.';
             fecharModalAgencia();
             await carregarAgencias();
-          } catch (e) { agenciaFormErr.value = 'Erro de conexÃ£o.'; }
+          } catch (e) { agenciaFormErr.value = 'Erro de conexão.'; }
           finally { agenciaFormLoading.value = false; }
         };
 
@@ -2280,13 +2354,13 @@
               body: JSON.stringify({ ativo: !ag.ativo }),
             });
             if (!res.ok) { const d = await res.json(); agenciaMsgErr.value = d.detail || 'Erro.'; return; }
-            agenciaMsgOk.value = ag.ativo ? 'âœ” AgÃªncia desativada.' : 'âœ” AgÃªncia ativada.';
+            agenciaMsgOk.value = ag.ativo ? '✔ Agência desativada.' : '✔ Agência ativada.';
             await carregarAgencias();
-          } catch (e) { agenciaMsgErr.value = 'Erro de conexÃ£o.'; }
+          } catch (e) { agenciaMsgErr.value = 'Erro de conexão.'; }
         };
 
         const confirmarExcluirAgencia = async (ag) => {
-          if (!confirm(`Excluir permanentemente a agÃªncia "${ag.agencia_nome}"?\n\nEsta aÃ§Ã£o nÃ£o pode ser desfeita.`)) return;
+          if (!confirm(`Excluir permanentemente a agência "${ag.agencia_nome}"?\n\nEsta ação não pode ser desfeita.`)) return;
           agenciaMsgOk.value = '';
           agenciaMsgErr.value = '';
           try {
@@ -2295,13 +2369,13 @@
               headers: { Authorization: `Bearer ${token.value}` },
             });
             if (res.status === 204) {
-              agenciaMsgOk.value = `âœ” AgÃªncia "${ag.agencia_nome}" excluÃ­da.`;
+              agenciaMsgOk.value = `✔ Agência "${ag.agencia_nome}" excluída.`;
               await carregarAgencias();
             } else {
               const d = await res.json();
               agenciaMsgErr.value = d.detail || 'Erro ao excluir.';
             }
-          } catch (e) { agenciaMsgErr.value = 'Erro de conexÃ£o.'; }
+          } catch (e) { agenciaMsgErr.value = 'Erro de conexão.'; }
         };
 
         const carregarStatsAdicionais = async () => {
@@ -2332,7 +2406,7 @@
         };
 
         const fmtDataHora = (dt) => {
-          if (!dt) return 'â€”';
+          if (!dt) return '—';
           const d = new Date(dt);
           return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
         };
@@ -2369,11 +2443,11 @@
           token, nomeUsuario, perfilUsuario, aba, carregando, solicitacoes, filtros,
           slotsCotacao,
           menuRecolhido, menuItens, menuLabel, menuDesc, kpiCardConfig,
-          modalAberto, detalhe, acaoCarregando, acaoErro, confirmacao,
+          modalAberto, detalhe, acaoCarregando, acaoErro, pdfErro, confirmacao,
           kpis, distribuicaoStatus, volumeMensal, maxMensal, centroCustoRanking, maxCC,
           ativosHoje, alertasAcesso, carregarStatsAdicionais, carregarAlertasAcesso, fmtDataHora,
           carregarSolicitacoes, debounceCarregar,
-          abrirDetalhe, fecharModal, confirmarAcao, executarAcao, calcularIndicadores,
+          abrirDetalhe, fecharModal, confirmarAcao, executarAcao, calcularIndicadores, abrirPdfAssinado,
           exportarSolicitacoes, exportarStatus, exportarCentroCusto, exportarVolumeMensal,
           casamentos, casamentosCount, casamentoMsgOk, casamentoMsgErr,
           carregarCasamentos, agirCasamento, tipoCasamentoCor,
@@ -2384,7 +2458,7 @@
           toggleAgencia, confirmarExcluirAgencia,
           mascararCnpj, buscarCnpj, buscarCep, buscarBanco, fmtCnpj,
           sair, fmtData, fmtValor, statusLabel, statusCor, acaoLabel,
-          // Terceiros / DelegaÃ§Ãµes
+          // Terceiros / Delegações
           ticketsTerceiros, ticketsTerceirosPendentesCount, filtroTerceirosStatus, ticketObs, carregarTicketsTerceiros, decidirTicket,
           // Navegacao com transicao
           vlNavigate: (url) => (window.vlNavigate || (u => { window.location.href = u; }))(url),
