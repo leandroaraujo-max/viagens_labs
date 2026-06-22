@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1.endpoints import viagens_router, auth_router, aprovacao_router, agencia_router, duffel_router, setor_router, voucher_router, dev_router
+from app.api.v1.endpoints import viagens_router, auth_router, aprovacao_router, agencia_router, brasil_api_router, setor_router, voucher_router, dev_router
 from app.api.v1.endpoints.terceiros import router as terceiros_router
 from app.api.v1.endpoints.hoteis import router as hoteis_router
 
@@ -17,8 +17,8 @@ api_router.include_router(aprovacao_router, prefix="/aprovacao", tags=["Aprovaç
 # Portal da agência (Tastur/Kontrip)
 api_router.include_router(agencia_router, prefix="/agencia", tags=["Agência"])
 
-# Busca consultiva de voos (Duffel API)
-api_router.include_router(duffel_router, prefix="/duffel", tags=["Duffel"])
+# Integração Brasil API (clima de aeroportos e autocomplementação)
+api_router.include_router(brasil_api_router, prefix="/brasil-api", tags=["Brasil API"])
 
 # Portal do Setor (pré-aprovação e decisão entre cotações)
 api_router.include_router(setor_router, prefix="/setor", tags=["Setor"])

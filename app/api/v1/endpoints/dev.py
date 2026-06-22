@@ -231,7 +231,7 @@ def obter_config(
         "smtp_from":          settings.SMTP_FROM,
         "gas_relay_url":      settings.GAS_RELAY_URL or "(não configurado)",
         "gas_secret_ok":      bool(settings.GAS_SECRET),
-        "duffel_token_ok":    bool(settings.DUFFEL_TOKEN),
+        "brasil_api_ok":      True,
         "google_places_key_ok": bool(settings.GOOGLE_PLACES_KEY),
         "ad_base_dn":         settings.AD_BASE_DN,
         "ad_group_admins":    settings.AD_GROUP_ADMINS,

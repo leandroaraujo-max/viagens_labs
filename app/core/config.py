@@ -35,10 +35,8 @@ class Settings(BaseSettings):
     GAS_SECRET:         str = ""
     GAS_POLL_INTERVALO: int = 60
 
-    # Duffel API — busca consultiva de voos (token via .env, nunca hardcoded)
-    DUFFEL_TOKEN: str = ""
-    DUFFEL_BASE_URL: str = "https://api.duffel.com"
-    DUFFEL_VERSION: str = "v2"
+    # Brasil API — integração consultiva e clima de aeroportos (pública, sem autenticação)
+    BRASIL_API_BASE_URL: str = "https://brasilapi.com.br/api"
 
     # Active Directory — grupos de acesso
     AD_BASE_DN: str = "DC=magazineluiza,DC=intranet"

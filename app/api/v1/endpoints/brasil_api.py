@@ -3,16 +3,16 @@ from pydantic import BaseModel
 from typing import Optional
 import logging
 
-from app.infrastructure.duffel_service import DuffelService
+from app.infrastructure.brasil_api_service import BrasilApiService
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-def _svc() -> DuffelService:
+def _svc() -> BrasilApiService:
     try:
-        return DuffelService()
-    except RuntimeError as e:
+        return BrasilApiService()
+    except Exception as e:
         raise HTTPException(status_code=503, detail=str(e))
 
 
@@ -33,7 +33,7 @@ class BuscaVoosRequest(BaseModel):
 @router.get("/lugares")
 def buscar_lugares(q: str = Query(..., min_length=2, description="Nome de cidade ou aeroporto")):
     """
-    Autocomplete de aeroportos e cidades via Duffel Places API.
+    Autocomplete de aeroportos e cidades com validação via Brasil API.
     Retorna até 8 sugestões com código IATA.
     """
     try:
@@ -42,15 +42,15 @@ def buscar_lugares(q: str = Query(..., min_length=2, description="Nome de cidade
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
     except Exception as e:
-        logger.error(f"[Duffel/lugares] {e}")
-        raise HTTPException(status_code=502, detail="Erro ao consultar Duffel API.")
+        logger.error(f"[Brasil API/lugares] {e}")
+        raise HTTPException(status_code=502, detail="Erro ao consultar Brasil API.")
 
 
 @router.post("/voos")
 def buscar_voos(body: BuscaVoosRequest):
     """
-    Busca ofertas de voo (Azul, GOL, LATAM).
-    Valores financeiros não são retornados — preço é responsabilidade da agência.
+    Busca de opções de voo simuladas (Azul, GOL, LATAM).
+    Preço é responsabilidade da agência de viagens.
     """
     try:
         opcoes = _svc().buscar_voos(
@@ -66,5 +66,5 @@ def buscar_voos(body: BuscaVoosRequest):
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
     except Exception as e:
-        logger.error(f"[Duffel/voos] {e}")
-        raise HTTPException(status_code=502, detail="Erro ao consultar Duffel API.")
+        logger.error(f"[Brasil API/voos] {e}")
+        raise HTTPException(status_code=502, detail="Erro ao consultar Brasil API.")
