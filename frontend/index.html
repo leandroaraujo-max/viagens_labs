@@ -257,7 +257,10 @@
                             </span>
                             <span class="h-4 w-px bg-gray-200 hidden sm:block"></span>
                             <p class="text-xs text-gray-400 truncate hidden sm:block">
-                                {{ abaAtiva === 'nova_solicitacao' ? 'Preencha o formulário e crie uma nova solicitação corporativa.' : abaAtiva === 'minhas_viagens' ? 'Monitore e acompanhe o status de todas as suas solicitações.' : 'Solicite e gerencie permissões de delegação de acesso AD para terceiros.' }}
+                                {{ abaAtiva === 'nova_solicitacao' ? 'Preencha o formulário e crie uma nova solicitação
+                                corporativa.' : abaAtiva === 'minhas_viagens' ? 'Monitore e acompanhe o status de todas
+                                as suas solicitações.' : 'Solicite e gerencie permissões de delegação de acesso AD para
+                                terceiros.' }}
                             </p>
                         </div>
 
@@ -658,7 +661,8 @@
                                                         <span
                                                             class="ml-auto text-xs px-2 py-0.5 rounded-full font-bold uppercase"
                                                             :class="distanciaViagem >= 400 ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'">
-                                                            {{ distanciaViagem >= 400 ? 'Apto para voo' : 'Priorize terrestre' }}
+                                                            {{ distanciaViagem >= 400 ? 'Apto para voo' : 'Priorize
+                                                            terrestre' }}
                                                         </span>
                                                     </template>
                                                 </div>
