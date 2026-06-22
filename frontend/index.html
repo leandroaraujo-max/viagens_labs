@@ -1769,26 +1769,8 @@
                     data_volta: '',
                     motivo_viagem: '',
                     tipo_servico: [],
-                    preferencia_voo: null,   // string com resumo do voo selecionado no Duffel
-                    preferencia_voo_volta: null, // string com resumo do voo de volta
-                });
-
-                // --- Duffel: busca consultiva de voos ---
-                const duffelVoos = ref([]);
-                const duffelVoosVolta = ref([]);
-                const duffelBuscando = ref(false);
-                const duffelErro = ref('');
-                const duffelVooSelecionado = ref(null);
-                const duffelVooSelecionadoVolta = ref(null);
-
-                const podeBuscarVoos = computed(() => {
-                    const f = formViagem.value;
-                    const tipo = formPreferencias.value.aereo_tipo_trecho;
-                    const baseOk = f.origem_cidade.trim() !== '' &&
-                        f.destino_cidade.trim() !== '' &&
-                        f.data_ida.length === 10;
-                    if (tipo === 'ambos') return baseOk && f.data_volta.length === 10;
-                    return baseOk;
+                    preferencia_voo: null,
+                    preferencia_voo_volta: null,
                 });
 
                 // --- Passo 3: Preferências ---
@@ -1868,35 +1850,7 @@
                 ];
 
                 // --- Computados ---
-                const voosFiltrados = computed(() => {
-                    const de = formPreferencias.value.aereo_periodo_preferido;
-                    if (!duffelVoos.value) return [];
-                    if (!de) return duffelVoos.value;
-                    return duffelVoos.value.filter(v => {
-                        if (!v || !v.saida || typeof v.saida !== 'string') return false;
-                        const hr = parseInt(v.saida.slice(11, 13), 10);
-                        if (isNaN(hr)) return false;
-                        if (de === 'manha') return hr >= 6 && hr < 12;
-                        if (de === 'tarde') return hr >= 12 && hr < 18;
-                        if (de === 'noite') return hr >= 18 || hr < 6;
-                        return true;
-                    });
-                });
 
-                const voosVoltaFiltrados = computed(() => {
-                    const de = formPreferencias.value.aereo_periodo_preferido;
-                    if (!duffelVoosVolta.value) return [];
-                    if (!de) return duffelVoosVolta.value;
-                    return duffelVoosVolta.value.filter(v => {
-                        if (!v || !v.saida || typeof v.saida !== 'string') return false;
-                        const hr = parseInt(v.saida.slice(11, 13), 10);
-                        if (isNaN(hr)) return false;
-                        if (de === 'manha') return hr >= 6 && hr < 12;
-                        if (de === 'tarde') return hr >= 12 && hr < 18;
-                        if (de === 'noite') return hr >= 18 || hr < 6;
-                        return true;
-                    });
-                });
                 const classificacaoAereo = computed(() => {
                     if (!formViagem.value.data_ida || !formViagem.value.tipo_servico.includes('Aereo')) return null;
                     const dataIda = parseDateBR(formViagem.value.data_ida);
@@ -2535,106 +2489,9 @@
                     }
                 };
 
-                // --- Duffel: funções de busca de voos ---
-                // _sortByPeriodo removida em prol do filtro dinamico reativo voosFiltrados.
-
-                const buscarVoosDuffel = async () => {
-                    duffelErro.value = '';
-                    duffelVoos.value = [];
-                    duffelVoosVolta.value = [];
-                    duffelVooSelecionadoVolta.value = null;
-                    duffelBuscando.value = true;
-                    const tipo = formPreferencias.value.aereo_tipo_trecho;
-
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 12000); // 12 segundos de limite
-
-                    try {
-                        const f = formViagem.value;
-                        const bodyIda = {
-                            origem: f.origem_cidade.trim(),
-                            destino: f.destino_cidade.trim(),
-                            data_ida: toISO(f.data_ida) || f.data_ida,
-                            data_volta: null,
-                            adultos: 1,
-                            exigir_bagagem: formPreferencias.value.bagagem_extra,
-                        };
-                        const resp = await fetch('/api/v1/duffel/voos', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token.value}` },
-                            body: JSON.stringify(bodyIda),
-                            signal: controller.signal
-                        });
-
-                        let dados = {};
-                        try {
-                            dados = await resp.json();
-                        } catch (jsonErr) {
-                            if (!resp.ok) {
-                                duffelErro.value = `Erro ${resp.status}: Falha ao consultar o serviço de busca de voos.`;
-                            } else {
-                                duffelErro.value = 'Resposta inválida do servidor.';
-                            }
-                            return;
-                        }
-
-                        if (!resp.ok) { duffelErro.value = dados.detail || 'Erro na busca de voos.'; return; }
-                        if (!dados.opcoes || dados.opcoes.length === 0) {
-                            duffelErro.value = 'Nenhum voo de ida encontrado. Preencha a preferência manualmente no próximo passo.';
-                            return;
-                        }
-                        duffelVoos.value = dados.opcoes;
-
-                        // Busca voo de volta se trecho = ambos
-                        if (tipo === 'ambos' && f.data_volta && f.data_volta.length === 10) {
-                            const bodyVolta = {
-                                origem: f.destino_cidade.trim(),
-                                destino: f.origem_cidade.trim(),
-                                data_ida: toISO(f.data_volta) || f.data_volta,
-                                data_volta: null,
-                                adultos: 1,
-                                exigir_bagagem: formPreferencias.value.bagagem_extra,
-                            };
-                            const respV = await fetch('/api/v1/duffel/voos', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token.value}` },
-                                body: JSON.stringify(bodyVolta),
-                                signal: controller.signal
-                            });
-                            if (respV.ok) {
-                                let dadosV = {};
-                                try {
-                                    dadosV = await respV.json();
-                                    duffelVoosVolta.value = dadosV.opcoes || [];
-                                } catch (jsonVErr) {
-                                    console.warn('[Duffel] falha ao ler json do voo de volta');
-                                }
-                            }
-                        }
-                    } catch (e) {
-                        if (e.name === 'AbortError') {
-                            duffelErro.value = 'A busca de voos demorou muito para responder (limite de 12s excedido).';
-                        } else {
-                            duffelErro.value = 'Erro de conexão ao buscar voos.';
-                        }
-                    } finally {
-                        clearTimeout(timeoutId);
-                        duffelBuscando.value = false;
-                    }
-                };
-
-                const selecionarVoo = (voo, trecho = 'ida') => {
-                    const paradas = voo.paradas === 0 ? 'direto' : `${voo.paradas} parada(s)`;
-                    const bag = voo.bagagem ? ' | bagagem incluída' : '';
-                    const pref = `${voo.cia_nome} ${voo.numero_voo} | ${voo.origem}→${voo.destino} | ` +
-                        `${formatarHora(voo.saida)}→${formatarHora(voo.chegada)} | ${paradas}${bag}`;
-                    if (trecho === 'volta') {
-                        duffelVooSelecionadoVolta.value = voo;
-                        formViagem.value.preferencia_voo_volta = pref;
-                    } else {
-                        duffelVooSelecionado.value = voo;
-                        formViagem.value.preferencia_voo = pref;
-                    }
+                const formatarData = (iso) => {
+                    if (!iso) return '—';
+                    return new Date(iso).toLocaleDateString('pt-BR');
                 };
 
                 const formatarHora = (iso) => {
@@ -2656,12 +2513,7 @@
                     viajanteDados.value = null;
                     celularViajante.value = ''; dataNascimentoViajante.value = ''; perfilSalvo.value = false;
                     tipo_solicitacao.value = 'proprio';
-                    duffelVoos.value = [];
-                    duffelVooSelecionado.value = null;
-                    duffelErro.value = '';
                     distanciaViagem.value = null;
-                    duffelVoosVolta.value = [];
-                    duffelVooSelecionadoVolta.value = null;
                     formViagem.value = { origem_cidade: '', origem_estado: '', destino_cidade: '', destino_estado: '', data_ida: '', data_volta: '', motivo_viagem: '', tipo_servico: [], preferencia_voo: null, preferencia_voo_volta: null };
                     formPreferencias.value = { aereo_periodo_preferido: '', aereo_tipo_trecho: 'ambos', bagagem_extra: false, assento_especial: '', rodov_periodo_preferido: '', rodov_tipo_onibus: '', rodov_tipo_trecho: 'ambos', preferencia_hotel_nome: '', hosp_data_checkin: '', hosp_data_checkout: '', quarto_excecao_saude: false, carro_data_retirada: '', carro_hora_retirada: '', carro_cidade_retirada: '', carro_data_devolucao: '', carro_hora_devolucao: '', carro_cidade_devolucao: '', observacoes_viajante: '' };
                     protocoloGerado.value = null;
@@ -2967,10 +2819,8 @@
                     enviarSolicitacao, novasolicitacao,
                     // Histórico
                     historico, historicoCarregando, carregarHistorico, statusLabelMini, statusCorMini,
-                    // Duffel
-                    duffelVoos, duffelVoosVolta, duffelBuscando, duffelErro,
-                    duffelVooSelecionado, duffelVooSelecionadoVolta, podeBuscarVoos,
-                    buscarVoosDuffel, selecionarVoo, formatarHora, formatarDuracao,
+                    // Utilitários
+                    formatarHora, formatarDuracao, formatarData,
                     // Autocomplete IBGE
                     acCidades, buscarCidadesIBGE, selecionarCidade, fecharAc,
                     // Gestão de Créditos & Cancelamento/Remarcação
