@@ -323,7 +323,8 @@
                     <td class="px-4 py-3 text-gray-700 text-xs font-medium">{{ s.solicitante_username }}</td>
                     <td class="px-4 py-3 text-gray-700 text-xs hidden md:table-cell">{{ s.destino_cidade }}<span
                         class="text-gray-400">/{{ s.destino_estado }}</span></td>
-                    <td class="px-4 py-3 text-gray-500 text-xs whitespace-nowrap hidden lg:table-cell">{{ fmtData(s.data_ida) }}</td>
+                    <td class="px-4 py-3 text-gray-500 text-xs whitespace-nowrap hidden lg:table-cell">{{
+                      fmtData(s.data_ida) }}</td>
                     <td class="px-4 py-3 hidden lg:table-cell">
                       <span
                         class="text-xs bg-blue-50 text-labs-blue border border-blue-100 rounded-md px-2 py-0.5 font-medium whitespace-nowrap">
@@ -451,7 +452,8 @@
                 <span class="text-xl shrink-0">{{ kpiCardConfig(kpi.label).icon }}</span>
                 <div class="text-2xl font-extrabold tracking-tight leading-none">{{ kpi.valor }}</div>
               </div>
-              <div class="text-[11px] font-bold uppercase tracking-wider opacity-85 mt-2 leading-tight z-10">{{ kpi.label }}</div>
+              <div class="text-[11px] font-bold uppercase tracking-wider opacity-85 mt-2 leading-tight z-10">{{
+                kpi.label }}</div>
             </div>
           </div>
 
@@ -471,7 +473,8 @@
                 <div v-for="item in distribuicaoStatus" :key="item.label">
                   <div class="flex justify-between text-xs font-medium text-gray-600 mb-1.5">
                     <span>{{ item.label }}</span>
-                    <span>{{ item.count }} <span class="text-gray-400 font-normal font-mono">({{ item.pct }}%)</span></span>
+                    <span>{{ item.count }} <span class="text-gray-400 font-normal font-mono">({{ item.pct
+                        }}%)</span></span>
                   </div>
                   <div class="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
                     <div :class="['bar-fill h-2.5 rounded-full', item.cor]" :style="`width:${item.pct}%`"></div>
@@ -529,7 +532,8 @@
             <div v-if="centroCustoRanking.length" class="space-y-3">
               <div v-for="(item, idx) in centroCustoRanking" :key="item.cod || item.nome"
                 class="flex items-center gap-3">
-                <span class="w-5 text-xs font-bold text-gray-300 text-right flex-shrink-0 font-mono">{{ idx + 1 }}</span>
+                <span class="w-5 text-xs font-bold text-gray-300 text-right flex-shrink-0 font-mono">{{ idx + 1
+                  }}</span>
                 <div class="flex-1 min-w-0">
                   <div class="flex justify-between items-center text-xs font-medium text-gray-700 mb-1">
                     <span class="truncate">
@@ -637,7 +641,8 @@
             </div>
 
             <div v-if="agenciaMsgOk"
-              class="mb-4 bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 text-sm">{{ agenciaMsgOk }}</div>
+              class="mb-4 bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 text-sm">{{
+              agenciaMsgOk }}</div>
             <div v-if="agenciaMsgErr"
               class="mb-4 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">{{ agenciaMsgErr }}
             </div>
@@ -657,7 +662,8 @@
                       <span class="font-bold text-gray-900 text-sm">{{ ag.agencia_nome }}</span>
                       <span
                         :class="ag.ativo ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-600 border-red-200'"
-                        class="text-[10px] font-bold px-2 py-0.5 rounded-full border shadow-sm">{{ ag.ativo ? 'Ativa' : 'Inativa' }}</span>
+                        class="text-[10px] font-bold px-2 py-0.5 rounded-full border shadow-sm">{{ ag.ativo ? 'Ativa' :
+                        'Inativa' }}</span>
                     </div>
                     <p class="text-xs text-gray-600 mt-1.5 font-semibold">{{ ag.razao_social || '—' }}</p>
                     <p class="text-xs text-gray-500 font-mono">{{ ag.cnpj ? fmtCnpj(ag.cnpj) : 'CNPJ não informado' }}
@@ -758,6 +764,10 @@
               </div>
             </div>
 
+            <div v-if="pdfErro" class="mb-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+              {{ pdfErro }}
+            </div>
+
             <div v-if="ticketsTerceiros.length === 0" class="text-center py-16 text-gray-400 text-sm font-medium">
               Nenhum ticket encontrado.
             </div>
@@ -783,14 +793,15 @@
                       <div class="text-[10px] text-gray-400">{{ t.terceiro_email }}</div>
                     </td>
                     <td class="px-4 py-3">
-                      <a :href="t.pdf_url || ('/' + t.pdf_path)" target="_blank" rel="noopener noreferrer"
-                        class="inline-flex items-center gap-1.5 text-xs text-labs-blue hover:text-labs-dark hover:underline font-semibold">
+                      <button @click="abrirPdfAssinado(t)"
+                        class="inline-flex items-center gap-1.5 text-xs text-labs-blue hover:text-labs-dark hover:underline font-semibold bg-transparent border-0 cursor-pointer p-0">
                         <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                         Ver PDF Assinado
-                      </a>
+                      </button>
+                      <p v-if="pdfErro" class="text-[10px] text-red-500 mt-1 font-medium">{{ pdfErro }}</p>
                     </td>
                     <td class="px-4 py-3">
                       <span
@@ -818,7 +829,8 @@
                       </div>
                       <div v-else class="text-left text-gray-500 text-[11px] font-medium max-w-xs ml-auto">
                         <p><strong>Decidido por:</strong> {{ t.operador_setor }} · {{ fmtData(t.data_decisao) }}</p>
-                        <p v-if="t.observacao_setor" class="mt-0.5 italic"><strong>Obs:</strong> {{ t.observacao_setor }}</p>
+                        <p v-if="t.observacao_setor" class="mt-0.5 italic"><strong>Obs:</strong> {{ t.observacao_setor
+                          }}</p>
                       </div>
                     </td>
                   </tr>
@@ -855,7 +867,8 @@
                     <td class="px-4 py-3 text-gray-500 font-mono">{{ fmtDataHora(al.data_criacao) }}</td>
                     <td class="px-4 py-3 font-semibold text-gray-800 font-mono">{{ al.username }}</td>
                     <td class="px-4 py-3 text-gray-400 font-mono">{{ al.ip_origem }}</td>
-                    <td class="px-4 py-3 text-gray-600 font-sans leading-relaxed text-left whitespace-pre-wrap">{{ al.observacao }}</td>
+                    <td class="px-4 py-3 text-gray-600 font-sans leading-relaxed text-left whitespace-pre-wrap">{{
+                      al.observacao }}</td>
                     <td class="px-4 py-3 text-center">
                       <span
                         class="inline-flex items-center text-[9px] font-semibold bg-red-50 text-red-650 border border-red-100 rounded-md px-1.5 py-0.5 shadow-sm">
@@ -880,7 +893,8 @@
       <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden border border-white/20 mb-8">
         <!-- Header -->
         <div class="bg-labs-blue px-6 py-4 flex items-center justify-between">
-          <h3 class="text-white font-bold text-sm">{{ agenciaEditando ? 'Editar Agência' : 'Cadastrar Agência de Viagens' }}</h3>
+          <h3 class="text-white font-bold text-sm">{{ agenciaEditando ? 'Editar Agência' : 'Cadastrar Agência de
+            Viagens' }}</h3>
           <button @click="fecharModalAgencia" class="text-white/70 hover:text-white transition">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -1098,7 +1112,8 @@
                 <span class="text-xl">⚠️</span>
                 <div>
                   <h3 class="text-xs font-bold text-rose-800 uppercase tracking-wider">
-                    Revisão de {{ detalhe.status === 'PENDENTE_APROVACAO_CANCELAMENTO' ? 'Cancelamento' : 'Remarcação' }}
+                    Revisão de {{ detalhe.status === 'PENDENTE_APROVACAO_CANCELAMENTO' ? 'Cancelamento' : 'Remarcação'
+                    }}
                   </h3>
                   <p class="text-[10px] text-gray-400 mt-0.5">Confirme as taxas e reembolsos informados pela agência
                     antes de aprovar.</p>
@@ -1120,7 +1135,8 @@
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
               <div>
                 <span class="text-gray-400 block mb-0.5">Tipo</span>
-                <strong class="text-gray-700 uppercase">{{ detalhe.tipo_solicitacao_cancelamento || 'CANCELAR' }}</strong>
+                <strong class="text-gray-700 uppercase">{{ detalhe.tipo_solicitacao_cancelamento || 'CANCELAR'
+                  }}</strong>
               </div>
               <div>
                 <span class="text-gray-400 block mb-0.5">Itens a Cancelar</span>
@@ -1128,7 +1144,8 @@
               </div>
               <div class="col-span-2">
                 <span class="text-gray-400 block mb-0.5">Motivo Informado</span>
-                <p class="text-gray-700 italic font-medium">"{{ detalhe.motivo_cancelamento || 'Sem justificativa informada' }}"</p>
+                <p class="text-gray-700 italic font-medium">"{{ detalhe.motivo_cancelamento || 'Sem justificativa
+                  informada' }}"</p>
               </div>
             </div>
 
@@ -1136,16 +1153,19 @@
               class="bg-white border border-rose-100 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs shadow-inner">
               <div>
                 <span class="text-gray-400 block mb-0.5">Taxa de Cancelamento (Agência)</span>
-                <strong class="text-red-650 text-sm font-mono">R$ {{ fmtValor(detalhe.taxa_cancelamento_agencia) }}</strong>
+                <strong class="text-red-650 text-sm font-mono">R$ {{ fmtValor(detalhe.taxa_cancelamento_agencia)
+                  }}</strong>
               </div>
               <div>
                 <span class="text-gray-400 block mb-0.5">Valor Reembolsável</span>
-                <strong class="text-emerald-600 text-sm font-mono">R$ {{ fmtValor(detalhe.valor_reembolsavel_agencia) }}</strong>
+                <strong class="text-emerald-600 text-sm font-mono">R$ {{ fmtValor(detalhe.valor_reembolsavel_agencia)
+                  }}</strong>
               </div>
               <div>
                 <span class="text-gray-400 block mb-0.5">Crédito Gerado</span>
                 <strong class="text-blue-600 text-sm font-mono">R$ {{ fmtValor(detalhe.valor_credito_gerado) }} <span
-                    class="text-[10px] text-gray-500 font-sans" v-if="detalhe.companhia_credito">({{ detalhe.companhia_credito }})</span></strong>
+                    class="text-[10px] text-gray-500 font-sans" v-if="detalhe.companhia_credito">({{
+                    detalhe.companhia_credito }})</span></strong>
               </div>
             </div>
 
@@ -1192,7 +1212,8 @@
             </div>
             <div>
               <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide block mb-1">Destino</span>
-              <span class="font-semibold text-labs-dark">{{ detalhe.destino_cidade }}/{{ detalhe.destino_estado }}</span>
+              <span class="font-semibold text-labs-dark">{{ detalhe.destino_cidade }}/{{ detalhe.destino_estado
+                }}</span>
             </div>
             <div>
               <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide block mb-1">Ida</span>
@@ -1252,7 +1273,8 @@
                 <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide block mb-0.5">Centro de
                   Custo</span>
                 <span class="text-gray-700">{{ detalhe.viajante_centro_custo }}<span
-                    v-if="detalhe.viajante_cod_centro_custo" class="text-gray-400 ml-1">({{ detalhe.viajante_cod_centro_custo }})</span></span>
+                    v-if="detalhe.viajante_cod_centro_custo" class="text-gray-400 ml-1">({{
+                    detalhe.viajante_cod_centro_custo }})</span></span>
               </div>
               <div v-if="detalhe.viajante_email" class="col-span-2">
                 <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide block mb-0.5">E-mail</span>
@@ -1285,13 +1307,17 @@
             <div class="grid grid-cols-1 gap-2 text-sm">
               <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-3">
                 <span class="text-xs font-bold text-indigo-500 block mb-1">Aprovador N1</span>
-                <span class="font-semibold text-labs-dark">{{ detalhe.aprovador_n1_nome || detalhe.aprovador_n1_email }}</span>
-                <span v-if="detalhe.aprovador_n1_nome" class="text-xs text-gray-500 block">{{ detalhe.aprovador_n1_email }}</span>
+                <span class="font-semibold text-labs-dark">{{ detalhe.aprovador_n1_nome || detalhe.aprovador_n1_email
+                  }}</span>
+                <span v-if="detalhe.aprovador_n1_nome" class="text-xs text-gray-500 block">{{ detalhe.aprovador_n1_email
+                  }}</span>
               </div>
               <div v-if="detalhe.aprovador_n2_email" class="bg-indigo-50 border border-indigo-100 rounded-xl p-3">
                 <span class="text-xs font-bold text-indigo-400 block mb-1">Aprovador N2</span>
-                <span class="font-semibold text-labs-dark">{{ detalhe.aprovador_n2_nome || detalhe.aprovador_n2_email }}</span>
-                <span v-if="detalhe.aprovador_n2_nome" class="text-xs text-gray-500 block">{{ detalhe.aprovador_n2_email }}</span>
+                <span class="font-semibold text-labs-dark">{{ detalhe.aprovador_n2_nome || detalhe.aprovador_n2_email
+                  }}</span>
+                <span v-if="detalhe.aprovador_n2_nome" class="text-xs text-gray-500 block">{{ detalhe.aprovador_n2_email
+                  }}</span>
               </div>
             </div>
           </div>
@@ -1325,12 +1351,14 @@
               <div v-if="detalhe.preferencia_voo" class="col-span-2">
                 <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide block mb-0.5">Voo de Ida
                   Consultado</span>
-                <span class="text-gray-700 font-mono text-xs bg-white rounded p-2 block whitespace-pre-wrap">{{ detalhe.preferencia_voo }}</span>
+                <span class="text-gray-700 font-mono text-xs bg-white rounded p-2 block whitespace-pre-wrap">{{
+                  detalhe.preferencia_voo }}</span>
               </div>
               <div v-if="detalhe.preferencia_voo_volta" class="col-span-2">
                 <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide block mb-0.5">Voo de Volta
                   Consultado</span>
-                <span class="text-gray-700 font-mono text-xs bg-white rounded p-2 block whitespace-pre-wrap">{{ detalhe.preferencia_voo_volta }}</span>
+                <span class="text-gray-700 font-mono text-xs bg-white rounded p-2 block whitespace-pre-wrap">{{
+                  detalhe.preferencia_voo_volta }}</span>
               </div>
             </div>
           </div>
@@ -1441,20 +1469,27 @@
                   </div>
                   <div class="space-y-2 text-xs text-gray-600">
                     <div v-if="slot.cot.aereo_companhia" class="flex justify-between">
-                      <span>✈ {{ slot.cot.aereo_companhia }}<span v-if="slot.cot.aereo_numero_voo"> · {{ slot.cot.aereo_numero_voo }}</span></span>
-                      <span v-if="slot.cot.aereo_valor" class="font-semibold text-labs-dark">R$ {{ fmtValor(slot.cot.aereo_valor) }}</span>
+                      <span>✈ {{ slot.cot.aereo_companhia }}<span v-if="slot.cot.aereo_numero_voo"> · {{
+                          slot.cot.aereo_numero_voo }}</span></span>
+                      <span v-if="slot.cot.aereo_valor" class="font-semibold text-labs-dark">R$ {{
+                        fmtValor(slot.cot.aereo_valor) }}</span>
                     </div>
                     <div v-if="slot.cot.hotel_nome" class="flex justify-between">
-                      <span>🏨 {{ slot.cot.hotel_nome }}<span v-if="slot.cot.hotel_categoria"> ({{ slot.cot.hotel_categoria }})</span></span>
-                      <span v-if="slot.cot.hotel_valor_diaria" class="font-semibold text-labs-dark">R$ {{ fmtValor(slot.cot.hotel_valor_diaria) }}/diária</span>
+                      <span>🏨 {{ slot.cot.hotel_nome }}<span v-if="slot.cot.hotel_categoria"> ({{
+                          slot.cot.hotel_categoria }})</span></span>
+                      <span v-if="slot.cot.hotel_valor_diaria" class="font-semibold text-labs-dark">R$ {{
+                        fmtValor(slot.cot.hotel_valor_diaria) }}/diária</span>
                     </div>
                     <div v-if="slot.cot.rodov_empresa" class="flex justify-between">
                       <span>🚌 {{ slot.cot.rodov_empresa }}</span>
-                      <span v-if="slot.cot.rodov_valor" class="font-semibold text-labs-dark">R$ {{ fmtValor(slot.cot.rodov_valor) }}</span>
+                      <span v-if="slot.cot.rodov_valor" class="font-semibold text-labs-dark">R$ {{
+                        fmtValor(slot.cot.rodov_valor) }}</span>
                     </div>
                     <div v-if="slot.cot.carro_locadora" class="flex justify-between">
-                      <span>🚗 {{ slot.cot.carro_locadora }}<span v-if="slot.cot.carro_modelo"> · {{ slot.cot.carro_modelo }}</span></span>
-                      <span v-if="slot.cot.carro_valor_diaria" class="font-semibold text-labs-dark">R$ {{ fmtValor(slot.cot.carro_valor_diaria) }}/dia</span>
+                      <span>🚗 {{ slot.cot.carro_locadora }}<span v-if="slot.cot.carro_modelo"> · {{
+                          slot.cot.carro_modelo }}</span></span>
+                      <span v-if="slot.cot.carro_valor_diaria" class="font-semibold text-labs-dark">R$ {{
+                        fmtValor(slot.cot.carro_valor_diaria) }}/dia</span>
                     </div>
                     <div v-if="slot.cot.observacoes"
                       class="text-gray-400 italic border-t border-gray-200 pt-1.5 mt-1.5">
@@ -1640,6 +1675,7 @@
         const detalhe = ref({});
         const acaoCarregando = ref(false);
         const acaoErro = ref('');
+        const pdfErro = ref('');
 
         const confirmacao = reactive({ aberto: false, sol: null, acao: '' });
 
@@ -1734,6 +1770,45 @@
           modalAberto.value = false;
           detalhe.value = {};
           acaoErro.value = '';
+        };
+
+        const abrirPdfAssinado = async (ticket) => {
+          pdfErro.value = '';
+
+          if (!ticket?.pdf_url && !ticket?.pdf_path) {
+            pdfErro.value = 'PDF não disponível para esta autorização.';
+            return;
+          }
+
+          const url = ticket.pdf_url || `/${ticket.pdf_path}`;
+          const novaAba = window.open('about:blank', '_blank');
+          if (!novaAba) {
+            pdfErro.value = 'Permita pop-ups para abrir o PDF assinado.';
+            return;
+          }
+
+          try {
+            const resp = await fetch(url, {
+              headers: { Authorization: `Bearer ${token.value}` },
+            });
+
+            if (resp.status === 401 || resp.status === 403) {
+              throw new Error('Não foi possível autenticar a visualização do PDF. Faça login novamente.');
+            }
+
+            if (!resp.ok) {
+              const dados = await resp.json().catch(() => ({}));
+              throw new Error(dados.detail || 'Falha ao carregar o PDF.');
+            }
+
+            const blob = await resp.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            novaAba.location.href = blobUrl;
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+          } catch (e) {
+            novaAba.close();
+            pdfErro.value = e.message || 'Falha ao abrir o PDF assinado.';
+          }
         };
 
         const confirmarAcao = (sol, acao) => {
@@ -2369,11 +2444,11 @@
           token, nomeUsuario, perfilUsuario, aba, carregando, solicitacoes, filtros,
           slotsCotacao,
           menuRecolhido, menuItens, menuLabel, menuDesc, kpiCardConfig,
-          modalAberto, detalhe, acaoCarregando, acaoErro, confirmacao,
+          modalAberto, detalhe, acaoCarregando, acaoErro, pdfErro, confirmacao,
           kpis, distribuicaoStatus, volumeMensal, maxMensal, centroCustoRanking, maxCC,
           ativosHoje, alertasAcesso, carregarStatsAdicionais, carregarAlertasAcesso, fmtDataHora,
           carregarSolicitacoes, debounceCarregar,
-          abrirDetalhe, fecharModal, confirmarAcao, executarAcao, calcularIndicadores,
+          abrirDetalhe, fecharModal, confirmarAcao, executarAcao, calcularIndicadores, abrirPdfAssinado,
           exportarSolicitacoes, exportarStatus, exportarCentroCusto, exportarVolumeMensal,
           casamentos, casamentosCount, casamentoMsgOk, casamentoMsgErr,
           carregarCasamentos, agirCasamento, tipoCasamentoCor,
@@ -2395,4 +2470,3 @@
 </body>
 
 </html>
- 

@@ -257,7 +257,10 @@
                             </span>
                             <span class="h-4 w-px bg-gray-200 hidden sm:block"></span>
                             <p class="text-xs text-gray-400 truncate hidden sm:block">
-                                {{ abaAtiva === 'nova_solicitacao' ? 'Preencha o formulário e crie uma nova solicitação corporativa.' : abaAtiva === 'minhas_viagens' ? 'Monitore e acompanhe o status de todas as suas solicitações.' : 'Solicite e gerencie permissões de delegação de acesso AD para terceiros.' }}
+                                {{ abaAtiva === 'nova_solicitacao' ? 'Preencha o formulário e crie uma nova solicitação
+                                corporativa.' : abaAtiva === 'minhas_viagens' ? 'Monitore e acompanhe o status de todas
+                                as suas solicitações.' : 'Solicite e gerencie permissões de delegação de acesso AD para
+                                terceiros.' }}
                             </p>
                         </div>
 
@@ -658,7 +661,8 @@
                                                         <span
                                                             class="ml-auto text-xs px-2 py-0.5 rounded-full font-bold uppercase"
                                                             :class="distanciaViagem >= 400 ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'">
-                                                            {{ distanciaViagem >= 400 ? 'Apto para voo' : 'Priorize terrestre' }}
+                                                            {{ distanciaViagem >= 400 ? 'Apto para voo' : 'Priorize
+                                                            terrestre' }}
                                                         </span>
                                                     </template>
                                                 </div>
@@ -811,208 +815,22 @@
                                                 </div>
                                             </div>
 
-                                            <!-- ══ BUSCA CONSULTIVA DE VOOS (Duffel) ══════════════════════ -->
                                             <div v-if="formViagem.tipo_servico.includes('Aereo')"
-                                                class="border border-blue-200 rounded-xl bg-blue-50 p-4">
-                                                <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
-                                                    <div class="flex items-center gap-2">
-                                                        <span class="text-blue-700 text-lg">✈</span>
-                                                        <span class="font-semibold text-blue-800 text-sm">Pesquisa de
-                                                            Voos (opcional)</span>
-                                                        <span class="text-xs text-blue-500">— Consultivo · sem
-                                                            reserva</span>
-                                                    </div>
-                                                    <button type="button" @click="buscarVoosDuffel"
-                                                        :disabled="!podeBuscarVoos || duffelBuscando"
-                                                        class="text-xs bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-lg px-3 py-1.5 transition">
-                                                        {{ duffelBuscando ? '⏳ Buscando…' : '🔍 Buscar Voos' }}
-                                                    </button>
+                                                class="border border-sky-200 rounded-xl bg-sky-50 p-4">
+                                                <div class="flex items-center gap-2 mb-2">
+                                                    <span class="text-sky-700 text-lg">✈️</span>
+                                                    <span class="font-semibold text-sky-800 text-sm">Preferência de
+                                                        voo</span>
                                                 </div>
-
-                                                <!-- Voo selecionado -->
-                                                <div v-if="duffelVooSelecionado"
-                                                    class="mb-3 bg-green-50 border border-green-300 rounded-lg px-3 py-2 text-sm flex items-center justify-between gap-2">
-                                                    <span class="text-green-700">
-                                                        ✔ <strong>{{ duffelVooSelecionado.cia_nome }} {{
-                                                            duffelVooSelecionado.numero_voo }}</strong>
-                                                        · {{ formatarHora(duffelVooSelecionado.saida) }} → {{
-                                                        formatarHora(duffelVooSelecionado.chegada) }}
-                                                        · {{ duffelVooSelecionado.paradas === 0 ? 'Direto' :
-                                                        duffelVooSelecionado.paradas + ' parada(s)' }}
-                                                        <span v-if="duffelVooSelecionado.bagagem"
-                                                            class="ml-1 text-xs bg-green-100 text-green-700 rounded px-1">🧳
-                                                            bagagem</span>
-                                                    </span>
-                                                    <button type="button"
-                                                        @click="duffelVooSelecionado = null; formViagem.preferencia_voo = null"
-                                                        class="text-gray-400 hover:text-red-500 text-xs">✕
-                                                        Remover</button>
-                                                </div>
-
-                                                <!-- Erro -->
-                                                <div v-if="duffelErro"
-                                                    class="mb-3 text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                                                    {{ duffelErro }}
-                                                </div>
-
-                                                <!-- Lista de resultados -->
-                                                <div v-if="duffelVoos.length">
-                                                    <div v-if="formPreferencias.aereo_tipo_trecho === 'ambos'"
-                                                        class="flex items-center gap-2 mb-2">
-                                                        <span class="text-xs font-bold text-blue-700">↗ Voo de
-                                                            Ida</span>
-                                                        <span class="text-xs text-blue-500">{{ formViagem.origem_cidade
-                                                            }} → {{ formViagem.destino_cidade }}</span>
-                                                    </div>
-                                                    <div class="space-y-2 max-h-72 overflow-y-auto pr-1">
-                                                        <div v-if="voosFiltrados.length === 0 && duffelVoos.length > 0"
-                                                            class="text-xs text-amber-700 bg-amber-50 p-4 rounded-xl border border-amber-200 font-medium mb-3 select-none">
-                                                            ⚠ Nenhum voo de ida disponível no período selecionado ({{
-                                                            formPreferencias.aereo_periodo_preferido === 'manha' ?
-                                                            'Manhã: 06h–12h' : formPreferencias.aereo_periodo_preferido
-                                                            === 'tarde' ? 'Tarde: 12h–18h' : 'Noite/Madrugada: 18h–06h'
-                                                            }}).
-                                                        </div>
-                                                        <div v-for="voo in voosFiltrados" :key="voo.id"
-                                                            @click="selecionarVoo(voo)"
-                                                            :class="duffelVooSelecionado && duffelVooSelecionado.id === voo.id
-                                                        ? 'border-blue-500 bg-white ring-2 ring-blue-400'
-                                                        : 'border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50'"
-                                                            class="border rounded-lg p-3 cursor-pointer transition flex items-center justify-between gap-3 text-sm">
-                                                            <div class="flex items-center gap-3 min-w-0">
-                                                                <div class="text-center w-14 flex-shrink-0">
-                                                                    <div class="font-bold text-blue-700 text-xs">{{
-                                                                        voo.cia_nome }}</div>
-                                                                    <div class="text-gray-500 text-xs">{{ voo.numero_voo
-                                                                        }}</div>
-                                                                </div>
-                                                                <div>
-                                                                    <div class="font-semibold text-gray-800">
-                                                                        {{ formatarHora(voo.saida) }} → {{
-                                                                        formatarHora(voo.chegada) }}
-                                                                    </div>
-                                                                    <div class="text-xs text-gray-500">
-                                                                        {{ voo.origem }} → {{ voo.destino }} ·
-                                                                        {{ voo.paradas === 0 ? 'Direto' : voo.paradas +
-                                                                        ' parada(s)' }}
-                                                                        <template v-if="voo.escalas.length">
-                                                                            ({{ voo.escalas.map(e =>
-                                                                            e.aeroporto).join(', ') }})
-                                                                        </template>
-                                                                        · {{ formatarDuracao(voo.duracao) }}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            <div class="flex-shrink-0 flex flex-col items-end gap-1">
-                                                                <span v-if="voo.bagagem"
-                                                                    class="text-xs bg-green-100 text-green-700 rounded px-1.5 py-0.5">🧳
-                                                                    bagagem</span>
-                                                                <span
-                                                                    v-if="duffelVooSelecionado && duffelVooSelecionado.id === voo.id"
-                                                                    class="text-xs bg-blue-100 text-blue-700 rounded px-1.5 py-0.5 font-semibold">✔
-                                                                    selecionado</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <p v-if="!duffelBuscando && duffelVoos.length === 0 && !duffelErro && !duffelVooSelecionado"
-                                                    class="text-xs text-blue-500 mt-1">
-                                                    Preencha origem, destino e data de ida, depois clique em "Buscar
-                                                    Voos" para ver opções disponíveis. A preferência será enviada à
-                                                    agência como contexto.
+                                                <p class="text-xs text-sky-700 leading-relaxed">
+                                                    Não há mais busca consultiva de voos nesta etapa. O pedido seguirá
+                                                    apenas com a preferência de período <strong class="text-sky-900">{{
+                                                        formPreferencias.aereo_periodo_preferido === 'manha' ? 'manhã' :
+                                                        formPreferencias.aereo_periodo_preferido === 'tarde' ? 'tarde' :
+                                                        formPreferencias.aereo_periodo_preferido === 'noite' ? 'noite' :
+                                                        'sem preferência' }}</strong> e as observações informadas.
                                                 </p>
-
-                                                <!-- Seção Voo de Volta -->
-                                                <div v-if="formPreferencias.aereo_tipo_trecho === 'ambos' && duffelVoos.length > 0"
-                                                    class="border-t border-blue-200 mt-3 pt-3">
-                                                    <div class="flex items-center gap-2 mb-2">
-                                                        <span class="text-xs font-bold text-blue-700">↩ Voo de
-                                                            Volta</span>
-                                                        <span class="text-xs text-blue-500">{{ formViagem.destino_cidade
-                                                            }} → {{ formViagem.origem_cidade }}</span>
-                                                    </div>
-                                                    <p v-if="!duffelVoosVolta.length && !duffelVooSelecionadoVolta"
-                                                        class="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-2">
-                                                        ⚠ Nenhum voo de volta encontrado para a data selecionada. Você
-                                                        pode informar sua preferência manualmente no próximo passo.
-                                                    </p>
-
-                                                    <!-- Voo de Volta Selecionado -->
-                                                    <div v-if="duffelVooSelecionadoVolta"
-                                                        class="mb-2 bg-green-50 border border-green-300 rounded-lg px-3 py-2 text-sm flex items-center justify-between gap-2">
-                                                        <span class="text-green-700">
-                                                            ✔ <strong>{{ duffelVooSelecionadoVolta.cia_nome }} {{
-                                                                duffelVooSelecionadoVolta.numero_voo }}</strong>
-                                                            · {{ formatarHora(duffelVooSelecionadoVolta.saida) }} → {{
-                                                            formatarHora(duffelVooSelecionadoVolta.chegada) }}
-                                                            · {{ duffelVooSelecionadoVolta.paradas === 0 ? 'Direto' :
-                                                            duffelVooSelecionadoVolta.paradas + ' parada(s)' }}
-                                                            <span v-if="duffelVooSelecionadoVolta.bagagem"
-                                                                class="ml-1 text-xs bg-green-100 text-green-700 rounded px-1">🧳
-                                                                bagagem</span>
-                                                        </span>
-                                                        <button type="button"
-                                                            @click="duffelVooSelecionadoVolta = null; formViagem.preferencia_voo_volta = null"
-                                                            class="text-gray-400 hover:text-red-500 text-xs">✕
-                                                            Remover</button>
-                                                    </div>
-
-                                                    <!-- Lista de Voos de Volta -->
-                                                    <div v-if="duffelVoosVolta.length"
-                                                        class="space-y-2 max-h-72 overflow-y-auto pr-1">
-                                                        <div v-if="voosVoltaFiltrados.length === 0 && duffelVoosVolta.length > 0"
-                                                            class="text-xs text-amber-700 bg-amber-50 p-4 rounded-xl border border-amber-200 font-medium mb-3 select-none">
-                                                            ⚠ Nenhum voo de volta disponível no período selecionado ({{
-                                                            formPreferencias.aereo_periodo_preferido === 'manha' ?
-                                                            'Manhã: 06h–12h' : formPreferencias.aereo_periodo_preferido
-                                                            === 'tarde' ? 'Tarde: 12h–18h' : 'Noite/Madrugada: 18h–06h'
-                                                            }}).
-                                                        </div>
-                                                        <div v-for="voo in voosVoltaFiltrados" :key="'v-' + voo.id"
-                                                            @click="selecionarVoo(voo, 'volta')"
-                                                            :class="duffelVooSelecionadoVolta && duffelVooSelecionadoVolta.id === voo.id
-                                                            ? 'border-blue-500 bg-white ring-2 ring-blue-400'
-                                                            : 'border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50'"
-                                                            class="border rounded-lg p-3 cursor-pointer transition flex items-center justify-between gap-3 text-sm">
-                                                            <div class="flex items-center gap-3 min-w-0">
-                                                                <div class="text-center w-14 flex-shrink-0">
-                                                                    <div class="font-bold text-blue-700 text-xs">{{
-                                                                        voo.cia_nome }}</div>
-                                                                    <div class="text-gray-500 text-xs">{{ voo.numero_voo
-                                                                        }}</div>
-                                                                </div>
-                                                                <div>
-                                                                    <div class="font-semibold text-gray-800">
-                                                                        {{ formatarHora(voo.saida) }} → {{
-                                                                        formatarHora(voo.chegada) }}
-                                                                    </div>
-                                                                    <div class="text-xs text-gray-500">
-                                                                        {{ voo.origem }} → {{ voo.destino }} ·
-                                                                        {{ voo.paradas === 0 ? 'Direto' : voo.paradas +
-                                                                        ' parada(s)' }}
-                                                                        <template v-if="voo.escalas.length">
-                                                                            ({{ voo.escalas.map(e =>
-                                                                            e.aeroporto).join(', ') }})
-                                                                        </template>
-                                                                        · {{ formatarDuracao(voo.duracao) }}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            <div class="flex-shrink-0 flex flex-col items-end gap-1">
-                                                                <span v-if="voo.bagagem"
-                                                                    class="text-xs bg-green-100 text-green-700 rounded px-1.5 py-0.5">🧳
-                                                                    bagagem</span>
-                                                                <span
-                                                                    v-if="duffelVooSelecionadoVolta && duffelVooSelecionadoVolta.id === voo.id"
-                                                                    class="text-xs bg-blue-100 text-blue-700 rounded px-1.5 py-0.5 font-semibold">✔
-                                                                    selecionado</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
                                             </div>
-                                            <!-- ══ / BUSCA DUFFEL ══════════════════════════════════════════ -->
 
                                             <div class="flex justify-between pt-4 border-t border-gray-100">
                                                 <button @click="passoAtual = 1"
@@ -1951,26 +1769,8 @@
                     data_volta: '',
                     motivo_viagem: '',
                     tipo_servico: [],
-                    preferencia_voo: null,   // string com resumo do voo selecionado no Duffel
-                    preferencia_voo_volta: null, // string com resumo do voo de volta
-                });
-
-                // --- Duffel: busca consultiva de voos ---
-                const duffelVoos = ref([]);
-                const duffelVoosVolta = ref([]);
-                const duffelBuscando = ref(false);
-                const duffelErro = ref('');
-                const duffelVooSelecionado = ref(null);
-                const duffelVooSelecionadoVolta = ref(null);
-
-                const podeBuscarVoos = computed(() => {
-                    const f = formViagem.value;
-                    const tipo = formPreferencias.value.aereo_tipo_trecho;
-                    const baseOk = f.origem_cidade.trim() !== '' &&
-                        f.destino_cidade.trim() !== '' &&
-                        f.data_ida.length === 10;
-                    if (tipo === 'ambos') return baseOk && f.data_volta.length === 10;
-                    return baseOk;
+                    preferencia_voo: null,
+                    preferencia_voo_volta: null,
                 });
 
                 // --- Passo 3: Preferências ---
@@ -2050,35 +1850,7 @@
                 ];
 
                 // --- Computados ---
-                const voosFiltrados = computed(() => {
-                    const de = formPreferencias.value.aereo_periodo_preferido;
-                    if (!duffelVoos.value) return [];
-                    if (!de) return duffelVoos.value;
-                    return duffelVoos.value.filter(v => {
-                        if (!v || !v.saida || typeof v.saida !== 'string') return false;
-                        const hr = parseInt(v.saida.slice(11, 13), 10);
-                        if (isNaN(hr)) return false;
-                        if (de === 'manha') return hr >= 6 && hr < 12;
-                        if (de === 'tarde') return hr >= 12 && hr < 18;
-                        if (de === 'noite') return hr >= 18 || hr < 6;
-                        return true;
-                    });
-                });
 
-                const voosVoltaFiltrados = computed(() => {
-                    const de = formPreferencias.value.aereo_periodo_preferido;
-                    if (!duffelVoosVolta.value) return [];
-                    if (!de) return duffelVoosVolta.value;
-                    return duffelVoosVolta.value.filter(v => {
-                        if (!v || !v.saida || typeof v.saida !== 'string') return false;
-                        const hr = parseInt(v.saida.slice(11, 13), 10);
-                        if (isNaN(hr)) return false;
-                        if (de === 'manha') return hr >= 6 && hr < 12;
-                        if (de === 'tarde') return hr >= 12 && hr < 18;
-                        if (de === 'noite') return hr >= 18 || hr < 6;
-                        return true;
-                    });
-                });
                 const classificacaoAereo = computed(() => {
                     if (!formViagem.value.data_ida || !formViagem.value.tipo_servico.includes('Aereo')) return null;
                     const dataIda = parseDateBR(formViagem.value.data_ida);
@@ -2717,108 +2489,6 @@
                     }
                 };
 
-                // --- Duffel: funções de busca de voos ---
-                // _sortByPeriodo removida em prol do filtro dinamico reativo voosFiltrados.
-
-                const buscarVoosDuffel = async () => {
-                    duffelErro.value = '';
-                    duffelVoos.value = [];
-                    duffelVoosVolta.value = [];
-                    duffelVooSelecionadoVolta.value = null;
-                    duffelBuscando.value = true;
-                    const tipo = formPreferencias.value.aereo_tipo_trecho;
-
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 12000); // 12 segundos de limite
-
-                    try {
-                        const f = formViagem.value;
-                        const bodyIda = {
-                            origem: f.origem_cidade.trim(),
-                            destino: f.destino_cidade.trim(),
-                            data_ida: toISO(f.data_ida) || f.data_ida,
-                            data_volta: null,
-                            adultos: 1,
-                            exigir_bagagem: formPreferencias.value.bagagem_extra,
-                        };
-                        const resp = await fetch('/api/v1/duffel/voos', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token.value}` },
-                            body: JSON.stringify(bodyIda),
-                            signal: controller.signal
-                        });
-
-                        let dados = {};
-                        try {
-                            dados = await resp.json();
-                        } catch (jsonErr) {
-                            if (!resp.ok) {
-                                duffelErro.value = `Erro ${resp.status}: Falha ao consultar o serviço de busca de voos.`;
-                            } else {
-                                duffelErro.value = 'Resposta inválida do servidor.';
-                            }
-                            return;
-                        }
-
-                        if (!resp.ok) { duffelErro.value = dados.detail || 'Erro na busca de voos.'; return; }
-                        if (!dados.opcoes || dados.opcoes.length === 0) {
-                            duffelErro.value = 'Nenhum voo de ida encontrado. Preencha a preferência manualmente no próximo passo.';
-                            return;
-                        }
-                        duffelVoos.value = dados.opcoes;
-
-                        // Busca voo de volta se trecho = ambos
-                        if (tipo === 'ambos' && f.data_volta && f.data_volta.length === 10) {
-                            const bodyVolta = {
-                                origem: f.destino_cidade.trim(),
-                                destino: f.origem_cidade.trim(),
-                                data_ida: toISO(f.data_volta) || f.data_volta,
-                                data_volta: null,
-                                adultos: 1,
-                                exigir_bagagem: formPreferencias.value.bagagem_extra,
-                            };
-                            const respV = await fetch('/api/v1/duffel/voos', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token.value}` },
-                                body: JSON.stringify(bodyVolta),
-                                signal: controller.signal
-                            });
-                            if (respV.ok) {
-                                let dadosV = {};
-                                try {
-                                    dadosV = await respV.json();
-                                    duffelVoosVolta.value = dadosV.opcoes || [];
-                                } catch (jsonVErr) {
-                                    console.warn('[Duffel] falha ao ler json do voo de volta');
-                                }
-                            }
-                        }
-                    } catch (e) {
-                        if (e.name === 'AbortError') {
-                            duffelErro.value = 'A busca de voos demorou muito para responder (limite de 12s excedido).';
-                        } else {
-                            duffelErro.value = 'Erro de conexão ao buscar voos.';
-                        }
-                    } finally {
-                        clearTimeout(timeoutId);
-                        duffelBuscando.value = false;
-                    }
-                };
-
-                const selecionarVoo = (voo, trecho = 'ida') => {
-                    const paradas = voo.paradas === 0 ? 'direto' : `${voo.paradas} parada(s)`;
-                    const bag = voo.bagagem ? ' | bagagem incluída' : '';
-                    const pref = `${voo.cia_nome} ${voo.numero_voo} | ${voo.origem}→${voo.destino} | ` +
-                        `${formatarHora(voo.saida)}→${formatarHora(voo.chegada)} | ${paradas}${bag}`;
-                    if (trecho === 'volta') {
-                        duffelVooSelecionadoVolta.value = voo;
-                        formViagem.value.preferencia_voo_volta = pref;
-                    } else {
-                        duffelVooSelecionado.value = voo;
-                        formViagem.value.preferencia_voo = pref;
-                    }
-                };
-
                 const formatarData = (iso) => {
                     if (!iso) return '—';
                     return new Date(iso).toLocaleDateString('pt-BR');
@@ -2843,12 +2513,7 @@
                     viajanteDados.value = null;
                     celularViajante.value = ''; dataNascimentoViajante.value = ''; perfilSalvo.value = false;
                     tipo_solicitacao.value = 'proprio';
-                    duffelVoos.value = [];
-                    duffelVooSelecionado.value = null;
-                    duffelErro.value = '';
                     distanciaViagem.value = null;
-                    duffelVoosVolta.value = [];
-                    duffelVooSelecionadoVolta.value = null;
                     formViagem.value = { origem_cidade: '', origem_estado: '', destino_cidade: '', destino_estado: '', data_ida: '', data_volta: '', motivo_viagem: '', tipo_servico: [], preferencia_voo: null, preferencia_voo_volta: null };
                     formPreferencias.value = { aereo_periodo_preferido: '', aereo_tipo_trecho: 'ambos', bagagem_extra: false, assento_especial: '', rodov_periodo_preferido: '', rodov_tipo_onibus: '', rodov_tipo_trecho: 'ambos', preferencia_hotel_nome: '', hosp_data_checkin: '', hosp_data_checkout: '', quarto_excecao_saude: false, carro_data_retirada: '', carro_hora_retirada: '', carro_cidade_retirada: '', carro_data_devolucao: '', carro_hora_devolucao: '', carro_cidade_devolucao: '', observacoes_viajante: '' };
                     protocoloGerado.value = null;
@@ -3154,10 +2819,8 @@
                     enviarSolicitacao, novasolicitacao,
                     // Histórico
                     historico, historicoCarregando, carregarHistorico, statusLabelMini, statusCorMini,
-                    // Duffel
-                    duffelVoos, duffelVoosVolta, duffelBuscando, duffelErro,
-                    duffelVooSelecionado, duffelVooSelecionadoVolta, podeBuscarVoos,
-                    buscarVoosDuffel, selecionarVoo, formatarHora, formatarDuracao, formatarData,
+                    // Utilitários
+                    formatarHora, formatarDuracao, formatarData,
                     // Autocomplete IBGE
                     acCidades, buscarCidadesIBGE, selecionarCidade, fecharAc,
                     // Gestão de Créditos & Cancelamento/Remarcação
@@ -3176,4 +2839,4 @@
     </script>
 </body>
 
-</html> 
+</html>
