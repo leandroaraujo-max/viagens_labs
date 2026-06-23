@@ -351,8 +351,14 @@ Documento de Política de Privacidade Formal (2-3 páginas)
 - 🔜 Próxima execução recomendada do plano (ordem):
   1. ~~Etapa 3.5 (job de processamento de solicitações expiradas)~~ ✅ Concluída
   2. ~~Etapa 3.6 (termo de consentimento para gestores no portal do setor)~~ ✅ Concluída
-  3. Etapa 3.2 (encriptação em repouso), após alinhamento jurídico e política de retenção final.
-  4. Fase 4 (validação, testes integrados e deploy em produção).
+  3. **Etapa 3.2** ⏸️ Aguardando alinhamento jurídico sobre política de retenção de dados (encriptação em repouso).
+  4. **Fase 4** (validação, testes integrados e deploy em produção) - pode ser iniciada em paralelo.
+
+---
+
+## 🚧 Bloqueadores Conhecidos
+
+- **Etapa 3.2 (Encriptação em Repouso)**: Depende de aprovação da equipe jurídica/DPO sobre política de retenção final. Contato: DPO (dpo@luizalabs.com)
 
 ---
 
