@@ -691,8 +691,13 @@
                                                 <input type="checkbox" v-model="formPreferencias.quarto_excecao_saude" class="w-4 h-4 text-labs-blue rounded focus:ring-labs-blue">
                                                 <span class="text-sm text-gray-700">Solicitar quarto individual por condição de saúde</span>
                                             </label>
-                                            <div v-if="formPreferencias.quarto_excecao_saude" class="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                                                <p class="text-xs font-semibold text-amber-700 mb-1.5">⚕ Justificativa obrigatória — descreva a condição e se há alinhamento com os times responsáveis.</p>
+                                            <div v-if="formPreferencias.quarto_excecao_saude" class="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-2">
+                                                <p class="text-xs font-semibold text-amber-700">⚕ Justificativa obrigatória — descreva a condição e se há alinhamento com os times responsáveis.</p>
+                                                <textarea v-model="formPreferencias.observacoes_viajante"
+                                                    rows="3"
+                                                    placeholder="Ex: Necessito de quarto individual por condição médica documentada (CID...). Alinhado com RH em DD/MM/AAAA."
+                                                    class="w-full px-3 py-2 rounded-lg border border-amber-300 bg-white text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-300 resize-none"
+                                                ></textarea>
                                             </div>
                                         </div>
 
@@ -2221,7 +2226,12 @@
                 };
 
                 const logout = () => {
+                    // Preservar consentimento LGPD — não deve ser perdido no logout
+                    const lgpdAceito = localStorage.getItem('lgpd_aceito');
+                    const lgpdData   = localStorage.getItem('lgpd_data_aceito');
                     localStorage.clear();
+                    if (lgpdAceito) localStorage.setItem('lgpd_aceito', lgpdAceito);
+                    if (lgpdData)   localStorage.setItem('lgpd_data_aceito', lgpdData);
                     token.value = null;
                     nomeUsuario.value = '';
                     perfilUsuario.value = '';

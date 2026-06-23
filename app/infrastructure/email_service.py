@@ -187,6 +187,24 @@ class EmailService:
             logger.warning(f"Erro ao buscar testador QA no banco: {e}")
             return None
 
+    def _obter_nome_display(self, username: str) -> str:
+        """Retorna o primeiro nome do colaborador pelo username. Fallback: username."""
+        if not username:
+            return username
+        try:
+            from app.infrastructure.database import SessionLocal
+            from app.infrastructure.orm.models import ColaboradorCacheModel
+            db = SessionLocal()
+            try:
+                col = db.query(ColaboradorCacheModel).filter_by(username=username).first()
+                if col and col.nome:
+                    return col.nome.split()[0].capitalize()
+            finally:
+                db.close()
+        except Exception:
+            pass
+        return username
+
     def _obter_agencias_ativas(self) -> list:
         try:
             from app.infrastructure.database import SessionLocal
@@ -360,7 +378,7 @@ class EmailService:
         ])
 
         corpo = f"""
-          <p style="margin:0 0 16px">Olá, <strong>{solicitacao.solicitante_username}</strong>,</p>
+          <p style="margin:0 0 16px">Olá, <strong>{self._obter_nome_display(solicitacao.solicitante_username)}</strong>,</p>
           <p style="margin:0 0 16px;color:#64748b">Segue o resultado da análise da sua solicitação de viagem:</p>
           {dados}
           {proximo}"""
@@ -402,7 +420,7 @@ class EmailService:
         ])
 
         corpo = f"""
-          <p style="margin:0 0 16px">Olá, <strong>{solicitacao.solicitante_username}</strong>,</p>
+          <p style="margin:0 0 16px">Olá, <strong>{self._obter_nome_display(solicitacao.solicitante_username)}</strong>,</p>
           <p style="margin:0 0 16px;color:#64748b">
             Sua solicitação de viagem foi registrada no sistema. Guarde o protocolo abaixo para acompanhamento:
           </p>
@@ -465,7 +483,7 @@ class EmailService:
             obs_html = f'<p style="font-size:13px;color:#64748b;font-style:italic;margin:8px 0 0"><strong>Obs.:</strong> {cotacao.observacoes}</p>'
 
         corpo = f"""
-          <p style="margin:0 0 16px">Olá, <strong>{solicitacao.solicitante_username}</strong>,</p>
+          <p style="margin:0 0 16px">Olá, <strong>{self._obter_nome_display(solicitacao.solicitante_username)}</strong>,</p>
           <p style="margin:0 0 16px;color:#64748b">
             A agência <strong>{cotacao.agencia_nome}</strong> enviou a cotação para a sua viagem:
           </p>
@@ -748,7 +766,7 @@ class EmailService:
             ("Agência",      f"<strong>{agencia_nome}</strong>"),
         ])
         corpo = f"""
-          <p style="margin:0 0 16px">Olá, <strong>{solicitacao.solicitante_username}</strong>,</p>
+          <p style="margin:0 0 16px">Olá, <strong>{self._obter_nome_display(solicitacao.solicitante_username)}</strong>,</p>
           <p style="margin:0 0 16px;color:#64748b">
             Boa notícia! Sua solicitação foi aprovada pelo setor de viagens.
             A agência <strong>{agencia_nome}</strong> irá emitir os vouchers em breve.
@@ -787,7 +805,7 @@ class EmailService:
                 </p>
               </div>"""
         corpo = f"""
-          <p style="margin:0 0 16px">Olá, <strong>{solicitacao.solicitante_username}</strong>,</p>
+          <p style="margin:0 0 16px">Olá, <strong>{self._obter_nome_display(solicitacao.solicitante_username)}</strong>,</p>
           <p style="margin:0 0 16px;color:#64748b">
             Infelizmente sua solicitação de viagem não foi aprovada.
           </p>
@@ -823,7 +841,7 @@ class EmailService:
             url   = f"{self.base_url}/vouchers/{v.caminho_arquivo}"
             links_html += f'<div style="margin:8px 0"><a href="{url}" style="display:inline-block;padding:8px 20px;background:{_AZUL_MEDIO};color:#fff;border-radius:6px;text-decoration:none;font-size:13px">{label} — Download</a></div>'
         corpo = f"""
-          <p style="margin:0 0 16px">Olá, <strong>{solicitacao.solicitante_username}</strong>,</p>
+          <p style="margin:0 0 16px">Olá, <strong>{self._obter_nome_display(solicitacao.solicitante_username)}</strong>,</p>
           <p style="margin:0 0 16px;color:#64748b">Seus vouchers de viagem já estão disponíveis. Boa viagem! ✈</p>
           {dados}
           <div style="margin:20px 0">{links_html}</div>
