@@ -2,6 +2,7 @@ from fastapi import APIRouter
 from app.api.v1.endpoints import viagens_router, auth_router, aprovacao_router, agencia_router, brasil_api_router, setor_router, voucher_router, dev_router
 from app.api.v1.endpoints.terceiros import router as terceiros_router
 from app.api.v1.endpoints.hoteis import router as hoteis_router
+from app.api.v1.endpoints.lgpd import router as lgpd_router
 
 api_router = APIRouter()
 
@@ -34,3 +35,6 @@ api_router.include_router(terceiros_router, prefix="", tags=["Terceiros"])
 
 # Fluxo de Solicitação para Hotéis
 api_router.include_router(hoteis_router, prefix="/hoteis", tags=["Hoteis"])
+
+# LGPD — Consentimento, acesso a dados, direito ao esquecimento
+api_router.include_router(lgpd_router, tags=["LGPD"])

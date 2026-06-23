@@ -349,3 +349,21 @@ class ColaboradorCacheModel(Base):
     foneres           = Column(String(50),  default='')
     situacao          = Column(String(50),  default='')
     data_atualizacao  = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class LGPDConsentimentoModel(Base):
+    """
+    Registro de consentimento LGPD dos usuários.
+    Obrigatório na primeira entrada; pode ser revogado pelo usuário.
+    """
+    __tablename__ = "lgpd_consentimento"
+
+    id                    = Column(Integer, primary_key=True, index=True)
+    usuario_id            = Column(String(100), nullable=False, index=True)
+    aceito                = Column(Boolean, default=False, nullable=False)
+    data_aceito           = Column(DateTime(timezone=True), server_default=func.now())
+    data_revogacao        = Column(DateTime(timezone=True), nullable=True)
+    versao_politica       = Column(String(20), default='1.0')
+    ip_origem             = Column(String(50), nullable=True)
+    user_agent            = Column(String(500), nullable=True)
+    criado_em             = Column(DateTime(timezone=True), server_default=func.now(), index=True)
