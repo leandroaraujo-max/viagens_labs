@@ -982,5 +982,33 @@ Sempre fornecer o código completo do método/função alterado.
 
 ---
 
+## QA Padrao com Pytest
+
+O padrao oficial de QA do projeto passa a ser o pytest.
+
+### Comandos oficiais
+
+```powershell
+# Suite padrao (rapida, sem integracao externa)
+.\venv\Scripts\python.exe -m pytest tests -m "not integration"
+
+# Suite completa com integracao (inclui PostgreSQL)
+.\venv\Scripts\python.exe -m pytest tests -m integration
+
+# Runner padrao de QA (recomendado)
+.\scripts\qa.ps1
+
+# Runner completo com integracao
+.\scripts\qa.ps1 -Integration
+```
+
+### Estrutura da suite
+
+- tests/test_lgpd_api.py: validacao dos endpoints LGPD
+- tests/test_db_schema.py: validacao de schema do modelo e integracao PostgreSQL
+- pytest.ini: configuracao oficial de descoberta e marcadores
+
+---
+
 *Última atualização: 23/05/2026 — Estabilização geral e Dynamicização de Agências concluída: correção de ReferenceError do Vue 3 em fmtCnpj, bypass de tela preta na navegação de portais técnicos, KPI cards e filtros 100% dinâmicos por agência ativa, contagem inteligente de cotações para decisão e console terminal hacker de Logs do Sistema em tempo real.*
 
