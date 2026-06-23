@@ -1620,10 +1620,25 @@
   </div>
 
   <script>
-    const { createApp, ref, computed, onMounted, reactive } = Vue;
+    const { createApp, ref, computed, onMounted, reactive, watch } = Vue;
 
     createApp({
       setup() {
+        // ── 1. FUNÇÕES DE NAVEGAÇÃO E UTILS (Definidas no topo para evitar ReferenceError) ──
+        const vlNavigate = (url) => {
+          if (typeof window.vlNavigate === 'function') {
+            window.vlNavigate(url);
+          } else {
+            window.location.href = url;
+          }
+        };
+
+        const sair = () => {
+          localStorage.clear();
+          vlNavigate('/index.html');
+        };
+
+        // ── 2. REFS E ESTADOS GERAIS ──
         const token = ref(localStorage.getItem('token') || '');
         const nomeUsuario = ref(localStorage.getItem('nome_usuario') || '');
         const perfilUsuario = ref(localStorage.getItem('perfil') || 'setor');
@@ -1633,9 +1648,33 @@
         const ativosHoje = ref(0);
         const alertasAcesso = ref([]);
         const alertasAcessoInterval = ref(null);
-
         const menuRecolhido = ref(false);
 
+        // Refs de Casamentos
+        const casamentos = ref([]);
+        const casamentosCount = ref(0);
+        const casamentoMsgOk = ref('');
+        const casamentoMsgErr = ref('');
+
+        // Refs de Terceiros
+        const ticketsTerceiros = ref([]);
+        const ticketsTerceirosPendentesCount = ref(0);
+        const filtroTerceirosStatus = ref('PENDENTE');
+        const ticketObs = ref({});
+
+        // Refs de Agências
+        const agencias = ref([]);
+        const agenciaMsgOk = ref('');
+        const agenciaMsgErr = ref('');
+        const modalAgenciaAberto = ref(false);
+        const agenciaEditando = ref(null);
+        const agenciaFormLoading = ref(false);
+        const agenciaFormErr = ref('');
+        const cnpjBuscando = ref(false);
+        const cnpjErro = ref('');
+        const bancoBuscando = ref(false);
+
+        // ── 3. PROPRIEDADES COMPUTADAS ──
         const menuItens = computed(() => [
           { id: 'solicitacoes', label: 'Solicitações', icon: '📋' },
           { id: 'indicadores', label: 'Indicadores', icon: '📊' },
@@ -1675,7 +1714,7 @@
             'Ativos Hoje': { bg: 'bg-gradient-to-br from-indigo-50 to-indigo-100/30 border-indigo-200 text-indigo-700', icon: '👥' },
             'Ag. Cotação': { bg: 'bg-gradient-to-br from-blue-50 to-blue-100/30 border-blue-200 text-blue-700', icon: '✈️' },
             'Decidir': { bg: 'bg-gradient-to-br from-purple-50 to-purple-100/30 border-purple-200 text-purple-700', icon: '🏆' },
-            'Emergenciais': { bg: 'bg-gradient-to-br from-rose-50 to-rose-100/30 border-rose-200 text-rose-700', icon: 'âš¡' },
+            'Emergenciais': { bg: 'bg-gradient-to-br from-rose-50 to-rose-100/30 border-rose-200 text-rose-700', icon: '⚡' },
           };
           return config[label] || { bg: 'bg-gradient-to-br from-sky-50 to-sky-100/30 border-sky-200 text-sky-700', icon: '🏢' };
         };
@@ -1688,7 +1727,6 @@
         const acaoCarregando = ref(false);
         const acaoErro = ref('');
         const pdfErro = ref('');
-
         const confirmacao = reactive({ aberto: false, sol: null, acao: '' });
 
         const kpis = ref([]);
@@ -1709,23 +1747,16 @@
             }
           });
 
-          if (listaAgencias.length === 0) {
-            // Sem agências cadastradas e sem cotações — lista vazia, não usa fallback legado
-            return [];
-          }
+          if (listaAgencias.length === 0) return [];
 
           return listaAgencias.map(agName => {
             const cot = cotacoes.find(c => c.agencia_nome.toLowerCase() === agName.toLowerCase());
-            return {
-              agencia: agName,
-              cot: cot || null
-            };
+            return { agencia: agName, cot: cot || null };
           });
         });
 
-        // ── Auth guard ────────────────────────────────────────────────────────────
+        // ── 4. AUTH GUARD & LIFECYCLE ──
         onMounted(() => {
-          // Sinaliza ao sistema de transição que o Vue montou com sucesso
           if (typeof window._vlReady === 'function') window._vlReady();
 
           const perfil = localStorage.getItem('perfil');
@@ -1739,7 +1770,7 @@
           carregarStatsAdicionais();
         });
 
-        // ── API ───────────────────────────────────────────────────────────────────
+        // ── 5. MÉTODOS DE API E LÓGICA ──
         const carregarSolicitacoes = async () => {
           carregando.value = true;
           try {
@@ -1786,33 +1817,25 @@
 
         const abrirPdfAssinado = async (ticket) => {
           pdfErro.value = '';
-
           if (!ticket?.pdf_url && !ticket?.pdf_path) {
             pdfErro.value = 'PDF não disponível para esta autorização.';
             return;
           }
-
           const url = ticket.pdf_url || `/${ticket.pdf_path}`;
           const novaAba = window.open('about:blank', '_blank');
           if (!novaAba) {
             pdfErro.value = 'Permita pop-ups para abrir o PDF assinado.';
             return;
           }
-
           try {
-            const resp = await fetch(url, {
-              headers: { Authorization: `Bearer ${token.value}` },
-            });
-
+            const resp = await fetch(url, { headers: { Authorization: `Bearer ${token.value}` } });
             if (resp.status === 401 || resp.status === 403) {
               throw new Error('Não foi possível autenticar a visualização do PDF. Faça login novamente.');
             }
-
             if (!resp.ok) {
               const dados = await resp.json().catch(() => ({}));
               throw new Error(dados.detail || 'Falha ao carregar o PDF.');
             }
-
             const blob = await resp.blob();
             const blobUrl = URL.createObjectURL(blob);
             novaAba.location.href = blobUrl;
@@ -1830,7 +1853,7 @@
           confirmacao.aberto = true;
         };
 
-        const executarAcao = async (sol, acao) => {
+        const ejecutarAcao = async (sol, acao) => {
           acaoCarregando.value = true;
           acaoErro.value = '';
           try {
@@ -1844,10 +1867,8 @@
             });
             const dados = await resp.json();
             if (!resp.ok) throw new Error(dados.detail || 'Erro ao executar ação.');
-
             confirmacao.aberto = false;
             await carregarSolicitacoes();
-            // Recarrega o detalhe se o modal estiver aberto
             if (modalAberto.value) await abrirDetalhe(sol);
           } catch (e) {
             acaoErro.value = e.message;
@@ -1870,10 +1891,8 @@
             });
             const dados = await resp.json();
             if (!resp.ok) throw new Error(dados.detail || 'Erro ao decidir cancelamento/remarcação.');
-
             confirmacao.aberto = false;
             await carregarSolicitacoes();
-            // Recarrega o detalhe se o modal estiver aberto
             if (modalAberto.value) await abrirDetalhe(sol);
           } catch (e) {
             acaoErro.value = e.message;
@@ -1882,7 +1901,6 @@
           }
         };
 
-        // ── Indicadores ───────────────────────────────────────────────────────────
         const calcularIndicadores = () => {
           const lista = solicitacoes.value;
           const total = lista.length;
@@ -1892,6 +1910,7 @@
           const agCot = lista.filter(s => s.status === 'AGUARDANDO_COTACAO').length;
           const decidir = lista.filter(s => s.status === 'PENDENTE_APROVACAO_SETOR_COTACAO').length;
           const emerg = lista.filter(s => s.classificacao === 'Emergencial').length;
+
           const novosKpis = [
             { label: 'Total', valor: total, cor: 'text-gray-700' },
             { label: 'Concluídas', valor: conc, cor: 'text-green-600' },
@@ -1903,21 +1922,14 @@
             { label: 'Emergenciais', valor: emerg, cor: 'text-red-600' },
           ];
 
-          // Adiciona dinamicamente as agências registradas no banco de dados!
           const coresAg = ['text-indigo-600', 'text-pink-600', 'text-amber-600', 'text-cyan-600', 'text-teal-600', 'text-violet-600'];
           agencias.value.forEach((ag, idx) => {
             const count = lista.filter(s => s.agencia_vencedora === ag.agencia_nome).length;
-            const cor = coresAg[idx % coresAg.length];
-            novosKpis.push({
-              label: ag.agencia_nome,
-              valor: count,
-              cor: cor
-            });
+            novosKpis.push({ label: ag.agencia_nome, valor: count, cor: coresAg[idx % coresAg.length] });
           });
 
           kpis.value = novosKpis;
 
-          // Distribuição por status
           const grupos = {};
           lista.forEach(s => { grupos[s.status] = (grupos[s.status] || 0) + 1; });
           distribuicaoStatus.value = Object.entries(grupos)
@@ -1929,7 +1941,6 @@
               cor: statusBarCor(status),
             }));
 
-          // Volume mensal — últimos 6 meses (contagem por data_ida)
           const meses = {};
           const agora = new Date();
           for (let i = 5; i >= 0; i--) {
@@ -1945,7 +1956,6 @@
           });
           volumeMensal.value = Object.entries(meses).map(([mes, total]) => ({ mes, total }));
 
-          // Ranking por centro de custo
           const ccMap = {};
           lista.forEach(s => {
             const nome = s.viajante_centro_custo || '';
@@ -1955,28 +1965,21 @@
             if (!ccMap[key]) ccMap[key] = { nome, cod, count: 0 };
             ccMap[key].count++;
           });
-          centroCustoRanking.value = Object.values(ccMap)
-            .sort((a, b) => b.count - a.count)
-            .slice(0, 10);
+          centroCustoRanking.value = Object.values(ccMap).sort((a, b) => b.count - a.count).slice(0, 10);
         };
 
-        // ── Exportação CSV ────────────────────────────────────────────────────────
         const _csvEscape = (v) => {
           const s = (v === null || v === undefined) ? '' : String(v);
-          return s.includes(',') || s.includes('"') || s.includes('\n')
-            ? `"${s.replace(/"/g, '""')}"`
-            : s;
+          return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
         };
 
         const _baixarCSV = (rows, filename) => {
-          const bom = '\uFEFF'; // BOM UTF-8 para Excel abrir corretamente
+          const bom = '\uFEFF';
           const csv = bom + rows.map(r => r.map(_csvEscape).join(',')).join('\r\n');
           const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
-          a.href = url;
-          a.download = filename;
-          a.click();
+          a.href = url; a.download = filename; a.click();
           URL.revokeObjectURL(url);
         };
 
@@ -1990,24 +1993,11 @@
             'Agência Vencedora', 'Motivo', 'Data Criação',
           ];
           const linhas = solicitacoes.value.map(s => [
-            s.protocolo,
-            s.solicitante_username,
-            s.viajante_nome,
-            s.viajante_matricula,
-            s.viajante_centro_custo,
-            s.viajante_cod_centro_custo,
-            s.viajante_cargo,
-            s.viajante_filial,
-            s.origem_cidade,
-            s.destino_cidade,
-            s.destino_estado,
-            fmtData(s.data_ida),
-            s.data_volta ? fmtData(s.data_volta) : '',
-            (s.tipo_servico || '').replace(/,/g, ' / '),
-            s.classificacao,
-            statusLabel(s.status),
-            s.agencia_vencedora || '',
-            s.motivo_viagem,
+            s.protocolo, s.solicitante_username, s.viajante_nome, s.viajante_matricula,
+            s.viajante_centro_custo, s.viajante_cod_centro_custo, s.viajante_cargo, s.viajante_filial,
+            s.origem_cidade, s.destino_cidade, s.destino_estado, fmtData(s.data_ida),
+            s.data_volta ? fmtData(s.data_volta) : '', (s.tipo_servico || '').replace(/,/g, ' / '),
+            s.classificacao, statusLabel(s.status), s.agencia_vencedora || '', s.motivo_viagem,
             s.data_criacao ? fmtData(s.data_criacao) : '',
           ]);
           _baixarCSV([cabecalho, ...linhas], `solicitacoes_${_hoje()}.csv`);
@@ -2031,12 +2021,6 @@
           _baixarCSV([cabecalho, ...linhas], `volume_mensal_${_hoje()}.csv`);
         };
 
-        // ── Helpers ───────────────────────────────────────────────────────────────
-        const sair = () => {
-          localStorage.clear();
-          vlNavigate('/index.html');
-        };
-
         const fmtData = (iso) => {
           if (!iso) return '—';
           try { return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }); }
@@ -2049,19 +2033,12 @@
         };
 
         const STATUS_LABELS = {
-          AGUARDANDO_N1: 'Ag. Aprovação N1',
-          AGUARDANDO_N2: 'Ag. Aprovação N2',
-          PENDENTE_PRE_APROVACAO_SETOR: 'Pré-Aprovar',
-          AGUARDANDO_COTACAO: 'Ag. Cotação',
-          COTACAO_ENVIADA: 'Cot. Enviada',
-          PENDENTE_APROVACAO_SETOR_COTACAO: 'Decidir Agência',
-          CONCLUIDA: 'Concluída',
-          REPROVADA: 'Reprovada',
-          CADEIA_INCOMPLETA: 'Cadeia Incompleta',
-          PENDENTE_CANCELAMENTO: 'Ag. Agência (Cancelamento)',
-          PENDENTE_REMARCACAO: 'Ag. Agência (Remarcação)',
-          PENDENTE_APROVACAO_CANCELAMENTO: 'Revisar Cancelamento',
-          PENDENTE_APROVACAO_REMARCACAO: 'Revisar Remarcação',
+          AGUARDANDO_N1: 'Ag. Aprovação N1', AGUARDANDO_N2: 'Ag. Aprovação N2',
+          PENDENTE_PRE_APROVACAO_SETOR: 'Pré-Aprovar', AGUARDANDO_COTACAO: 'Ag. Cotação',
+          COTACAO_ENVIADA: 'Cot. Enviada', PENDENTE_APROVACAO_SETOR_COTACAO: 'Decidir Agência',
+          CONCLUIDA: 'Concluída', REPROVADA: 'Reprovada', CADEIA_INCOMPLETA: 'Cadeia Incompleta',
+          PENDENTE_CANCELAMENTO: 'Ag. Agência (Cancelamento)', PENDENTE_REMARCACAO: 'Ag. Agência (Remarcação)',
+          PENDENTE_APROVACAO_CANCELAMENTO: 'Revisar Cancelamento', PENDENTE_APROVACAO_REMARCACAO: 'Revisar Remarcação',
           CANCELADA: 'Cancelada',
         };
         const statusLabel = (s) => STATUS_LABELS[s] || s;
@@ -2088,44 +2065,26 @@
 
         const statusBarCor = (s) => {
           const m = {
-            CONCLUIDA: 'bg-green-500',
-            REPROVADA: 'bg-red-400',
-            PENDENTE_PRE_APROVACAO_SETOR: 'bg-yellow-500',
-            AGUARDANDO_COTACAO: 'bg-blue-500',
-            PENDENTE_APROVACAO_SETOR_COTACAO: 'bg-purple-500',
-            COTACAO_ENVIADA: 'bg-indigo-500',
-            AGUARDANDO_N1: 'bg-gray-400',
-            AGUARDANDO_N2: 'bg-orange-400',
-            PENDENTE_CANCELAMENTO: 'bg-amber-500',
-            PENDENTE_REMARCACAO: 'bg-amber-500',
-            PENDENTE_APROVACAO_CANCELAMENTO: 'bg-rose-500',
-            PENDENTE_APROVACAO_REMARCACAO: 'bg-violet-500',
+            CONCLUIDA: 'bg-green-500', REPROVADA: 'bg-red-400', PENDENTE_PRE_APROVACAO_SETOR: 'bg-yellow-500',
+            AGUARDANDO_COTACAO: 'bg-blue-500', PENDENTE_APROVACAO_SETOR_COTACAO: 'bg-purple-500',
+            COTACAO_ENVIADA: 'bg-indigo-500', AGUARDANDO_N1: 'bg-gray-400', AGUARDANDO_N2: 'bg-orange-400',
+            PENDENTE_CANCELAMENTO: 'bg-amber-500', PENDENTE_REMARCACAO: 'bg-amber-500',
+            PENDENTE_APROVACAO_CANCELAMENTO: 'bg-rose-500', PENDENTE_APROVACAO_REMARCACAO: 'bg-violet-500',
             CANCELADA: 'bg-red-650',
           };
           return m[s] || 'bg-gray-400';
         };
 
         const ACAO_LABELS = {
-          PRE_APROVAR: 'Pré-Aprovar',
-          PRE_REPROVAR: 'Reprovar (pré-aprovação)',
-          REPROVAR: 'Reprovar',
-          REENVIAR_AGENCIAS: 'Reenviar E-mails às Agências',
+          PRE_APROVAR: 'Pré-Aprovar', PRE_REPROVAR: 'Reprovar (pré-aprovação)',
+          REPROVAR: 'Reprovar', REENVIAR_AGENCIAS: 'Reenviar E-mails às Agências',
         };
-        // Para ações dinâmicas APROVAR_<AGENCIA>, o label é gerado no botão ("Escolher {{ slot.agencia }}")
         const acaoLabel = (a) => ACAO_LABELS[a] || a;
-
-        // ── Casamentos ─────────────────────────────────────────────────────────────
-        const casamentos = ref([]);
-        const casamentosCount = ref(0);
-        const casamentoMsgOk = ref('');
-        const casamentoMsgErr = ref('');
 
         const carregarCasamentos = async () => {
           casamentos.value = [];
           try {
-            const res = await fetch('/api/v1/setor/casamentos', {
-              headers: { Authorization: `Bearer ${token.value}` },
-            });
+            const res = await fetch('/api/v1/setor/casamentos', { headers: { Authorization: `Bearer ${token.value}` } });
             if (!res.ok) return;
             const lista = await res.json();
             casamentos.value = lista;
@@ -2134,33 +2093,21 @@
         };
 
         const agirCasamento = async (id, acao) => {
-          casamentoMsgOk.value = '';
-          casamentoMsgErr.value = '';
+          casamentoMsgOk.value = ''; casamentoMsgErr.value = '';
           try {
             const res = await fetch(`/api/v1/setor/casamentos/${id}/${acao}`, {
-              method: 'POST',
-              headers: { Authorization: `Bearer ${token.value}` },
+              method: 'POST', headers: { Authorization: `Bearer ${token.value}` },
             });
             const dados = await res.json();
             if (!res.ok) { casamentoMsgErr.value = dados.detail || 'Erro.'; return; }
-            casamentoMsgOk.value = acao === 'vincular'
-              ? `✔ Casamento vinculado! Grupo: ${dados.grupo_viagem}`
-              : '✔ Match ignorado.';
+            casamentoMsgOk.value = acao === 'vincular' ? `✔ Casamento vinculado! Grupo: ${dados.grupo_viagem}` : '✔ Match ignorado.';
             await carregarCasamentos();
           } catch (e) { casamentoMsgErr.value = 'Erro de conexão.'; }
         };
 
         const tipoCasamentoCor = (tipo) => ({
-          TOTAL: 'bg-green-100 text-green-800',
-          PARCIAL_A: 'bg-blue-100 text-blue-800',
-          PARCIAL_B: 'bg-yellow-100 text-yellow-800',
+          TOTAL: 'bg-green-100 text-green-800', PARCIAL_A: 'bg-blue-100 text-blue-800', PARCIAL_B: 'bg-yellow-100 text-yellow-800',
         }[tipo] || 'bg-gray-100 text-gray-600');
-
-        // ── Tickets de Acesso Terceiros ───────────────────────────────────────────
-        const ticketsTerceiros = ref([]);
-        const ticketsTerceirosPendentesCount = ref(0);
-        const filtroTerceirosStatus = ref('PENDENTE');
-        const ticketObs = ref({});
 
         const carregarTicketsTerceiros = async () => {
           try {
@@ -2168,11 +2115,7 @@
             const res = await fetch(`/api/v1/terceiros/admin/todos${statusFiltro ? '?status_filtro=' + statusFiltro : ''}`, {
               headers: { Authorization: `Bearer ${token.value}` }
             });
-            if (res.ok) {
-              ticketsTerceiros.value = await res.json();
-            }
-
-            // Carrega também a contagem de pendentes para o badge da barra lateral
+            if (res.ok) { ticketsTerceiros.value = await res.json(); }
             const resP = await fetch('/api/v1/terceiros/admin/todos?status_filtro=PENDENTE', {
               headers: { Authorization: `Bearer ${token.value}` }
             });
@@ -2180,9 +2123,7 @@
               const pendentes = await resP.json();
               ticketsTerceirosPendentesCount.value = pendentes.length;
             }
-          } catch (e) {
-            console.error('Erro ao carregar tickets de terceiros:', e);
-          }
+          } catch (e) { console.error('Erro ao carregar tickets de terceiros:', e); }
         };
 
         const decidirTicket = async (id, acao, obs = '') => {
@@ -2190,43 +2131,24 @@
             const formData = new FormData();
             formData.append('acao', acao);
             formData.append('observacao', obs || '');
-
             const res = await fetch(`/api/v1/terceiros/admin/${id}/decisao`, {
-              method: 'PATCH',
-              headers: { Authorization: `Bearer ${token.value}` },
-              body: formData
+              method: 'PATCH', headers: { Authorization: `Bearer ${token.value}` }, body: formData
             });
             if (res.ok) {
-              // Limpa campo de observações para este ticket
               delete ticketObs.value[id];
               await carregarTicketsTerceiros();
             } else {
               const dados = await res.json();
               alert('Erro ao processar decisão do ticket: ' + (dados.detail || 'Erro desconhecido.'));
             }
-          } catch (e) {
-            console.error('Erro de conexão ao decidir ticket:', e);
-          }
+          } catch (e) { console.error('Erro de conexão ao decidir ticket:', e); }
         };
-
-        // ── Agências ───────────────────────────────────────────────────────────────
-        const agencias = ref([]);
-        const agenciaMsgOk = ref('');
-        const agenciaMsgErr = ref('');
-        const modalAgenciaAberto = ref(false);
-        const agenciaEditando = ref(null);
-        const agenciaFormLoading = ref(false);
-        const agenciaFormErr = ref('');
-        const cnpjBuscando = ref(false);
-        const cnpjErro = ref('');
-        const bancoBuscando = ref(false);
 
         const _emptyAgenciaForm = () => ({
           agencia_nome: '', razao_social: '', cnpj: '', inscricao_estadual: '', email: '',
           cep: '', logradouro: '', numero: '', complemento: '', bairro: '', municipio: '', uf: '',
           banco_nome: '', banco_codigo: '', agencia_bancaria: '', conta_bancaria: '',
-          tipo_conta: 'CC', titularidade_cnpj: '', titularidade_razao_social: '',
-          ativo: true,
+          tipo_conta: 'CC', titularidade_cnpj: '', titularidade_razao_social: '', ativo: true,
         });
         const agenciaForm = ref(_emptyAgenciaForm());
 
@@ -2247,12 +2169,9 @@
         const buscarCnpj = async () => {
           const cnpj = agenciaForm.value.cnpj.replace(/\D/g, '');
           if (cnpj.length !== 14) { cnpjErro.value = 'CNPJ deve ter 14 dígitos.'; return; }
-          cnpjErro.value = '';
-          cnpjBuscando.value = true;
+          cnpjErro.value = ''; cnpjBuscando.value = true;
           try {
-            const res = await fetch(`/api/v1/setor/proxy/cnpj/${cnpj}`, {
-              headers: { Authorization: `Bearer ${token.value}` },
-            });
+            const res = await fetch(`/api/v1/setor/proxy/cnpj/${cnpj}`, { headers: { Authorization: `Bearer ${token.value}` } });
             if (!res.ok) { cnpjErro.value = 'CNPJ não encontrado ou erro na consulta.'; return; }
             const d = await res.json();
             agenciaForm.value.razao_social = d.razao_social || '';
@@ -2275,9 +2194,7 @@
           const cep = agenciaForm.value.cep.replace(/\D/g, '');
           if (cep.length !== 8) return;
           try {
-            const res = await fetch(`/api/v1/setor/proxy/cep/${cep}`, {
-              headers: { Authorization: `Bearer ${token.value}` },
-            });
+            const res = await fetch(`/api/v1/setor/proxy/cep/${cep}`, { headers: { Authorization: `Bearer ${token.value}` } });
             if (!res.ok) return;
             const d = await res.json();
             if (d.street) agenciaForm.value.logradouro = d.street;
@@ -2292,9 +2209,7 @@
           if (!cod) return;
           bancoBuscando.value = true;
           try {
-            const res = await fetch(`/api/v1/setor/proxy/bank/${cod}`, {
-              headers: { Authorization: `Bearer ${token.value}` },
-            });
+            const res = await fetch(`/api/v1/setor/proxy/bank/${cod}`, { headers: { Authorization: `Bearer ${token.value}` } });
             if (!res.ok) return;
             const d = await res.json();
             agenciaForm.value.banco_nome = d.name || d.fullName || agenciaForm.value.banco_nome;
@@ -2302,42 +2217,28 @@
         };
 
         const carregarAgencias = async () => {
-          agencias.value = [];
-          agenciaMsgOk.value = '';
-          agenciaMsgErr.value = '';
+          agencias.value = []; agenciaMsgOk.value = ''; agenciaMsgErr.value = '';
           try {
-            const res = await fetch('/api/v1/setor/agencias', {
-              headers: { Authorization: `Bearer ${token.value}` },
-            });
+            const res = await fetch('/api/v1/setor/agencias', { headers: { Authorization: `Bearer ${token.value}` } });
             if (!res.ok) { agenciaMsgErr.value = 'Erro ao carregar agências.'; return; }
             agencias.value = await res.json();
           } catch (e) { agenciaMsgErr.value = 'Erro de conexão.'; }
         };
 
         const abrirModalAgencia = (ag) => {
-          agenciaEditando.value = ag;
-          agenciaFormErr.value = '';
-          cnpjErro.value = '';
-          agenciaForm.value = ag
-            ? { ...ag, cnpj: fmtCnpj(ag.cnpj) }
-            : _emptyAgenciaForm();
+          agenciaEditando.value = ag; agenciaFormErr.value = ''; cnpjErro.value = '';
+          agenciaForm.value = ag ? { ...ag, cnpj: fmtCnpj(ag.cnpj) } : _emptyAgenciaForm();
           modalAgenciaAberto.value = true;
         };
 
         const fecharModalAgencia = () => {
-          modalAgenciaAberto.value = false;
-          agenciaEditando.value = null;
+          modalAgenciaAberto.value = false; agenciaEditando.value = null;
         };
 
         const salvarAgencia = async () => {
-          agenciaFormErr.value = '';
-          agenciaFormLoading.value = true;
+          agenciaFormErr.value = ''; agenciaFormLoading.value = true;
           try {
-            const payload = {
-              ...agenciaForm.value,
-              cnpj: agenciaForm.value.cnpj.replace(/\D/g, ''),
-              uf: agenciaForm.value.uf.toUpperCase(),
-            };
+            const payload = { ...agenciaForm.value, cnpj: agenciaForm.value.cnpj.replace(/\D/g, ''), uf: agenciaForm.value.uf.toUpperCase() };
             const ed = agenciaEditando.value;
             if (!payload.agencia_nome?.trim()) { agenciaFormErr.value = 'Informe o nome fantasia.'; return; }
             if (!ed && !payload.email?.trim()) { agenciaFormErr.value = 'Informe o e-mail de contato.'; return; }
@@ -2345,26 +2246,20 @@
             const url = ed ? `/api/v1/setor/agencias/${ed.id}` : '/api/v1/setor/agencias';
             const method = ed ? 'PUT' : 'POST';
             const res = await fetch(url, {
-              method,
-              headers: { Authorization: `Bearer ${token.value}`, 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload),
+              method, headers: { Authorization: `Bearer ${token.value}`, 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
             });
             if (!res.ok) { const d = await res.json(); agenciaFormErr.value = d.detail || 'Erro ao salvar.'; return; }
             agenciaMsgOk.value = ed ? '✔ Agência atualizada.' : '✔ Agência cadastrada com sucesso.';
-            fecharModalAgencia();
-            await carregarAgencias();
+            fecharModalAgencia(); await carregarAgencias();
           } catch (e) { agenciaFormErr.value = 'Erro de conexão.'; }
           finally { agenciaFormLoading.value = false; }
         };
 
         const toggleAgencia = async (ag) => {
-          agenciaMsgOk.value = '';
-          agenciaMsgErr.value = '';
+          agenciaMsgOk.value = ''; agenciaMsgErr.value = '';
           try {
             const res = await fetch(`/api/v1/setor/agencias/${ag.id}`, {
-              method: 'PUT',
-              headers: { Authorization: `Bearer ${token.value}`, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ ativo: !ag.ativo }),
+              method: 'PUT', headers: { Authorization: `Bearer ${token.value}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ ativo: !ag.ativo }),
             });
             if (!res.ok) { const d = await res.json(); agenciaMsgErr.value = d.detail || 'Erro.'; return; }
             agenciaMsgOk.value = ag.ativo ? '✔ Agência desativada.' : '✔ Agência ativada.';
@@ -2374,48 +2269,28 @@
 
         const confirmarExcluirAgencia = async (ag) => {
           if (!confirm(`Excluir permanentemente a agência "${ag.agencia_nome}"?\n\nEsta ação não pode ser desfeita.`)) return;
-          agenciaMsgOk.value = '';
-          agenciaMsgErr.value = '';
+          agenciaMsgOk.value = ''; agenciaMsgErr.value = '';
           try {
-            const res = await fetch(`/api/v1/setor/agencias/${ag.id}`, {
-              method: 'DELETE',
-              headers: { Authorization: `Bearer ${token.value}` },
-            });
+            const res = await fetch(`/api/v1/setor/agencias/${ag.id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token.value}` } });
             if (res.status === 204) {
               agenciaMsgOk.value = `✔ Agência "${ag.agencia_nome}" excluída.`;
               await carregarAgencias();
-            } else {
-              const d = await res.json();
-              agenciaMsgErr.value = d.detail || 'Erro ao excluir.';
-            }
+            } else { const d = await res.json(); agenciaMsgErr.value = d.detail || 'Erro ao excluir.'; }
           } catch (e) { agenciaMsgErr.value = 'Erro de conexão.'; }
         };
 
         const carregarStatsAdicionais = async () => {
           try {
-            const resp = await fetch(`/api/v1/setor/stats`, {
-              headers: { Authorization: `Bearer ${token.value}` },
-            });
-            if (resp.ok) {
-              const dados = await resp.json();
-              ativosHoje.value = dados.ativos_hoje || 0;
-            }
-          } catch (e) {
-            console.error('[Setor] Erro ao carregar stats adicionais:', e);
-          }
+            const resp = await fetch(`/api/v1/setor/stats`, { headers: { Authorization: `Bearer ${token.value}` } });
+            if (resp.ok) { const dados = await resp.json(); ativosHoje.value = dados.ativos_hoje || 0; }
+          } catch (e) { console.error('[Setor] Erro ao carregar stats adicionais:', e); }
         };
 
         const carregarAlertasAcesso = async () => {
           try {
-            const resp = await fetch(`/api/v1/setor/alertas-acesso`, {
-              headers: { Authorization: `Bearer ${token.value}` },
-            });
-            if (resp.ok) {
-              alertasAcesso.value = await resp.json();
-            }
-          } catch (e) {
-            console.error('[Setor] Erro ao carregar alertas de acesso:', e);
-          }
+            const resp = await fetch(`/api/v1/setor/alertas-acesso`, { headers: { Authorization: `Bearer ${token.value}` } });
+            if (resp.ok) { alertasAcesso.value = await resp.json(); }
+          } catch (e) { console.error('[Setor] Erro ao carregar alertas de acesso:', e); }
         };
 
         const fmtDataHora = (dt) => {
@@ -2424,21 +2299,16 @@
           return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
         };
 
-        Vue.watch(aba, (novaAba) => {
+        watch(aba, (novaAba) => {
           if (novaAba === 'terceiros') {
             carregarAlertasAcesso();
             clearInterval(alertasAcessoInterval.value);
-            alertasAcessoInterval.value = setInterval(() => {
-              carregarAlertasAcesso();
-            }, 8000);
+            alertasAcessoInterval.value = setInterval(() => { carregarAlertasAcesso(); }, 8000);
           } else {
             clearInterval(alertasAcessoInterval.value);
           }
-
           if (novaAba === 'indicadores') {
-            carregarStatsAdicionais().then(() => {
-              calcularIndicadores();
-            });
+            carregarStatsAdicionais().then(() => { calcularIndicadores(); });
           }
         });
 
@@ -2446,35 +2316,22 @@
           if (!dataCriacao) return false;
           const criacao = new Date(dataCriacao);
           const atualizacao = dataAtualizacao ? new Date(dataAtualizacao) : new Date();
-          const diffTime = Math.abs(atualizacao - criacao);
-          const diffHours = diffTime / (1000 * 60 * 60);
-          return diffHours <= 24;
+          return Math.abs(atualizacao - criacao) / (1000 * 60 * 60) <= 24;
         };
 
         return {
-          isWithin24h, decidirCancelamento,
-          token, nomeUsuario, perfilUsuario, aba, carregando, solicitacoes, filtros,
-          slotsCotacao,
-          menuRecolhido, menuItens, menuLabel, menuDesc, kpiCardConfig,
-          modalAberto, detalhe, acaoCarregando, acaoErro, pdfErro, confirmacao,
-          kpis, distribuicaoStatus, volumeMensal, maxMensal, centroCustoRanking, maxCC,
-          ativosHoje, alertasAcesso, carregarStatsAdicionais, carregarAlertasAcesso, fmtDataHora,
-          carregarSolicitacoes, debounceCarregar,
-          abrirDetalhe, fecharModal, confirmarAcao, executarAcao, calcularIndicadores, abrirPdfAssinado,
-          exportarSolicitacoes, exportarStatus, exportarCentroCusto, exportarVolumeMensal,
-          casamentos, casamentosCount, casamentoMsgOk, casamentoMsgErr,
-          carregarCasamentos, agirCasamento, tipoCasamentoCor,
-          agencias, agenciaMsgOk, agenciaMsgErr,
-          modalAgenciaAberto, agenciaEditando, agenciaForm, agenciaFormLoading, agenciaFormErr,
-          cnpjBuscando, cnpjErro, bancoBuscando,
-          carregarAgencias, abrirModalAgencia, fecharModalAgencia, salvarAgencia,
-          toggleAgencia, confirmarExcluirAgencia,
-          mascararCnpj, buscarCnpj, buscarCep, buscarBanco, fmtCnpj,
-          sair, fmtData, fmtValor, statusLabel, statusCor, acaoLabel,
-          // Terceiros / Delegações
-          ticketsTerceiros, ticketsTerceirosPendentesCount, filtroTerceirosStatus, ticketObs, carregarTicketsTerceiros, decidirTicket,
-          // Navegacao com transicao
-          vlNavigate: (url) => (window.vlNavigate || (u => { window.location.href = u; }))(url),
+          isWithin24h, decidirCancelamento, token, nomeUsuario, perfilUsuario, aba, carregando, solicitacoes, filtros,
+          slotsCotacao, menuRecolhido, menuItens, menuLabel, menuDesc, kpiCardConfig, modalAberto, detalhe, acaoCarregando,
+          acaoErro, pdfErro, confirmacao, kpis, distribuicaoStatus, volumeMensal, maxMensal, centroCustoRanking, maxCC,
+          ativosHoje, alertasAcesso, carregarStatsAdicionais, carregarAlertasAcesso, fmtDataHora, carregarSolicitacoes,
+          debounceCarregar, abrirDetalhe, fecharModal, confirmarAcao, executarAcao, calcularIndicadores, abrirPdfAssinado,
+          exportarSolicitacoes, exportarStatus, exportarCentroCusto, exportarVolumeMensal, casamentos, casamentosCount,
+          casamentoMsgOk, casamentoMsgErr, carregarCasamentos, agirCasamento, tipoCasamentoCor, agencias, agenciaMsgOk,
+          agenciaMsgErr, modalAgenciaAberto, agenciaEditando, agenciaForm, agenciaFormLoading, agenciaFormErr, cnpjBuscando,
+          cnpjErro, bancoBuscando, carregarAgencias, abrirModalAgencia, fecharModalAgencia, salvarAgencia, toggleAgencia,
+          confirmarExcluirAgencia, marcarCnpj: mascararCnpj, buscarCnpj, buscarCep, buscarBanco, fmtCnpj, sair, fmtData,
+          fmtValor, statusLabel, statusCor, acaoLabel, ticketsTerceiros, ticketsTerceirosPendentesCount, filtroTerceirosStatus,
+          ticketObs, carregarTicketsTerceiros, decidirTicket, vlNavigate, mascararCnpj
         };
       }
     }).mount('#app');
