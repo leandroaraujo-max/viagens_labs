@@ -6,7 +6,7 @@ from app.api.dependencies import get_db_session, require_auth
 from app.infrastructure.orm.models import LGPDConsentimentoModel, SolicitacaoModel
 from app.domain.models import schemas
 
-router = APIRouter(prefix="/api/v1/lgpd", tags=["LGPD"])
+router = APIRouter(prefix="/lgpd", tags=["LGPD"])
 
 
 @router.post("/consentimento")
