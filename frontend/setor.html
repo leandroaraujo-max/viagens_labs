@@ -1603,6 +1603,91 @@
       </div>
     </div>
 
+    <!-- ═══════════════════ MODAL CONSENTIMENTO LGPD GESTOR ═══════════════════ -->
+    <transition name="fade">
+      <div v-show="mostrandoModalLGPDGestor && !aceitouLGPDGestor"
+        class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-gray-900/80 backdrop-blur-sm">
+        <div
+          class="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-200">
+          <div class="bg-gradient-to-r from-indigo-600 to-purple-700 px-6 py-5">
+            <div class="flex items-center gap-3">
+              <span class="text-2xl">🛡️</span>
+              <h2 class="text-lg font-bold text-white">Termo de Responsabilidade - Acesso a Dados Pessoais</h2>
+            </div>
+          </div>
+
+          <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+            <p class="text-sm text-gray-700 leading-relaxed">
+              Como <strong>operador de dados</strong> no sistema <strong>Viagens Labs</strong>, você terá acesso a
+              <strong>dados pessoais de colaboradores</strong> protegidos pela Lei nº 13.709/2018 (LGPD).
+            </p>
+
+            <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-2 text-xs text-gray-700">
+              <p><strong>⚠️ Dados aos quais você terá acesso:</strong></p>
+              <ul class="list-disc list-inside space-y-1 ml-1">
+                <li>Dados pessoais: Nome, CPF, data de nascimento, celular</li>
+                <li>Dados profissionais: Cargo, filial, centro de custo, gestor</li>
+                <li>Dados de viagem: Origem, destino, datas, serviços, cotações</li>
+                <li>Dados bancários: Contas para reembolso (quando aplicável)</li>
+              </ul>
+            </div>
+
+            <div class="bg-red-50 border border-red-300 rounded-lg p-4 space-y-2 text-xs text-gray-700">
+              <p><strong>🚨 Suas responsabilidades:</strong></p>
+              <ul class="list-disc list-inside space-y-1 ml-1">
+                <li><strong>Confidencialidade:</strong> Não compartilhar dados fora do sistema ou com pessoas não
+                  autorizadas</li>
+                <li><strong>Finalidade:</strong> Acessar dados somente para gestão de viagens corporativas</li>
+                <li><strong>Segurança:</strong> Não exportar, copiar ou armazenar dados fora do sistema oficial</li>
+                <li><strong>Auditoria:</strong> Seus acessos são registrados e podem ser auditados a qualquer momento
+                </li>
+              </ul>
+            </div>
+
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2 text-xs text-gray-700">
+              <p><strong>✓ Uso legítimo dos dados:</strong></p>
+              <ul class="list-disc list-inside space-y-1 ml-1">
+                <li>Pré-aprovar solicitações de viagem</li>
+                <li>Gerenciar cotações com agências</li>
+                <li>Aprovar tickets de acesso para terceiros</li>
+                <li>Gerar relatórios de conformidade e auditoria</li>
+              </ul>
+            </div>
+
+            <div class="border-t border-gray-200 pt-4">
+              <p class="text-xs text-gray-600 mb-2">
+                <strong class="text-gray-800">Base Legal:</strong> O tratamento é necessário para execução de
+                contrato de trabalho (Art. 7º, V, LGPD).
+              </p>
+              <p class="text-xs text-gray-600">
+                Leia nossa <a href="/politica-privacidade.html" target="_blank"
+                  class="text-blue-600 hover:underline font-semibold">Política de Privacidade Completa</a> para mais
+                detalhes.
+              </p>
+            </div>
+
+            <!-- Erro se houver -->
+            <div v-if="erroConsentimentoGestor"
+              class="bg-red-50 border border-red-200 rounded-lg p-3 text-xs text-red-700">
+              {{ erroConsentimentoGestor }}
+            </div>
+          </div>
+
+          <div class="px-6 py-4 border-t border-gray-100 flex justify-between items-center gap-3 shrink-0">
+            <button @click="sair"
+              class="px-3 py-2 border border-gray-300 text-gray-600 rounded-lg text-xs font-semibold hover:bg-gray-50 transition">
+              Rejeitar e Sair
+            </button>
+            <button @click="aceitarConsentimentoLGPDGestor" :disabled="registrandoConsentimentoGestor"
+              class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition disabled:opacity-50 flex items-center gap-2">
+              <span v-if="!registrandoConsentimentoGestor">✓ Aceitar Termos e Continuar</span>
+              <span v-else>Processando...</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
     <!-- Footer Política de Privacidade -->
     <div class="text-center text-xs text-gray-600 mt-8 space-y-1">
       <a href="/politica-privacidade.html" target="_blank" class="hover:text-labs-blue transition">
@@ -1632,6 +1717,12 @@
         const alertasAcessoInterval = ref(null);
 
         const menuRecolhido = ref(false);
+
+        // ── LGPD: Consentimento de Gestor ──
+        const mostrandoModalLGPDGestor = ref(false);
+        const aceitouLGPDGestor = ref(false);
+        const registrandoConsentimentoGestor = ref(false);
+        const erroConsentimentoGestor = ref('');
 
         const menuItens = computed(() => [
           { id: 'solicitacoes', label: 'Solicitações', icon: '📋' },
@@ -1720,6 +1811,57 @@
           });
         });
 
+        // ── LGPD: Verificar e Aceitar Consentimento ──────────────────────────────
+        const verificarConsentimentoLGPDGestor = () => {
+          // Verificar se já aceitou nesta sessão ou hoje no localStorage
+          const aceitouEstavez = localStorage.getItem('lgpd_gestor_aceito');
+          const dataAceito = localStorage.getItem('lgpd_gestor_data_aceito');
+          const hoje = new Date().toISOString().split('T')[0];
+
+          // Se aceitou hoje, não mostrar novamente
+          if (aceitouEstavez && dataAceito === hoje) {
+            aceitouLGPDGestor.value = true;
+            mostrandoModalLGPDGestor.value = false;
+          } else {
+            // Mostrar modal na primeira vez ou após renovação diária
+            mostrandoModalLGPDGestor.value = true;
+            aceitouLGPDGestor.value = false;
+          }
+        };
+
+        const aceitarConsentimentoLGPDGestor = async () => {
+          registrandoConsentimentoGestor.value = true;
+          erroConsentimentoGestor.value = '';
+          try {
+            const r = await fetch('/api/v1/lgpd/consentimento', {
+              method: 'POST',
+              headers: {
+                'Authorization': 'Bearer ' + token.value,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                aceito: true,
+                versao_politica: '1.0',
+                tipo: 'gestor_operador' // diferencia do consentimento de viajante
+              })
+            });
+            if (r.ok) {
+              aceitouLGPDGestor.value = true;
+              mostrandoModalLGPDGestor.value = false;
+              const hoje = new Date().toISOString().split('T')[0];
+              localStorage.setItem('lgpd_gestor_aceito', 'true');
+              localStorage.setItem('lgpd_gestor_data_aceito', hoje);
+            } else {
+              const err = await r.json();
+              erroConsentimentoGestor.value = err.detail || 'Erro ao registrar consentimento';
+            }
+          } catch (e) {
+            erroConsentimentoGestor.value = 'Erro de conexão ao registrar consentimento';
+          } finally {
+            registrandoConsentimentoGestor.value = false;
+          }
+        };
+
         // ── Auth guard ────────────────────────────────────────────────────────────
         onMounted(() => {
           // Sinaliza ao sistema de transição que o Vue montou com sucesso
@@ -1730,6 +1872,10 @@
             vlNavigate('/index.html');
             return;
           }
+          
+          // Verificar consentimento LGPD de gestor
+          verificarConsentimentoLGPDGestor();
+          
           carregarSolicitacoes();
           carregarTicketsTerceiros();
           carregarAgencias();

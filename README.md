@@ -824,6 +824,23 @@ Entregas principais (Etapa 3.5 do Plano LGPD):
 - Registro em trilha de auditoria LGPD (`AuditoriaLGPDModel`) de todas as ações.
 - 100% de cobertura de testes: 18 testes passando (incluindo 3 novos do scheduler).
 
+### 2026-06-23 - v2026.06.23-lgpd-gestor-consent (EM PROGRESS local, ainda nao comitado)
+
+Arquivos modificados:
+
+- `frontend/setor.html` - Adição de modal de consentimento LGPD para gestores operadores.
+- `PLANO_FASE_2_3_4.md` - Atualização de progresso da Etapa 3.6.
+
+Entregas principais (Etapa 3.6 do Plano LGPD):
+
+- Modal de termo de responsabilidade para gestores que acessam dados pessoais de colaboradores.
+- Conteúdo específico destacando papel de "operador de dados" conforme LGPD.
+- Avisos sobre confidencialidade, finalidade, segurança e auditoria de acessos.
+- Integração com endpoint `/api/v1/lgpd/consentimento` usando tipo `gestor_operador`.
+- Verificação diária via localStorage (modal reaparece a cada dia de novo acesso).
+- Bloqueio de acesso às funcionalidades do portal até aceite explícito do termo.
+- Base legal documentada: Art. 7º, V da LGPD (execução de contrato de trabalho).
+
 ---
 
 ## 📊 Estado Atual e Próximos Passos

@@ -340,10 +340,19 @@ Documento de Política de Privacidade Formal (2-3 páginas)
   - Scheduler registrado em `app/main.py` via `iniciar_lgpd_scheduler()`.
   - 3 testes novos em `tests/test_lgpd_scheduler.py` com 100% de cobertura (18 testes total passando).
 
+- ✅ Etapa 3.6 implementada e funcional:
+  - Modal de consentimento LGPD para gestores no `frontend/setor.html`.
+  - Conteúdo específico para operadores de dados (gestores que acessam dados de subordinados).
+  - Termo de responsabilidade destacando confidencialidade, finalidade, segurança e auditoria.
+  - Integração com endpoint `/api/v1/lgpd/consentimento` com tipo `gestor_operador`.
+  - Verificação diária via localStorage (renova consentimento a cada dia de acesso).
+  - Modal bloqueia acesso às funcionalidades até aceite do termo.
+
 - 🔜 Próxima execução recomendada do plano (ordem):
   1. ~~Etapa 3.5 (job de processamento de solicitações expiradas)~~ ✅ Concluída
-  2. Etapa 3.2 (encriptação em repouso), após alinhamento jurídico e política de retenção final.
-  3. Etapa 3.6 (termo de consentimento para gestores no portal do setor).
+  2. ~~Etapa 3.6 (termo de consentimento para gestores no portal do setor)~~ ✅ Concluída
+  3. Etapa 3.2 (encriptação em repouso), após alinhamento jurídico e política de retenção final.
+  4. Fase 4 (validação, testes integrados e deploy em produção).
 
 ---
 
