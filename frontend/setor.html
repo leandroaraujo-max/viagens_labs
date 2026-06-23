@@ -173,7 +173,7 @@
       <div class="p-4 border-t border-slate-800/40 flex flex-col gap-3 shrink-0">
         <button @click="menuRecolhido = !menuRecolhido"
           class="w-full flex items-center justify-center gap-2 px-3 py-2 bg-slate-800/20 border border-slate-800/40 hover:bg-slate-800/30 text-slate-400 hover:text-slate-200 rounded-lg text-[10px] font-mono transition">
-          <span>{{ menuRecolhido ? '▶' : '◀ Recolher menu' }}</span>
+          <span>{{ menuRecolhido ? 'â–¶' : 'â—€ Recolher menu' }}</span>
         </button>
         <div v-if="!menuRecolhido" class="text-center text-[10px] text-slate-500 font-mono">
           © 2026 LuizaLabs Viagens
@@ -1088,7 +1088,7 @@
               </span>
               <span v-if="detalhe.classificacao === 'Emergencial'"
                 class="text-xs font-bold bg-red-50 text-red-600 border border-red-200 px-2.5 py-0.5 rounded-full">
-                ⚡ Emergencial
+                âš¡ Emergencial
               </span>
             </div>
           </div>
