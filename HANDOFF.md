@@ -49,7 +49,7 @@ clasp deploy --description "Viagens Labs relay vX - descrição"
 
 ```dotenv
 DATABASE_URL=postgresql://postgres:Magazine%40123@127.0.0.1:5433/solicitacao_viagens?client_encoding=utf8
-DUFFEL_TOKEN=duffel_test_1MmtcmUYHK0-...
+BRASIL_API_BASE_URL=https://brasilapi.com.br/api
 
 # Agências
 AGENCIA_TASTUR_EMAIL=leandro.araujo@luizalabs.com
@@ -199,7 +199,7 @@ viagens_labs/
 │   │           ├── aprovacao.py        # GET/POST aprovação por token N1/N2
 │   │           ├── agencia.py          # Acesso de agências por token ou credenciais
 │   │           ├── setor.py            # API do painel do setor (ações, listagem, agências)
-│   │           ├── duffel.py           # Integração de pesquisa de voos Duffel
+│   │           ├── brasil_api.py       # Autocomplete de lugares + períodos de voo
 │   │           ├── dev.py              # API do Portal do Desenvolvedor (logs, QA, config)
 │   │           ├── terceiros.py        # [NOVO] Solicitações para Terceiros (termo em PDF)
 │   │           ├── hoteis.py           # [NOVO] Proxy seguro Google Places API para hotéis
@@ -214,6 +214,7 @@ viagens_labs/
 │   │   ├── orm/models.py               # Todos os modelos ORM (PostgreSQL)
 │   │   ├── ldap_service.py             # Autenticação AD + fallback mock
 │   │   ├── bigquery_service.py         # Busca de dados do viajante + fallback mock
+│   │   ├── brasil_api_service.py       # Sugestões de lugares e períodos de voo
 │   │   ├── email_service.py            # Envio SMTP relay (notificações do fluxo completo)
 │   │   ├── google_relay_service.py     # Singleton do Apps Script Relay
 │   │   └── aprovacao_relay_scheduler.py # Daemon polling: processa GAS ↔ DB
@@ -224,7 +225,7 @@ viagens_labs/
 │       ├── setor_service.py            # [ATUALIZADO] Criação de tokens dinâmicos para agências ativas
 │       └── voucher_service.py          # Upload e conclusão com vouchers
 ├── frontend/
-│   ├── index.html                      # Portal do Viajante (SPA em passos, Duffel e Terceiros)
+│   ├── index.html                      # Portal do Viajante (SPA em passos, períodos e Terceiros)
 │   ├── portal_aprovacao.html           # Portal de Aprovação N1/N2 via token do e-mail
 │   ├── agencia.html                    # Portal da Agência (Cotações e Vouchers via token)
 │   ├── setor.html                      # [REESTRUTURADO] Painel do Setor com sidebar vertical e KPIs

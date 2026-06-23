@@ -3,7 +3,6 @@ Integração com a Brasil API (Aeroportos/CPTEC) e Autocomplete de aeroportos br
 """
 import logging
 import requests
-from typing import Optional
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -105,60 +104,13 @@ class BrasilApiService:
 
         return resultados[:8]
 
-    def buscar_voos(
-        self,
-        origem: str,
-        destino: str,
-        data_ida: str,
-        data_volta: Optional[str] = None,
-        adultos: int = 1,
-        cabine: Optional[str] = None,
-        exigir_bagagem: bool = False,
-    ) -> list[dict]:
+    def obter_periodos_voo(self) -> list[dict]:
         """
-        Retorna opções de voos simulados para substituir a consulta de voos reais da Duffel.
+        Retorna as sugestões de período permitidas para preferência de voo.
         """
-        orig_clean = origem.strip().upper()
-        dest_clean = destino.strip().upper()
-        
-        cias = [
-            ("AD", "Azul", "AD1024"),
-            ("G3", "GOL", "G32042"),
-            ("LA", "LATAM", "LA3452")
+        return [
+            {"id": "manha", "nome": "Manhã", "horario_inicio": "06:00", "horario_fim": "12:00", "emoji": "🌅"},
+            {"id": "tarde", "nome": "Tarde", "horario_inicio": "12:00", "horario_fim": "18:00", "emoji": "☀️"},
+            {"id": "noite", "nome": "Noite", "horario_inicio": "18:00", "horario_fim": "23:59", "emoji": "🌙"},
+            {"id": "madrugada", "nome": "Madrugada", "horario_inicio": "00:00", "horario_fim": "06:00", "emoji": "🌌"},
         ]
-        
-        opcoes = []
-        for i, (cia_cod, cia_nome, voo_num) in enumerate(cias):
-            saida_ida = f"{data_ida}T{10 + i * 4:02d}:00:00Z"
-            chegada_ida = f"{data_ida}T{12 + i * 4:02d}:30:00Z"
-            
-            volta = None
-            if data_volta:
-                saida_vol = f"{data_volta}T{11 + i * 3:02d}:00:00Z"
-                chegada_vol = f"{data_volta}T{13 + i * 3:02d}:30:00Z"
-                volta = {
-                    "origem": dest_clean,
-                    "destino": orig_clean,
-                    "saida": saida_vol,
-                    "chegada": chegada_vol,
-                    "paradas": 0,
-                    "escalas": []
-                }
-                
-            opcoes.append({
-                "id": f"mock_offer_{cia_cod.lower()}_{i}",
-                "cia_codigo": cia_cod,
-                "cia_nome": cia_nome,
-                "numero_voo": voo_num,
-                "origem": orig_clean,
-                "destino": dest_clean,
-                "saida": saida_ida,
-                "chegada": chegada_ida,
-                "duracao": "PT2H30M",
-                "paradas": 0,
-                "escalas": [],
-                "bagagem": exigir_bagagem or (i % 2 == 0),
-                "volta": volta
-            })
-            
-        return opcoes

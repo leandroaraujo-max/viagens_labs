@@ -159,8 +159,8 @@ BASE_URL_AGENCIA=http://viagenslabs.magazineluiza.intranet
 #   Produção c/ VPN ou internet:  BASE_URL_APROVACAO=https://viagenslabs.magazineluiza.com.br
 BASE_URL_APROVACAO=http://viagenslabs.magazineluiza.intranet
 
-# ── Duffel API — busca consultiva de voos ──────────────────────────────────
-DUFFEL_TOKEN=duffel_test_xxxxxxxxxxxx
+# ── Brasil API — autocomplete de aeroportos e períodos de voo ──────────────
+BRASIL_API_BASE_URL=https://brasilapi.com.br/api
 
 # ── QA Override — redireciona aprovações para testador ─────────────────────
 # Quando definido, TODOS os e-mails de aprovação (N1/N2) vão para este endereço.
@@ -265,7 +265,7 @@ viagens_labs/
 │   │           ├── aprovacao.py        # GET/POST aprovação por token (N1/N2)
 │   │           ├── agencia.py          # Login + cotação (agências)
 │   │           ├── setor.py            # Painel do setor (CRUD + ações)
-│   │           └── duffel.py           # Integração Duffel (pesquisa de voos)
+│   │           └── brasil_api.py       # Autocomplete e períodos de voo
 │   ├── core/
 │   │   ├── config.py                   # Settings (Pydantic BaseSettings)
 │   │   └── security.py                 # JWT encode/decode, bcrypt
@@ -277,7 +277,7 @@ viagens_labs/
 │   │   ├── ldap_service.py             # Autenticação AD + verificação de grupos
 │   │   ├── bigquery_service.py         # Consulta hierarquia do colaborador
 │   │   ├── email_service.py            # SMTP relay corporativo (5 templates)
-│   │   ├── duffel_service.py           # API Duffel para pesquisa de voos
+│   │   ├── brasil_api_service.py       # Integração Brasil API + períodos de voo
 │   │   ├── google_relay_service.py     # Integração com GAS relay (aprovações + agências)
 │   │   └── aprovacao_relay_scheduler.py # Thread daemon: polling GAS → processa decisões/cotações reais
 │   ├── repositories/
@@ -327,8 +327,8 @@ viagens_labs/
 | `aereo_periodo_preferido` | String | Período preferido de voo (manhã, tarde…) |
 | `bagagem_extra` | Boolean | Solicita bagagem despachada |
 | `assento_especial` | String | Preferência de assento |
-| `preferencia_voo` | Text | Voo de ida consultado no Duffel (JSON) |
-| `preferencia_voo_volta` | Text | Voo de volta consultado no Duffel (JSON) |
+| `preferencia_voo` | Text | Período preferido de voo (`manha`, `tarde`, `noite`, `madrugada`) |
+| `preferencia_voo_volta` | Text | Campo livre de preferência complementar |
 | `rodov_periodo_preferido` | String | Período preferido rodoviário |
 | `rodov_tipo_onibus` | String | Tipo de ônibus (executivo, leito…) |
 | `rodov_tipo_trecho` | String | Trecho rodoviário |
@@ -662,10 +662,11 @@ BASE_URL_AGENCIA=http://viagenslabs.magazineluiza.intranet
 |---|---|---|
 | `POST` | `/api/v1/vouchers/{id}/upload` | Upload de voucher (autenticado — agência login) |
 
-### Duffel (pesquisa de voos — experimental)
+### Brasil API (autocomplete e períodos de voo)
 | Método | Rota | Descrição |
 |---|---|---|
-| `POST` | `/api/v1/duffel/pesquisar` | Pesquisa voos via API Duffel |
+| `GET` | `/api/v1/brasil-api/lugares?q=...` | Retorna sugestões de aeroportos/cidades para autocomplete |
+| `GET` | `/api/v1/brasil-api/periodos-voo` | Retorna períodos de voo: manhã, tarde, noite e madrugada |
 
 ### Dev, Auditoria & Telemetria (requer perfil `dev` ou `setor` conforme o caso)
 | Método | Rota | Descrição |
@@ -872,10 +873,10 @@ Banco de Dados:
   Migrações: automáticas no startup via create_all() em app/main.py
 
 Arquitetura: Clean Architecture
-  app/api/v1/endpoints/  → auth, viagens, aprovacao, agencia, setor, duffel, dev, terceiros, hoteis, voucher
+  app/api/v1/endpoints/  → auth, viagens, aprovacao, agencia, setor, brasil_api, dev, terceiros, hoteis, voucher
   app/services/          → viagens, aprovacao, cotacao, casamento, setor, voucher
   app/infrastructure/    → database, ldap_service, bigquery_service, email_service,
-                           duffel_service, google_relay_service, aprovacao_relay_scheduler
+                           brasil_api_service, google_relay_service, aprovacao_relay_scheduler
   app/domain/models/     → schemas.py (Pydantic)
   frontend/              → index.html, portal_aprovacao.html, agencia.html, setor.html, dev.html
   frontend/js/lib/       → libs locais do Vue 3 e Tailwind (suporte 100% offline)
@@ -957,7 +958,7 @@ setor.py — padrão atual:
 setor.html (Painel) — modal de detalhe exibe 6 seções:
   1. Dados do Colaborador (viajante_*)
   2. Cadeia de Aprovação (aprovador_n1/n2_*)
-  3. Preferências Aéreas (trecho, período, bagagem, assento, voo ida/volta Duffel)
+  3. Preferências Aéreas (trecho, período, bagagem e assento)
   4. Preferências Rodoviárias
   5. Preferências de Hospedagem
   6. Preferências de Veículo
