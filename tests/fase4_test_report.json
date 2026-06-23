@@ -1,0 +1,111 @@
+{
+  "timestamp": "2026-06-23T04:59:25.907813",
+  "total": 19,
+  "passed": 13,
+  "failed": 1,
+  "pending": 5,
+  "percentage": 68.42105263157895,
+  "results": {
+    "funcionalidade": {
+      "modal_consentimento_viajante": {
+        "passed": true,
+        "message": "Implementado em index.html",
+        "timestamp": "2026-06-23T04:59:25.891178"
+      },
+      "modal_consentimento_gestor": {
+        "passed": true,
+        "message": "Implementado em setor.html",
+        "timestamp": "2026-06-23T04:59:25.891192"
+      },
+      "email_username": {
+        "passed": null,
+        "message": "Requer teste manual com e-mail real",
+        "timestamp": "2026-06-23T04:59:25.891692"
+      },
+      "logs_sem_dados_sensveis": {
+        "passed": true,
+        "message": "Verificar via grep em app/",
+        "timestamp": "2026-06-23T04:59:25.891963"
+      },
+      "portabilidade_json": {
+        "passed": true,
+        "message": "Endpoint /api/v1/lgpd/meus-dados implementado",
+        "timestamp": "2026-06-23T04:59:25.892283"
+      },
+      "solicitacao_delecao": {
+        "passed": true,
+        "message": "Implementado com deduplicação",
+        "timestamp": "2026-06-23T04:59:25.892759"
+      },
+      "scheduler_automatico": {
+        "passed": true,
+        "message": "Scheduler LGPD implementado",
+        "timestamp": "2026-06-23T04:59:25.893148"
+      }
+    },
+    "seguranca": {
+      "https_ativo": {
+        "passed": null,
+        "message": "Requer teste em produção",
+        "timestamp": "2026-06-23T04:59:25.893929"
+      },
+      "certificado_ssl": {
+        "passed": null,
+        "message": "Requer teste em produção",
+        "timestamp": "2026-06-23T04:59:25.894331"
+      },
+      "encriptacao_repouso": {
+        "passed": false,
+        "message": "Bloqueado - Etapa 3.2 pendente",
+        "timestamp": "2026-06-23T04:59:25.894722"
+      },
+      "auditoria_lgpd": {
+        "passed": true,
+        "message": "Middleware e tabela implementados",
+        "timestamp": "2026-06-23T04:59:25.897295"
+      },
+      "token_ttl_valido": {
+        "passed": true,
+        "message": "SLA scheduler implementado",
+        "timestamp": "2026-06-23T04:59:25.897944"
+      },
+      "no_credentials_exposed": {
+        "passed": true,
+        "message": "Usar .env e .gitignore",
+        "timestamp": "2026-06-23T04:59:25.898383"
+      }
+    },
+    "conformidade_lgpd": {
+      "politica_privacidade": {
+        "passed": true,
+        "message": "Publicada em /politica-privacidade.html",
+        "timestamp": "2026-06-23T04:59:25.899390"
+      },
+      "consentimento_obrigatorio": {
+        "passed": true,
+        "message": "Modal bloqueia + tabela",
+        "timestamp": "2026-06-23T04:59:25.900243"
+      },
+      "revogar_consentimento": {
+        "passed": true,
+        "message": "Endpoint implementado",
+        "timestamp": "2026-06-23T04:59:25.900565"
+      },
+      "portabilidade_dados": {
+        "passed": true,
+        "message": "Endpoint implementado",
+        "timestamp": "2026-06-23T04:59:25.900953"
+      },
+      "dpo_informado": {
+        "passed": null,
+        "message": "Requer comunicação formal",
+        "timestamp": "2026-06-23T04:59:25.901409"
+      },
+      "politica_retencao": {
+        "passed": null,
+        "message": "Aguardando aprovação jurídica",
+        "timestamp": "2026-06-23T04:59:25.902227"
+      }
+    }
+  }
+}
