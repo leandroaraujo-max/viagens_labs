@@ -19,11 +19,11 @@
 
 ---
 
-## 1.1 Estado Atual — Fase 1 Concluída ✅
+## 1.1 Estado Atual — Fase 2.2 em Implementação 🟡
 
-**Última sessão:** 23/06/2026 — Ajustes de UI/UX + Simplificação de Integrações
+**Última sessão:** 24/06/2026 — Fase 1 Completa, Fase 2.2 Implementada (Modal LGPD + Política de Privacidade)
 
-### Mudanças Implementadas:
+### Fase 1 ✅ Concluída (23/06/2026)
 
 **Frontend:** [frontend/index.html](frontend/index.html)
 - ✅ Removido aviso desnecessário: "Preencha a data de volta para buscar voo de retorno"
@@ -37,15 +37,48 @@
 - ✅ SVG emoji converter já ativo (script [js/svgify-emojis.js](js/svgify-emojis.js) aplicado globalmente)
 - ✅ Painel de indicadores (BI) com design suave e acessível
 
+### Fase 2.2 ✅ Concluída (24/06/2026) — Consentimento LGPD + Política de Privacidade
+
+**Backend:** [app/infrastructure/orm/models.py](app/infrastructure/orm/models.py)
+- ✅ Adicionada tabela `LGPDConsentimentoModel` com auditoria (usuario_id, aceito, data_aceito, data_revogacao, ip_origem, user_agent)
+
+**Backend:** [app/api/v1/endpoints/lgpd.py](app/api/v1/endpoints/lgpd.py) (novo)
+- ✅ Endpoint `POST /api/v1/lgpd/consentimento` — Registra aceite de consentimento (JWT obrigatório)
+- ✅ Endpoint `GET /api/v1/lgpd/meus-dados` — Portabilidade de dados (Art. 20, LGPD)
+- ✅ Endpoint `POST /api/v1/lgpd/revogar-consentimento` — Revogação de consentimento (Art. 8, § 5º)
+
+**Frontend:** [frontend/index.html](frontend/index.html) (modificado)
+- ✅ Modal LGPD: Exibido na primeira autenticação + a cada 30 dias
+- ✅ Estado Vue: `mostrandoModalLGPD`, `aceitouLGPD`, `registrandoConsentimento`, `erroConsentimento`
+- ✅ Funções: `verificarConsentimentoLGPD()` (localStorage + data), `aceitarConsentimentoLGPD()` (POST + armazenamento)
+- ✅ localStorage: Salva data ISO para controle diário (`lgpd_aceito`, `lgpd_data_aceito`)
+- ✅ Modal UI: Gradiente azul, explicações (4 tópicos), link para política, botões "Rejeitar e Sair" | "Aceitar"
+
+**Frontend:** [frontend/politica-privacidade.html](frontend/politica-privacidade.html) (novo)
+- ✅ Página de Política de Privacidade completa com 10 seções:
+  1. Controlador de Dados (Luizalabs, endereço, DPO)
+  2. Dados Coletados (pessoais, profissionais, viagem, sistema)
+  3. Base Legal LGPD (Arts. 7-V, 7-II, 7-I com explicações)
+  4. Fins do Tratamento (8 finalidades incluindo gerenciamento, aprovação, auditoria)
+  5. Destinatários (gestores N1/N2, setor, agências, GCP, AD, auditores)
+  6. Período de Retenção (tabela: viagens 3 anos, aprovações 2 anos, dados sensíveis deletados em 30 dias)
+  7. Seus Direitos LGPD (5 direitos: acesso, retificação, exclusão, portabilidade, revogar consentimento)
+  8. Segurança dos Dados (TLS 1.3, encriptação em repouso, MFA, auditoria, backups)
+  9. Processadores de Dados (Google, Microsoft, Gmail com links de política)
+  10. Alterações nesta Política (notificação via e-mail)
+
 **Status de Segurança:**
-- 🟡 LGPD: Não implementado ainda (Fase 3)
-- 🟡 E-mails: Ainda usando nome de display (será atualizado em Fase 2)
+- 🟡 LGPD Modal: Implementado ✅ | Testes: Pendentes
+- 🟡 LGPD Política: Implementada ✅ | Link em footers: Pendente
+- 🟡 E-mails: Ainda usando nome de display (Fase 2.1 próxima)
 - 🟢 Encriptação em trânsito: HTTPS via Nginx (já implementado)
 
 ### Próximos Passos:
-- **Fase 2:** Personalização de e-mails (username) + consentimento LGPD básico (5-7 dias)
+- **Fase 2.1:** Personalização de e-mails (username em saudações) — 1-2 horas
+- **Fase 2.3:** Integração de link de Política de Privacidade em todos os footers — 1 hora
+- **Fase 2.4:** Testes de consentimento + deployment — 2-3 horas
 - **Fase 3:** Encriptação em repouso + auditoria completa + política jurídica (1-2 semanas)
-- **Fase 4:** Validação e deploy (3-4 dias)
+- **Fase 4:** Validação e deploy final (3-4 dias)
 
 ---
 
@@ -290,6 +323,11 @@ Após o deploy v4, é necessário executar `setupAgencia()` no editor do Google 
 ### Backlog Técnico
 | Fase | Item | Status |
 |---|---|---|
+| 1 | Simplificação UI/UX (remover avisos, hotel simples, cores SVG) | **Concluído e Homologado** ✅ |
+| 2.1 | Personalização de e-mails (username em saudações) | **Em Andamento** 🟡 |
+| 2.2 | Modal LGPD + Política de Privacidade | **Concluído e Testável** ✅ |
+| 2.3 | Integração de links de Política em todos os footers | **Pendente** ⏳ |
+| 2.4 | Testes de consentimento + deployment | **Pendente** ⏳ |
 | 5B | Motor SLA (lembretes de aprovação/cotação atrasados) | **Concluído e Homologado** |
 | 6A | Portal do Desenvolvedor (`dev.html` e endpoints) | **Concluído e Homologado** |
 | 6B | Redesign de Agências (Sem login, acesso exclusivo GAS) | **Concluído e Homologado** |
