@@ -551,28 +551,13 @@
                                                     <input type="radio" v-model="formPreferencias.aereo_tipo_trecho" value="ida" class="accent-blue-600">
                                                     <span class="text-sm text-gray-700">Somente Ida</span>
                                                 </label>
-                                                <span v-if="formPreferencias.aereo_tipo_trecho === 'ambos' && (!formViagem.data_volta || formViagem.data_volta.length < 10)"
-                                                    class="text-xs text-amber-600 ml-auto">⚠ Preencha a data de volta para buscar voo de retorno</span>
                                             </div>
-                                            <!-- Período + Bagagem + Assento -->
-                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                                <div>
-                                                    <label class="block text-xs font-semibold text-gray-600 mb-1">Período Preferido</label>
-                                                    <select v-model="formPreferencias.aereo_periodo_preferido" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-labs-blue text-sm bg-white">
-                                                        <option value="">Sem preferência</option>
-                                                        <option value="manha">Manhã (06h–12h)</option>
-                                                        <option value="tarde">Tarde (12h–18h)</option>
-                                                        <option value="noite">Noite (18h–23h)</option>
-                                                            <option value="madrugada">Madrugada (00h–06h)</option>
-                                                    </select>
-                                                </div>
-                                                <div class="flex flex-col gap-2 justify-center">
-                                                    <label class="flex items-center gap-2 cursor-pointer">
-                                                        <input type="checkbox" v-model="formPreferencias.bagagem_extra" class="w-4 h-4 text-labs-blue rounded focus:ring-labs-blue">
-                                                        <span class="text-sm text-gray-700">Necessito despachar bagagem</span>
-                                                    </label>
-                                                    <input v-model="formPreferencias.assento_especial" type="text" placeholder="Preferência de assento (ex: janela)" class="px-3 py-1.5 rounded-lg border border-gray-300 focus:border-labs-blue text-sm">
-                                                </div>
+                                            <!-- Bagagem -->
+                                            <div class="flex flex-col gap-2 justify-center">
+                                                <label class="flex items-center gap-2 cursor-pointer">
+                                                    <input type="checkbox" v-model="formPreferencias.bagagem_extra" class="w-4 h-4 text-labs-blue rounded focus:ring-labs-blue">
+                                                    <span class="text-sm text-gray-700">Necessito despachar bagagem</span>
+                                                </label>
                                             </div>
                                         </div>
 
@@ -603,6 +588,16 @@
                                                 <p class="text-xs text-green-800">
                                                     ✔ <strong>Período selecionado:</strong> {{ periodoSelecionado?.nome }} ({{ periodoSelecionado?.horario_inicio }}–{{ periodoSelecionado?.horario_fim }})
                                                 </p>
+                                            </div>
+
+                                            <div class="mt-3">
+                                                <label class="block text-xs font-semibold text-gray-700 mb-1">Observações de voo (opcional)</label>
+                                                <textarea
+                                                    v-model="formPreferencias.observacoes_viajante"
+                                                    rows="2"
+                                                    placeholder="Informe detalhes importantes para a emissão (ex: conexão máxima, restrições de horário, necessidade específica)."
+                                                    class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-labs-blue text-sm resize-none"
+                                                ></textarea>
                                             </div>
                                         </div>
                                         <!-- ══ / SUGESTÕES PERÍODO ═══════════════════════════════════ -->
@@ -686,39 +681,11 @@
                                                            :class="formPreferencias.hosp_data_checkout ? 'border-green-400 bg-green-50/10' : 'border-gray-300'">
                                                 </div>
                                             </div>
-                                            <div class="relative">
+                                            <div>
                                                 <label class="block text-xs font-semibold text-gray-600 mb-1.5">Sugestão de Hotel (opcional)</label>
-                                                <div class="flex gap-2">
-                                                    <input v-model="formPreferencias.preferencia_hotel_nome"
-                                                           @focus="hoteisDropdown = hoteisGoogle.length > 0"
-                                                           @blur="setTimeout(() => hoteisDropdown = false, 200)"
-                                                           type="text" placeholder="Nome do hotel preferido"
-                                                           class="flex-1 min-w-0 px-3 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue text-sm">
-                                                    <button type="button" @click="buscarHoteisGoogle"
-                                                            :disabled="hoteisGoogleBuscando || !formViagem.destino_cidade.trim()"
-                                                            class="shrink-0 flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap">
-                                                        <svg v-if="hoteisGoogleBuscando" class="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
-                                                        <svg v-else class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z"/></svg>
-                                                        {{ hoteisGoogleBuscando ? 'Buscando…' : 'Sugerir' }}
-                                                    </button>
-                                                </div>
-                                                <!-- Dropdown de resultados -->
-                                                <ul v-if="hoteisDropdown && hoteisGoogle.length"
-                                                    class="absolute z-50 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl max-h-72 overflow-y-auto">
-                                                    <li v-for="h in hoteisGoogle" :key="h.id"
-                                                        @mousedown.prevent="selecionarHotelGoogle(h)"
-                                                        class="flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-blue-50 border-b border-gray-100 last:border-0">
-                                                        <div class="flex-1 min-w-0">
-                                                            <p class="text-sm font-semibold text-gray-800 truncate">{{ h.displayName?.text }}</p>
-                                                            <p class="text-xs text-gray-400 truncate mt-0.5">{{ h.formattedAddress }}</p>
-                                                        </div>
-                                                        <div v-if="h.rating" class="flex items-center gap-1 shrink-0">
-                                                            <span class="text-yellow-400 text-xs">★</span>
-                                                            <span class="text-xs font-bold text-gray-600">{{ h.rating }}</span>
-                                                        </div>
-                                                    </li>
-                                                </ul>
-                                                <p v-if="hoteisGoogleErro" class="text-xs text-red-500 mt-1">⚠ {{ hoteisGoogleErro }}</p>
+                                                <input v-model="formPreferencias.preferencia_hotel_nome"
+                                                       type="text" placeholder="Informe manualmente o hotel preferido"
+                                                       class="w-full px-3 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue text-sm">
                                             </div>
                                             <label class="flex items-center gap-3 cursor-pointer">
                                                 <input type="checkbox" v-model="formPreferencias.quarto_excecao_saude" class="w-4 h-4 text-labs-blue rounded focus:ring-labs-blue">
@@ -800,19 +767,6 @@
                                                     <input v-model="formPreferencias.carro_hora_devolucao" type="time" class="w-full px-3 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue text-sm">
                                                 </div>
                                             </div>
-                                        </div>
-
-                                        <!-- Observações Gerais -->
-                                        <div>
-                                            <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                                Observações adicionais
-                                                <span v-if="formPreferencias.quarto_excecao_saude" class="text-red-500"> *</span>
-                                            </label>
-                                            <textarea v-model="formPreferencias.observacoes_viajante" rows="2"
-                                                :placeholder="formPreferencias.quarto_excecao_saude ? 'Obrigatório: descreva a condição de saúde e o alinhamento com os times responsáveis...' : 'Alguma informação importante para a agência...'"
-                                                :class="formPreferencias.quarto_excecao_saude && !formPreferencias.observacoes_viajante.trim() ? 'border-red-300 focus:border-red-500 bg-red-50' : 'border-gray-300 focus:border-labs-blue'"
-                                                class="w-full px-4 py-2.5 rounded-lg border focus:ring-1 focus:ring-labs-blue text-sm resize-none"></textarea>
-                                            <p v-if="formPreferencias.quarto_excecao_saude && !formPreferencias.observacoes_viajante.trim()" class="text-xs text-red-500 mt-1">Justificativa obrigatória quando quarto individual por saúde é solicitado.</p>
                                         </div>
 
                                         <div v-if="erroEnvio" class="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded-md">
@@ -1714,43 +1668,7 @@
                     return `${d}/${m}/${y}`;
                 };
 
-                // ── Google Places API ─────────────────────────────────────────
-                const hoteisGoogle = ref([]);
-                const hoteisGoogleBuscando = ref(false);
-                const hoteisDropdown = ref(false);
-                const hoteisGoogleErro = ref('');
 
-                async function buscarHoteisGoogle() {
-                    const cidade = formViagem.value.destino_cidade.trim();
-                    const estado = formViagem.value.destino_estado?.trim() || '';
-                    if (!cidade) return;
-                    hoteisGoogleBuscando.value = true;
-                    hoteisGoogleErro.value = '';
-                    hoteisDropdown.value = false;
-                    try {
-                        const termo = `hotéis em ${cidade}${estado ? ' ' + estado : ''} Brasil`;
-                        const res = await fetch(`/api/v1/hoteis/sugestoes?q=${encodeURIComponent(termo)}`);
-                        if (!res.ok) throw new Error('Erro ao buscar sugestões de hotéis');
-                        const dados = await res.json();
-                        hoteisGoogle.value = (dados || []).map(h => ({
-                            displayName: { text: h.descricao },
-                            formattedAddress: '',
-                            rating: '',
-                            ...h
-                        }));
-                        hoteisDropdown.value = hoteisGoogle.value.length > 0;
-                        if (!hoteisGoogle.value.length) hoteisGoogleErro.value = 'Nenhum hotel encontrado para esse destino.';
-                    } catch (e) {
-                        hoteisGoogleErro.value = 'Falha ao buscar hotéis: ' + e.message;
-                    } finally {
-                        hoteisGoogleBuscando.value = false;
-                    }
-                }
-
-                function selecionarHotelGoogle(hotel) {
-                    formPreferencias.value.preferencia_hotel_nome = hotel.displayName?.text || '';
-                    hoteisDropdown.value = false;
-                }
 
                 const pickerFormViagem = (e, campo) => {
                     const v = isoToDisplay(e.target.value);
@@ -1871,7 +1789,11 @@
                 const enviarSolicitacao = async () => {
                     erroEnvio.value = '';
                     // Validação: quarto individual por saúde exige observações
-                    if (formPreferencias.value.quarto_excecao_saude && !formPreferencias.value.observacoes_viajante.trim()) {
+                    if (
+                        formPreferencias.value.quarto_excecao_saude &&
+                        formViagem.value.tipo_servico.includes('Aereo') &&
+                        !formPreferencias.value.observacoes_viajante.trim()
+                    ) {
                         erroEnvio.value = 'Por favor, preencha o campo Observações com a justificativa da condição de saúde para quarto individual.';
                         return;
                     }
@@ -2190,9 +2112,6 @@
                     autorizacoesTerceiros, autorizacaoSelecionada, carregarAutorizacoesTerceiros,
                     mostrandoModalTerceiro, terceiroBuscaMatricula, terceiroEncontrado, terceiroErroBusca, terceiroBuscando, buscarTerceiroPorMatricula,
                     pdfArquivo, terceiroSubmetendo, terceiroMensagemSucesso, terceiroErroSubmissao, submeterTicketTerceiro, lidarComUploadPDF,
-                    // Google Places
-                    hoteisGoogle, hoteisGoogleBuscando, hoteisDropdown, hoteisGoogleErro,
-                    buscarHoteisGoogle, selecionarHotelGoogle,
                     distanciaViagem, distanciaCalculando,
                     formViagem, formPreferencias, servicosDisponiveis,
                     hojeISO, classificacaoAereo, passo2Valido,
@@ -2219,5 +2138,6 @@
             }
         }).mount('#app');
     </script>
+    <script src="/js/svgify-emojis.js?v=1"></script>
 </body>
 </html>

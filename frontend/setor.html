@@ -2074,19 +2074,19 @@
 
         const statusBarCor = (s) => {
           const m = {
-            CONCLUIDA: 'bg-green-500',
+            CONCLUIDA: 'bg-emerald-500',
             REPROVADA: 'bg-red-400',
-            PENDENTE_PRE_APROVACAO_SETOR: 'bg-yellow-500',
+            PENDENTE_PRE_APROVACAO_SETOR: 'bg-yellow-400',
             AGUARDANDO_COTACAO: 'bg-blue-500',
             PENDENTE_APROVACAO_SETOR_COTACAO: 'bg-purple-500',
             COTACAO_ENVIADA: 'bg-indigo-500',
             AGUARDANDO_N1: 'bg-gray-400',
             AGUARDANDO_N2: 'bg-orange-400',
-            PENDENTE_CANCELAMENTO: 'bg-amber-500',
-            PENDENTE_REMARCACAO: 'bg-amber-500',
-            PENDENTE_APROVACAO_CANCELAMENTO: 'bg-rose-500',
-            PENDENTE_APROVACAO_REMARCACAO: 'bg-violet-500',
-            CANCELADA: 'bg-red-650',
+            PENDENTE_CANCELAMENTO: 'bg-amber-400',
+            PENDENTE_REMARCACAO: 'bg-amber-400',
+            PENDENTE_APROVACAO_CANCELAMENTO: 'bg-rose-400',
+            PENDENTE_APROVACAO_REMARCACAO: 'bg-violet-400',
+            CANCELADA: 'bg-red-500',
           };
           return m[s] || 'bg-gray-400';
         };
@@ -2465,6 +2465,7 @@
       }
     }).mount('#app');
   </script>
+  <script src="/js/svgify-emojis.js?v=1"></script>
 </body>
 
 </html>

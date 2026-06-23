@@ -1,7 +1,7 @@
 # Viagens Labs — Handoff Técnico
 
 > Documento de passagem de contexto para desenvolvedores e sessões de IA.  
-> Última atualização: **25/05/2026**
+> Última atualização: **23/06/2026** — Fase 1 (Simplificação UI/UX) concluída
 
 ---
 
@@ -16,6 +16,36 @@
 | Backend | FastAPI + Python 3.14 + Uvicorn (porta 8000) |
 | Frontend | Vue.js 3 CDN + TailwindCSS CDN (porta 80 via Nginx) |
 | Banco | PostgreSQL 5433, DB `solicitacao_viagens` |
+
+---
+
+## 1.1 Estado Atual — Fase 1 Concluída ✅
+
+**Última sessão:** 23/06/2026 — Ajustes de UI/UX + Simplificação de Integrações
+
+### Mudanças Implementadas:
+
+**Frontend:** [frontend/index.html](frontend/index.html)
+- ✅ Removido aviso desnecessário: "Preencha a data de volta para buscar voo de retorno"
+- ✅ Removido caixa informativa: "O período de voo deve ser escolhido nos cards abaixo"
+- ✅ Simplificado campo de hotel: removida integração Google Places API, mantido apenas textbox simples
+- ✅ Removidas funções: `buscarHoteisGoogle()`, `selecionarHotelGoogle()`
+- ✅ Removidas variáveis de estado: `hoteisGoogle`, `hoteisGoogleBuscando`, `hoteisDropdown`, `hoteisGoogleErro`
+
+**Frontend:** [frontend/setor.html](frontend/setor.html)
+- ✅ Reduzidos tons de cores neon em status bars para paleta mais profissional
+- ✅ SVG emoji converter já ativo (script [js/svgify-emojis.js](js/svgify-emojis.js) aplicado globalmente)
+- ✅ Painel de indicadores (BI) com design suave e acessível
+
+**Status de Segurança:**
+- 🟡 LGPD: Não implementado ainda (Fase 3)
+- 🟡 E-mails: Ainda usando nome de display (será atualizado em Fase 2)
+- 🟢 Encriptação em trânsito: HTTPS via Nginx (já implementado)
+
+### Próximos Passos:
+- **Fase 2:** Personalização de e-mails (username) + consentimento LGPD básico (5-7 dias)
+- **Fase 3:** Encriptação em repouso + auditoria completa + política jurídica (1-2 semanas)
+- **Fase 4:** Validação e deploy (3-4 dias)
 
 ---
 
