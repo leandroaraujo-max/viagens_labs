@@ -801,6 +801,29 @@ Entregas principais:
 - Cancelamento de execução (`POST /api/v1/dev/qa/jobs/{job_id}/cancelar`) com estados `canceling/canceled`.
 - Cobertura de testes para execução, catálogo, status e cancelamento de jobs QA.
 
+### 2026-06-23 - v2026.06.23-lgpd-scheduler (EM PROGRESS local, ainda nao comitado)
+
+Arquivos novos:
+
+- `app/infrastructure/lgpd_scheduler.py` - Scheduler daemon para processamento automático de solicitações de deleção LGPD.
+- `tests/test_lgpd_scheduler.py` - Cobertura de testes do scheduler (3 testes novos).
+
+Arquivos modificados:
+
+- `app/main.py` - Registro do scheduler LGPD no startup da aplicação.
+- `tests/conftest.py` - Inclusão de `TokenAprovacaoModel` e `AuditoriaLGPDModel` nas fixtures.
+- `PLANO_FASE_2_3_4.md` - Atualização de progresso da Etapa 3.5.
+
+Entregas principais (Etapa 3.5 do Plano LGPD):
+
+- Scheduler daemon executando a cada 1 hora para processar solicitações de deleção expiradas.
+- Busca automática de solicitações com `data_execucao <= now` e status `PENDENTE`.
+- Deleção de solicitações de viagem do usuário (`SolicitacaoModel`).
+- Anonimização de tokens de aprovação relacionados (`TokenAprovacaoModel`).
+- Atualização de status para `PROCESSADA` com timestamp de processamento.
+- Registro em trilha de auditoria LGPD (`AuditoriaLGPDModel`) de todas as ações.
+- 100% de cobertura de testes: 18 testes passando (incluindo 3 novos do scheduler).
+
 ---
 
 ## 📊 Estado Atual e Próximos Passos

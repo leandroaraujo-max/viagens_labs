@@ -318,6 +318,35 @@ Documento de Política de Privacidade Formal (2-3 páginas)
 
 ---
 
+### Status de Continuidade (23/06/2026 - Sessão Atual)
+
+- ✅ Etapa 3.4.2 iniciada e implementada no backend:
+  - Novo endpoint `POST /api/v1/lgpd/solicitar-delecao` em `app/api/v1/endpoints/lgpd.py`.
+  - Nova tabela `lgpd_solicitacao_delecao` via ORM (`LGPDSolicitacaoDelecaoModel`).
+  - Migração segura adicionada em `app/main.py` (`CREATE TABLE IF NOT EXISTS ...`).
+  - Regras implementadas: cria solicitação com janela de 30 dias e evita duplicidade pendente por usuário.
+  - Cobertura de testes adicionada/atualizada em `tests/test_lgpd_api.py` e `tests/conftest.py`.
+
+- ✅ Etapa 3.3 iniciada com base técnica implementada:
+  - Nova tabela `auditoria_lgpd` em ORM (`AuditoriaLGPDModel`).
+  - Migração segura adicionada em `app/main.py` (`CREATE TABLE IF NOT EXISTS ...`).
+  - Middleware global atualizado para persistir trilha dedicada para endpoints sensíveis (`/api/v1/viagens`, `/api/v1/setor`, `/api/v1/aprovacao`, `/api/v1/lgpd/meus-dados`).
+
+- ✅ Etapa 3.5 implementada e testada:
+  - Novo scheduler daemon `app/infrastructure/lgpd_scheduler.py` que roda a cada 1 hora.
+  - Função `_processar_delecoes_expiradas()` busca solicitações PENDENTES com `data_execucao <= now`.
+  - Executa deleção de viagens (`SolicitacaoModel`) e anonimização de tokens (`TokenAprovacaoModel`).
+  - Marca solicitação como PROCESSADA e registra em `AuditoriaLGPDModel`.
+  - Scheduler registrado em `app/main.py` via `iniciar_lgpd_scheduler()`.
+  - 3 testes novos em `tests/test_lgpd_scheduler.py` com 100% de cobertura (18 testes total passando).
+
+- 🔜 Próxima execução recomendada do plano (ordem):
+  1. ~~Etapa 3.5 (job de processamento de solicitações expiradas)~~ ✅ Concluída
+  2. Etapa 3.2 (encriptação em repouso), após alinhamento jurídico e política de retenção final.
+  3. Etapa 3.6 (termo de consentimento para gestores no portal do setor).
+
+---
+
 ### 3.2 Encriptação de Dados em Repouso
 
 #### 3.2.1 Colunas Sensíveis a Criptografar

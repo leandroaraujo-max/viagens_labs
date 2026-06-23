@@ -8,7 +8,13 @@ from sqlalchemy.orm import sessionmaker
 
 from app.api.dependencies import get_db_session, require_auth, require_dev
 from app.api.v1.routers import api_router
-from app.infrastructure.orm.models import LGPDConsentimentoModel, SolicitacaoModel
+from app.infrastructure.orm.models import (
+    LGPDConsentimentoModel,
+    LGPDSolicitacaoDelecaoModel,
+    SolicitacaoModel,
+    AuditoriaLGPDModel,
+    TokenAprovacaoModel,
+)
 
 
 @pytest.fixture()
@@ -21,7 +27,10 @@ def db_session(tmp_path):
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
     LGPDConsentimentoModel.__table__.create(bind=engine, checkfirst=True)
+    LGPDSolicitacaoDelecaoModel.__table__.create(bind=engine, checkfirst=True)
+    AuditoriaLGPDModel.__table__.create(bind=engine, checkfirst=True)
     SolicitacaoModel.__table__.create(bind=engine, checkfirst=True)
+    TokenAprovacaoModel.__table__.create(bind=engine, checkfirst=True)
 
     session = SessionLocal()
     try:

@@ -33,8 +33,9 @@ db_handler.setFormatter(logging.Formatter(
 ))
 db_logger.addHandler(db_handler)
 
-from app.infrastructure.database import Base, engine
+from app.infrastructure.database import Base, engine, SessionLocal
 from app.infrastructure.orm import models
+from app.infrastructure.orm.models import AuditoriaLGPDModel
 from app.api.v1.routers import api_router
 
 
@@ -137,6 +138,32 @@ def _migracoes_seguras():
         );""",
         "ALTER TABLE colaboradores_cache ADD COLUMN IF NOT EXISTS cpf VARCHAR(20) DEFAULT '';",
         "ALTER TABLE colaboradores_cache ADD COLUMN IF NOT EXISTS matricula VARCHAR(20) DEFAULT '';",
+        # Fase 3.4 — direito de deleção LGPD
+        """CREATE TABLE IF NOT EXISTS lgpd_solicitacao_delecao (
+            id SERIAL PRIMARY KEY,
+            usuario_id VARCHAR(100) NOT NULL,
+            status VARCHAR(20) DEFAULT 'PENDENTE',
+            data_solicitacao TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+            data_execucao TIMESTAMPTZ NOT NULL,
+            data_processamento TIMESTAMPTZ,
+            observacao TEXT DEFAULT '',
+            criado_em TIMESTAMPTZ DEFAULT NOW()
+        );""",
+        "CREATE INDEX IF NOT EXISTS ix_lgpd_solicitacao_delecao_usuario_id ON lgpd_solicitacao_delecao(usuario_id);",
+        "CREATE INDEX IF NOT EXISTS ix_lgpd_solicitacao_delecao_status ON lgpd_solicitacao_delecao(status);",
+        # Fase 3.3 — trilha dedicada de auditoria LGPD
+        """CREATE TABLE IF NOT EXISTS auditoria_lgpd (
+            id SERIAL PRIMARY KEY,
+            usuario_id VARCHAR(100) NOT NULL,
+            acao VARCHAR(20) NOT NULL,
+            recurso VARCHAR(255) NOT NULL,
+            dados_acessados VARCHAR(255) DEFAULT 'dados_pessoais',
+            ip_origem VARCHAR(50) DEFAULT '0.0.0.0',
+            user_agent VARCHAR(255),
+            criado_em TIMESTAMPTZ DEFAULT NOW()
+        );""",
+        "CREATE INDEX IF NOT EXISTS ix_auditoria_lgpd_usuario_id ON auditoria_lgpd(usuario_id);",
+        "CREATE INDEX IF NOT EXISTS ix_auditoria_lgpd_recurso ON auditoria_lgpd(recurso);",
     ]
     with engine.connect() as conn:
         for sql in sqls:
@@ -176,6 +203,14 @@ async def lifespan(app: FastAPI):
         logger.info("GAS Relay Scheduler iniciado.")
     except Exception as exc:
         logger.warning(f"GAS Relay Scheduler não iniciado: {exc}")
+    # Inicia LGPD scheduler (processamento de solicitações de deleção expiradas)
+    try:
+        from app.infrastructure.lgpd_scheduler import iniciar_lgpd_scheduler
+        from app.infrastructure.database import SessionLocal
+        iniciar_lgpd_scheduler(SessionLocal)
+        logger.info("LGPD Scheduler iniciado.")
+    except Exception as exc:
+        logger.warning(f"LGPD Scheduler não iniciado: {exc}")
     yield
 
 def create_app() -> FastAPI:
@@ -216,6 +251,32 @@ def create_app() -> FastAPI:
                 except Exception:
                     pass
             logger.info(f"[AUDITORIA - NAVEGAÇÃO] Usuário: {username} | Perfil: {perfil} | Método: {request.method} | Rota: {path}")
+
+            # Trilha dedicada LGPD para endpoints com potencial de dados sensíveis.
+            endpoints_sensiveis = (
+                "/api/v1/viagens",
+                "/api/v1/setor",
+                "/api/v1/aprovacao",
+                "/api/v1/lgpd/meus-dados",
+            )
+            if any(path.startswith(prefixo) for prefixo in endpoints_sensiveis):
+                ip_origem = request.client.host if request.client else "0.0.0.0"
+                user_agent = (request.headers.get("user-agent") or "")[:255]
+                try:
+                    with SessionLocal() as db:
+                        db.add(
+                            AuditoriaLGPDModel(
+                                usuario_id=username,
+                                acao=request.method,
+                                recurso=path,
+                                dados_acessados="dados_pessoais",
+                                ip_origem=ip_origem,
+                                user_agent=user_agent,
+                            )
+                        )
+                        db.commit()
+                except Exception as exc:
+                    logger.warning(f"Falha ao registrar auditoria LGPD em banco: {exc}")
         
         response = await call_next(request)
         return response
