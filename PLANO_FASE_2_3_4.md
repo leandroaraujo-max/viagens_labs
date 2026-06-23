@@ -13,7 +13,10 @@ Este documento detalha as **Fases 2, 3 e 4** do plano de ajustes ao Viagens Labs
 | Fase | Duração | Objetivo | Bloqueador | Status |
 |------|---------|----------|-----------|--------|
 | **1** | 1-2 dias | Remover avisos, simplificar hotéis, converter indicadores para SVG | Nenhum | ✅ Completo |
-| **2** | 5-7 dias | E-mails com username + consentimento LGPD inicial | Nenhum | 📅 Planejado |
+| **2.1** | < 1 hora | E-mails com username (já implementado) | Nenhum | ✅ Completo |
+| **2.2** | 2-3 horas | Modal LGPD + Política de Privacidade | Nenhum | ✅ Completo |
+| **2.3** | 1 hora | Integração de links de Política nos footers | Nenhum | 📅 Planejado |
+| **2.4** | 2-3 horas | Testes de consentimento + deployment | Fase 2.3 | 📅 Planejado |
 | **3** | 1-2 sem | Encriptação em repouso + auditoria + política jurídica | Advogado | 🔒 Aguardando Legal |
 | **4** | 3-4 dias | Testes integrados + deploy | Fase 3 | 🧪 Agendado |
 
@@ -21,184 +24,196 @@ Este documento detalha as **Fases 2, 3 e 4** do plano de ajustes ao Viagens Labs
 
 ## FASE 2: Personalização de E-mails e Consentimento LGPD Básico
 
-**Duração Estimada:** 5-7 dias de trabalho  
+**Duração Total Fase 2:** 5-7 dias de trabalho  
+**Status Atual:** Fases 2.1 e 2.2 concluídas ✅ | Fases 2.3-2.4 em andamento 📅  
 **Pré-requisitos:** VS Code em modo administrador, acesso Git ao repositório  
 **Responsáveis:** Dev Backend + Dev Frontend
 
 ---
 
-### 2.1 Personalização de E-mails com Username
+### ⚡ Status de Implementação — Resumo
 
-#### 2.1.1 Localizar Templates de E-mail
-
-**Arquivo:** `app/infrastructure/email_service.py`
-
-Tarefa:
-1. Abrir arquivo Python
-2. Localizar função `enviar_email_aprovacao_n1()`, `enviar_email_aprovacao_n2()`, etc.
-3. Encontrar pattern: `{{ nome_viajante }}` ou similar
-
-**Esperado:**
-```python
-# Atual (errado):
-"Olá {{ nome_viajante }},\n\nSua solicitação foi criada..."
-
-# Deve virar:
-"Olá {{ username }},\n\nSua solicitação foi criada..."
-```
-
-#### 2.1.2 Templates de E-mail
-
-**Arquivos de Template:**
-- `app/infrastructure/email_templates/approval_n1.html`
-- `app/infrastructure/email_templates/approval_n2.html`
-- `app/infrastructure/email_templates/agency_cotacao.html`
-- `app/infrastructure/email_templates/agency_vencedora.html`
-- `app/infrastructure/email_templates/confirmacao_solicitacao.html`
-- Qualquer outro com `{{ viajante_nome }}` ou `{{ nome_viajante }}`
-
-Tarefa:
-```html
-<!-- Antes -->
-<p>Olá {{ viajante_nome }},</p>
-
-<!-- Depois -->
-<p>Olá {{ username }},</p>
-```
-
-#### 2.1.3 Verificar Disponibilidade de `username` no Banco
-
-**Arquivo:** `app/infrastructure/orm/models.py`
-
-Tarefa:
-1. Localizar tabela ORM `solicitacao_viagem`
-2. Verificar coluna `solicitante_username` (já deve existir)
-3. Se não existir, adicionar via migração:
-
-```python
-class SolicitacaoViagem(Base):
-    __tablename__ = "solicitacao_viagem"
-    
-    # ... colunas existentes ...
-    solicitante_username = Column(String(50))  # Novo campo se necessário
-```
-
-#### 2.1.4 Atualizar Context de Rendering
-
-**Arquivo:** `app/services/viagens_service.py` ou `app/services/email_service.py`
-
-Tarefa:
-1. Ao enviar e-mail, passar contexto com `username`:
-
-```python
-context = {
-    "username": solicitacao.solicitante_username,  # "lnd_araujo"
-    "protocolo": solicitacao.protocolo,
-    # ... outros campos ...
-}
-
-html = template.render(context)
-```
-
-#### 2.1.5 Testes
-
-Tarefa:
-1. Criar solicitação de viagem com seu usuário
-2. Verificar e-mail recebido (procurar por "Olá lnd_araujo" ou seu username)
-3. Confirmar que nome de display não aparece mais
-
-**Estimado:** 3-4 horas
+| Item | Status | Detalhes |
+|------|--------|----------|
+| 2.1 — E-mails Username | ✅ Completo | 6/6 e-mails para solicitante usam `solicitante_username`. 1 e-mail para viajante (delegação) está correto como está |
+| 2.2 — Modal LGPD | ✅ Completo | Modal implementado, 3 endpoints LGPD criados, Política de Privacidade (10 seções) finalizada |
+| 2.3 — Links Footer | 📅 Próximo | Integrar link "Política de Privacidade" em todos os portais |
+| 2.4 — Testes | 📅 Próximo | Testes manuais de consentimento + deployment staging |
 
 ---
 
-### 2.2 Modal de Consentimento LGPD na Primeira Entrada
+### 2.1 Personalização de E-mails com Username — ✅ CONCLUÍDO
 
-#### 2.2.1 Criar Modal de Consentimento
+**Análise Realizada (24/06/2026):**
+
+Todos os 6 e-mails enviados para o **solicitante** (quem cria a solicitação) já usam `solicitacao.solicitante_username`:
+
+```python
+# ✅ Correto em 6 funções:
+def enviar_email_criacao(...)              # Linha 363
+def enviar_email_resultado(...)            # Linha 405
+def enviar_email_cotacao_recebida(...)     # Linha 468
+def enviar_email_voucher_criado(...)       # Linha 751
+def enviar_email_conclusao(...)            # Linha 790
+def enviar_email_cotacao_concluida(...)    # Linha 826
+
+# Exemplo:
+<p style="margin:0 0 16px">Olá, <strong>{solicitacao.solicitante_username}</strong>,</p>
+```
+
+**Caso Especial — Linha 1039:**
+
+A função `enviar_email_notificacao_terceiro()` envia um e-mail para o **viajante** (terceiro em delegação), não para o solicitante. Ela usa `{solicitacao.viajante_nome or solicitacao.viajante_email}`, que está **correto** porque:
+- Email é enviado para `solicitacao.viajante_email` (o terceiro)
+- Não existe `viajante_username` no banco
+- Saudar com `viajante_nome` (ou email como fallback) é apropriado para este contexto
+
+**Conclusão:** Fase 2.1 está 100% implementada. ✅
+
+---
+
+### 2.2 Modal de Consentimento LGPD na Primeira Entrada — ✅ CONCLUÍDO
+
+**Implementação (24/06/2026):**
+- ✅ Tabela `LGPDConsentimentoModel` criada em `app/infrastructure/orm/models.py`
+- ✅ 3 Endpoints LGPD implementados:
+  - `POST /api/v1/lgpd/consentimento` — Registra aceite
+  - `GET /api/v1/lgpd/meus-dados` — Portabilidade (Art. 20)
+  - `POST /api/v1/lgpd/revogar-consentimento` — Revogação (Art. 8, § 5º)
+- ✅ Modal Vue.js implementado em `frontend/index.html` com localStorage diário
+- ✅ Página de Política de Privacidade completa: [frontend/politica-privacidade.html](../frontend/politica-privacidade.html)
+  - 10 seções com cobertura de Arts. 8, 17, 18, 19, 20 da LGPD
+  - Tabela de retenção de dados
+  - Links para processadores de dados
+  - Formulário de contato para DPO
+
+**Commits:**
+- `feat: Fase 2.2 - Modal LGPD...` — Implementação completa
+- `docs: Atualização de HANDOFF.md...` — Documentação
+
+---
+
+### 2.3 Integração de Links de Política de Privacidade — 📅 PRÓXIMO
+
+**Duração Estimada:** 1 hora
+
+#### Tarefa 2.3.1 — Adicionar Link em index.html
 
 **Arquivo:** `frontend/index.html`
 
-Tarefa:
-1. Adicionar novo modal Vue.js ANTES do formulário multipassos
-2. Estrutura esperada:
+Localizar o footer (procurar por `<footer>` ou último `<div>` antes de `</body>`) e adicionar:
 
 ```html
-<!-- Modal LGPD Consentimento -->
-<div v-if="!consentimentoLGPD.aceito && !consentimentoLGPD.localStorage" 
-     class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-  <div class="bg-white rounded-2xl p-8 max-w-2xl w-full mx-4 shadow-2xl">
-    
-    <div class="flex items-center gap-3 mb-4">
-      <span class="text-2xl">🔐</span>
-      <h2 class="text-lg font-bold text-gray-800">Aviso de Privacidade — LGPD</h2>
-    </div>
-    
-    <div class="space-y-4 mb-6 text-sm text-gray-700 max-h-96 overflow-y-auto">
-      <p>Ao acessar este portal, você reconhece que:</p>
-      
-      <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-2">
-        <p><strong>✓ Dados coletados:</strong> Seu e-mail, nome completo, CPF, data de nascimento, dados de viagem (origem, destino, datas, custo).</p>
-        
-        <p><strong>✓ Trafego de dados:</strong> Seus dados trafegam de forma criptografada entre:</p>
-        <ul class="ml-4 space-y-1">
-          <li>• Seu navegador (portal)</li>
-          <li>• Servidores Luizalabs (backend FastAPI)</li>
-          <li>• Sistemas integrados (Google BigQuery, Active Directory, Gmail Relay, Google Apps Script)</li>
-          <li>• Agências de viagem externas (Tastur, Kontrip)</li>
-        </ul>
-        
-        <p><strong>✓ Fins do tratamento:</strong> Gerenciamento de solicitações de viagens corporativas, aprovações de gestores, cotações de agências, reembolsos.</p>
-        
-        <p><strong>✓ Base legal:</strong> Relação de empregado-empregador (Art. 7, Inc. V da Lei nº 13.709/2018 — LGPD) e Consentimento Explícito (Art. 7, Inc. II).</p>
-        
-        <p><strong>✓ Seus direitos:</strong></p>
-        <ul class="ml-4 space-y-1">
-          <li>• Acessar seus dados pessoais</li>
-          <li>• Solicitar retificação ou exclusão</li>
-          <li>• Revogar consentimento (com impacto no acesso ao sistema)</li>
-          <li>• Portabilidade de dados</li>
-        </ul>
-        
-        <p><strong>✓ DPO (Encarregado):</strong> <a href="mailto:dpo@luizalabs.com" class="text-blue-600 underline">dpo@luizalabs.com</a></p>
-        
-        <p><strong>✓ Prazo de retenção:</strong> Dados são mantidos enquanto você for ativo no sistema, com direito ao esquecimento (exclusão) após 30 dias de solicitação.</p>
-      </div>
-      
-      <p class="text-xs text-gray-500">Para detalhes completos, consulte nossa <a href="/politica-privacidade.html" target="_blank" class="text-blue-600 underline">Política de Privacidade</a>.</p>
-    </div>
-    
-    <label class="flex items-center gap-3 mb-6">
-      <input v-model="consentimentoLGPD.checkbox" type="checkbox" class="w-5 h-5 rounded text-labs-blue">
-      <span class="text-sm font-semibold text-gray-700">
-        Declaro ter lido e aceito a Política de Privacidade e o tratamento de meus dados conforme descrito acima.
-      </span>
-    </label>
-    
-    <div class="flex gap-3 justify-end">
-      <button @click="logout()" 
-              class="px-4 py-2 text-sm font-semibold border border-gray-300 rounded-lg hover:bg-gray-50 transition">
-        Sair
-      </button>
-      <button @click="aceitarConsentimentoLGPD()" 
-              :disabled="!consentimentoLGPD.checkbox"
-              class="px-4 py-2 text-sm font-semibold bg-labs-blue text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50">
-        Aceitar e Continuar
-      </button>
-    </div>
-  </div>
+<div class="text-center text-xs text-gray-600 mt-8 space-y-1">
+  <a href="/politica-privacidade.html" target="_blank" class="hover:text-labs-blue transition">
+    Política de Privacidade
+  </a>
+  <span class="mx-2">•</span>
+  <a href="mailto:dpo@luizalabs.com" class="hover:text-labs-blue transition">
+    Contato DPO
+  </a>
 </div>
 ```
 
-#### 2.2.2 Adicionar Lógica Vue.js
+#### Tarefa 2.3.2 — Adicionar Link em setor.html
 
-**Arquivo:** `frontend/index.html` (seção `<script>`)
+**Arquivo:** `frontend/setor.html`
 
-Tarefa:
-```javascript
-// Estado inicial
-const consentimentoLGPD = reactive({
-  aceito: false,
-  checkbox: false,
-  localStorage: false,  // Controla se já foi aceito nesta sessão
+Mesmo padrão do index.html: adicionar footer com link para Política e DPO.
+
+#### Tarefa 2.3.3 — Adicionar Link em Portais Técnicos (opcional)
+
+Se aplicável, adicionar link em:
+- `frontend/portal_aprovacao.html`
+- `frontend/agencia.html`
+- `frontend/dev.html`
+
+---
+
+### 2.4 Testes de Consentimento + Deployment — 📅 PRÓXIMO
+
+**Duração Estimada:** 2-3 horas
+
+#### Teste 2.4.1 — Verificar Modal LGPD
+
+1. **Primeiro Login:**
+   - Abrir `http://localhost/index.html`
+   - Fazer login com usuário
+   - Verificar se modal LGPD aparece ✓
+   - Clicar em "Aceitar e Continuar"
+   - Verificar se localStorage salva `lgpd_aceito` e `lgpd_data_aceito`
+
+2. **Mesmo Dia:**
+   - Fazer logout e login novamente
+   - Verificar se modal NÃO aparece (deve estar bloqueado por localStorage) ✓
+
+3. **Dia Seguinte (testar com dev tools alterando data):**
+   - Abrir Console → `localStorage.setItem('lgpd_data_aceito', '2026-06-22')`
+   - Fazer logout e login
+   - Verificar se modal aparece novamente ✓
+
+#### Teste 2.4.2 — Verificar Endpoints LGPD
+
+```bash
+# Teste 1: Registrar consentimento (já feito pelo modal)
+curl -X POST http://localhost:8000/api/v1/lgpd/consentimento \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"aceito": true, "versao_politica": "1.0"}'
+
+# Teste 2: Portabilidade de dados
+curl -X GET http://localhost:8000/api/v1/lgpd/meus-dados \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+
+# Teste 3: Revogar consentimento
+curl -X POST http://localhost:8000/api/v1/lgpd/revogar-consentimento \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+#### Teste 2.4.3 — Verificar Política de Privacidade
+
+1. Abrir `http://localhost/politica-privacidade.html`
+2. Verificar se todas as 10 seções carregam corretamente
+3. Clicar em links para Google, Microsoft (devem abrir em nova aba)
+4. Verificar links "Voltar ao Portal" e "Contato DPO" funcionam
+
+#### Teste 2.4.4 — Verificar E-mails com Username
+
+1. Criar uma solicitação de viagem como colaborador
+2. Receber e-mail de confirmação
+3. Verificar se saudação é: "Olá, **lnd_araujo**," (username, não nome)
+4. Verificar se todos os campos estão preenchidos corretamente
+
+#### Deployment Staging
+
+```bash
+# 1. Criar migração (se necessária)
+cd c:\Projetos\viagens_labs
+alembic revision --autogenerate -m "Adicionar tabela lgpd_consentimento"
+alembic upgrade head
+
+# 2. Executar testes unitários
+pytest app/tests/test_lgpd.py -v
+
+# 3. Fazer deploy em staging
+# (Seguir procedimento específico da sua infraestrutura)
+
+# 4. Testar em staging (repetir Testes 2.4.1-2.4.4)
+
+# 5. Se tudo OK, fazer commit final
+git add -A
+git commit -m "feat: Fase 2 Completa - E-mails, LGPD Modal, Política, Links Footer
+
+- Fase 2.1: E-mails com username (já estava implementado)
+- Fase 2.2: Modal LGPD + Política de Privacidade (concluído)
+- Fase 2.3: Links de Política nos footers (concluído)
+- Fase 2.4: Testes e deployment (concluído)
+
+Testes incluem: Modal diário, localStorage, endpoints LGPD, e-mails, política."
+git push origin main
+```
+
+---
 });
 
 // Função para aceitar consentimento
@@ -272,76 +287,6 @@ def registrar_consentimento(
     )
     db.add(consent)
     db.commit()
-    
-    return {"status": "ok", "msg": "Consentimento registrado"}
-```
-
-#### 2.2.4 Adicionar Tabela ORM
-
-**Arquivo:** `app/infrastructure/orm/models.py`
-
-Tarefa:
-```python
-class LGPDConsentimento(Base):
-    __tablename__ = "lgpd_consentimento"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    usuario_id = Column(String(50), index=True)
-    aceito = Column(Boolean, default=False)
-    data_aceito = Column(DateTime, default=datetime.utcnow)
-    data_revogacao = Column(DateTime, nullable=True)
-    versao_politica = Column(String(10))
-    ip_origem = Column(String(15), nullable=True)
-    criado_em = Column(DateTime, default=datetime.utcnow)
-```
-
-**Estimado:** 3-4 horas
-
----
-
-### 2.3 Página de Política de Privacidade
-
-**Arquivo:** `frontend/politica-privacidade.html`
-
-Tarefa:
-1. Criar nova página HTML simples com política LGPD completa
-2. Conteúdo esperado:
-   - Titulo: "Política de Privacidade — Viagens Labs"
-   - Seções:
-     - Controlador de Dados
-     - Dados Coletados
-     - Base Legal
-     - Fins do Tratamento
-     - Direitos do Titular
-     - Tempo de Retenção
-     - Procedimento de Exclusão
-     - Contato do DPO
-     - Última Atualização
-
-3. Adicionar link no footer de `index.html`:
-```html
-<a href="/politica-privacidade.html" target="_blank" class="text-xs text-gray-400 hover:text-gray-600">
-  Política de Privacidade
-</a>
-```
-
-**Estimado:** 1-2 horas
-
----
-
-### 2.4 Testes de Fase 2
-
-Tarefa:
-1. Criar solicitação de viagem nova
-2. Verificar se modal de consentimento aparece
-3. Aceitar consentimento
-4. Verificar se e-mail de confirmação usa username (não nome)
-5. Fazer logout e login novamente
-6. Confirmar que modal não aparece por 30 dias
-
-**Estimado:** 1 hora
-
----
 
 ## FASE 3: Encriptação em Repouso + Auditoria + Política Jurídica
 
