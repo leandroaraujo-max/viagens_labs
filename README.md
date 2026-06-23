@@ -20,9 +20,10 @@
 11. [API — Endpoints](#-api--endpoints)
 12. [Frontend — Portais](#-frontend--portais)
 13. [Notificações por E-mail](#-notificações-por-e-mail)
-14. [Estado Atual e Próximos Passos](#-estado-atual-e-próximos-passos)
-15. [Como Contribuir](#-como-contribuir)
-16. [Licença e Contato](#-licença-e-contato)
+14. [Release Notes](#-release-notes)
+15. [Estado Atual e Próximos Passos](#-estado-atual-e-próximos-passos)
+16. [Como Contribuir](#-como-contribuir)
+17. [Licença e Contato](#-licença-e-contato)
 
 ---
 
@@ -761,7 +762,74 @@ Todos os portais usam **Vue.js 3 (CDN) + TailwindCSS (CDN)** — sem node_module
 
 ---
 
+## 🧾 Release Notes
+
+Esta seção concentra as entregas relevantes por versão/data para facilitar auditoria técnica, handoff e troubleshooting.
+
+### 2026-06-23 - v2026.06.23-qa-baseline (COMMITED em `main`)
+
+Commits base:
+
+- `601e4ae` - QA com pytest oficializado.
+- `8bd9b35` - Ajustes de UX/consentimento LGPD e e-mails nominais.
+- `c89fef2` - Remoção de referência hardcoded de agência no setor.
+- `084e296` - Correção de rota LGPD e política sem hardcode.
+
+Entregas principais:
+
+- Padronização de QA com `pytest` (`pytest.ini`, `tests/`, runner `scripts/qa.ps1`).
+- Correção do erro de `NOT FOUND` no fluxo de consentimento LGPD.
+- Persistência do aceite LGPD no logout para evitar reexibição indevida no mesmo dia.
+- Campo de justificativa de saúde com textarea no portal do viajante.
+- Remoção de exemplos fixos de agência nas telas/política (mais aderente a cadastro dinâmico).
+- E-mails transacionais com saudação nominal (lookup de nome do colaborador).
+
+### 2026-06-23 - v2026.06.23-dev-qa-stream (EM PROGRESS local, ainda nao comitado)
+
+Arquivos em alteração local:
+
+- `app/api/v1/endpoints/dev.py`
+- `frontend/dev.html`
+- `tests/conftest.py`
+- `tests/test_dev_qa_api.py`
+
+Entregas principais:
+
+- Execução de suíte QA por clique no Portal Dev.
+- Logs incrementais em tempo real via polling por `job_id`.
+- Catálogo dinâmico de suítes (`GET /api/v1/dev/qa/suites`).
+- Cancelamento de execução (`POST /api/v1/dev/qa/jobs/{job_id}/cancelar`) com estados `canceling/canceled`.
+- Cobertura de testes para execução, catálogo, status e cancelamento de jobs QA.
+
+---
+
 ## 📊 Estado Atual e Próximos Passos
+
+### Atualizacoes importantes ja comitadas (resumo por commit)
+
+- `601e4ae` - Institucionalizacao do pytest como padrao de QA do projeto:
+  - Inclusao de `pytest.ini` como configuracao oficial.
+  - Inclusao do runner `scripts/qa.ps1` para execucao padrao e integracao.
+  - Inclusao de suite inicial oficial em `tests/` cobrindo LGPD e schema/DB.
+- `8bd9b35` - Correcoes funcionais no portal do viajante e comunicacao por e-mail:
+  - E-mails transacionais passaram a usar saudacao nominal em vez de username bruto.
+  - Fluxo de saude ganhou textarea para justificativa (UX corrigida).
+  - Persistencia do aceite LGPD no logout para evitar reapresentacao indevida no mesmo dia.
+- `c89fef2` e `084e296` - Remocao de referencias hardcoded de agencias e ajuste LGPD:
+  - Correcao do erro `NOT FOUND` nos endpoints LGPD por ajuste de roteamento.
+  - Politica de privacidade e telas administrativas sem dependencia de nomes fixos de agencias.
+- `2c4d8c8` - Inclusao de links de Politica de Privacidade nos footers dos portais.
+- `1685208` - Entrega estrutural da Fase 2.2:
+  - Modal LGPD no frontend.
+  - Endpoints de consentimento LGPD no backend.
+  - Estrutura ORM para consentimento LGPD.
+
+### Atualizacoes importantes ainda nao comitadas (working tree atual)
+
+- Portal Dev com Suite QA executavel por clique, logs em tempo real e polling incremental.
+- Endpoint de catalogo de suites (`GET /api/v1/dev/qa/suites`) para reduzir hardcode no frontend.
+- Cancelamento de execucao QA por botao (`POST /api/v1/dev/qa/jobs/{job_id}/cancelar`) com estados `canceling/canceled`.
+- Cobertura de testes do fluxo Dev QA em `tests/test_dev_qa_api.py`.
 
 ### ✅ Implementado (Fase 6 & Fase 7 & Fase 12)
 - **Portal do Desenvolvedor (`dev.html`):** Dashboard gerencial completo com métricas de telemetria, painel de variáveis de ambiente do `.env` sanitizadas e console terminal hacker escuro para acompanhamento de logs em tempo real (FastAPI, Nginx, wrapper do Windows Service) com atualização automática a cada 3 segundos.
@@ -1006,9 +1074,45 @@ O padrao oficial de QA do projeto passa a ser o pytest.
 
 - tests/test_lgpd_api.py: validacao dos endpoints LGPD
 - tests/test_db_schema.py: validacao de schema do modelo e integracao PostgreSQL
+- tests/test_dev_qa_api.py: validacao dos endpoints de execucao assíncrona, status, catalogo e cancelamento da suite QA
 - pytest.ini: configuracao oficial de descoberta e marcadores
+
+### Portal Dev: execucao com logs em tempo real
+
+Na aba Suite QA do portal do desenvolvedor (`/dev.html`), as suites sao iniciadas por clique e a saida do pytest e exibida em streaming no painel.
+
+Fluxo tecnico:
+
+1. O front chama `POST /api/v1/dev/qa/executar?mode=padrao|integration|completa`.
+2. O backend cria um job em background e retorna `job_id`.
+3. O front faz polling de `GET /api/v1/dev/qa/jobs/{job_id}` a cada 1 segundo.
+4. O output incremental e renderizado no portal ate estado final.
+
+Estados de job QA:
+
+- `queued`: aguardando inicio.
+- `running`: execucao em andamento.
+- `canceling`: cancelamento solicitado.
+- `canceled`: cancelado.
+- `success`: concluido com exit code 0.
+- `failed`: concluido com falha.
+
+### Catalogo dinamico e cancelamento de execucao
+
+O backend disponibiliza catalogo de suites para desacoplar o front de comandos fixos:
+
+- `GET /api/v1/dev/qa/suites`
+
+Cancelamento de suite em tempo real pelo Portal Dev:
+
+- `POST /api/v1/dev/qa/jobs/{job_id}/cancelar`
+
+Comportamento do cancelamento:
+
+- Se estiver `queued`, o job e encerrado imediatamente como `canceled`.
+- Se estiver `running`, o backend envia sinal de termino para o processo de pytest e atualiza status para `canceling` ate finalizar.
 
 ---
 
-*Última atualização: 23/05/2026 — Estabilização geral e Dynamicização de Agências concluída: correção de ReferenceError do Vue 3 em fmtCnpj, bypass de tela preta na navegação de portais técnicos, KPI cards e filtros 100% dinâmicos por agência ativa, contagem inteligente de cotações para decisão e console terminal hacker de Logs do Sistema em tempo real.*
+*Última atualização: 23/06/2026 — Suite QA no Portal Dev com execução assíncrona, logs em tempo real, catálogo dinâmico de suites e cancelamento de job por botão.*
 

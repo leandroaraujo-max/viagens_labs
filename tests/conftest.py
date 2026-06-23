@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from app.api.dependencies import get_db_session, require_auth
+from app.api.dependencies import get_db_session, require_auth, require_dev
 from app.api.v1.routers import api_router
 from app.infrastructure.orm.models import LGPDConsentimentoModel, SolicitacaoModel
 
@@ -54,6 +54,14 @@ def client(db_session):
 @pytest.fixture()
 def client_no_auth(db_session):
     app = _build_app(db_session, override_auth=False)
+    with TestClient(app) as test_client:
+        yield test_client
+
+
+@pytest.fixture()
+def client_dev(db_session):
+    app = _build_app(db_session, override_auth=False)
+    app.dependency_overrides[require_dev] = lambda: "qa.dev"
     with TestClient(app) as test_client:
         yield test_client
 

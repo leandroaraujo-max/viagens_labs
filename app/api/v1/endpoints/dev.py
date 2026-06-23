@@ -8,6 +8,12 @@ from sqlalchemy import func, desc
 from typing import Optional, List
 import logging
 import os
+import sys
+import subprocess
+import time
+import threading
+import uuid
+from pathlib import Path
 
 from app.api.dependencies import get_db_session, require_dev
 from app.infrastructure.orm.models import (
@@ -81,6 +87,116 @@ def tail_file(filepath: str, lines_count: int = 100) -> str:
         except Exception as e2:
             return f"[ERRO] Falha ao ler logs: {e2}"
 
+
+def _project_root() -> Path:
+    # .../app/api/v1/endpoints/dev.py -> volta ate raiz do repositorio
+    return Path(__file__).resolve().parents[4]
+
+
+def _qa_command(mode: str) -> list[str]:
+    root = _project_root()
+    venv_python = root / "venv" / "Scripts" / "python.exe"
+    python_exec = str(venv_python) if venv_python.exists() else sys.executable
+
+    if mode == "padrao":
+        return [python_exec, "-m", "pytest", "tests", "-m", "not integration"]
+    if mode == "integration":
+        return [python_exec, "-m", "pytest", "tests", "-m", "integration"]
+    if mode == "completa":
+        return [python_exec, "-m", "pytest", "tests"]
+
+    raise HTTPException(status_code=400, detail="Modo de suite QA invalido. Use: padrao, integration ou completa.")
+
+
+QA_JOBS: dict[str, dict] = {}
+QA_PROCESSES: dict[str, subprocess.Popen] = {}
+QA_JOBS_LOCK = threading.Lock()
+
+
+def _truncate_output(text: str, max_chars: int = 120000) -> str:
+    if len(text) <= max_chars:
+        return text
+    return text[-max_chars:]
+
+
+def _run_qa_job(job_id: str, cmd: list[str], cwd: Path):
+    start_ts = time.time()
+    try:
+        proc = subprocess.Popen(
+            cmd,
+            cwd=str(cwd),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+        )
+
+        with QA_JOBS_LOCK:
+            QA_JOBS[job_id]["status"] = "running"
+            QA_JOBS[job_id]["pid"] = proc.pid
+            QA_JOBS[job_id]["started_at"] = start_ts
+            QA_PROCESSES[job_id] = proc
+
+        output_acc = ""
+        if proc.stdout:
+            for line in proc.stdout:
+                output_acc += line
+                with QA_JOBS_LOCK:
+                    QA_JOBS[job_id]["output"] = _truncate_output(output_acc)
+
+        exit_code = proc.wait(timeout=1800)
+        duration = round(time.time() - start_ts, 2)
+
+        with QA_JOBS_LOCK:
+            canceled = bool(QA_JOBS[job_id].get("canceled"))
+            QA_JOBS[job_id]["exit_code"] = exit_code
+            if canceled:
+                QA_JOBS[job_id]["success"] = False
+                QA_JOBS[job_id]["status"] = "canceled"
+            else:
+                QA_JOBS[job_id]["success"] = exit_code == 0
+                QA_JOBS[job_id]["status"] = "success" if exit_code == 0 else "failed"
+            QA_JOBS[job_id]["duration_seconds"] = duration
+            QA_JOBS[job_id]["finished_at"] = time.time()
+
+    except Exception as exc:
+        duration = round(time.time() - start_ts, 2)
+        with QA_JOBS_LOCK:
+            QA_JOBS[job_id]["status"] = "failed"
+            QA_JOBS[job_id]["success"] = False
+            QA_JOBS[job_id]["exit_code"] = -1
+            QA_JOBS[job_id]["duration_seconds"] = duration
+            QA_JOBS[job_id]["finished_at"] = time.time()
+            QA_JOBS[job_id]["output"] = _truncate_output(
+                (QA_JOBS[job_id].get("output") or "") + f"\n[ERRO] Falha ao executar suite QA: {exc}\n"
+            )
+    finally:
+        with QA_JOBS_LOCK:
+            QA_PROCESSES.pop(job_id, None)
+
+
+def _qa_suites_catalog() -> list[dict[str, str]]:
+    return [
+        {
+            "mode": "padrao",
+            "nome": "Suite Padrao",
+            "desc": "Testes rapidos de QA sem dependencias externas.",
+            "cmd": " ".join(_qa_command("padrao")),
+        },
+        {
+            "mode": "integration",
+            "nome": "Suite Integracao (PostgreSQL)",
+            "desc": "Valida schema e conectividade real com banco PostgreSQL.",
+            "cmd": " ".join(_qa_command("integration")),
+        },
+        {
+            "mode": "completa",
+            "nome": "Suite Completa",
+            "desc": "Executa todos os testes da pasta tests em uma unica rodada.",
+            "cmd": " ".join(_qa_command("completa")),
+        },
+    ]
+
 # ── Stats gerais ──────────────────────────────────────────────────────────────
 
 @router.get("/stats")
@@ -107,6 +223,113 @@ def stats_gerais(
         "total_agencias": agencias,
         "total_cotacoes": cotacoes,
         "total_vouchers": vouchers,
+    }
+
+
+@router.post("/qa/executar")
+def executar_suite_qa(
+    mode: str = Query("padrao"),
+    _: str = Depends(require_dev),
+):
+    """Inicia suite pytest em background para streaming de logs no Portal Dev."""
+    cmd = _qa_command(mode)
+    root = _project_root()
+    job_id = str(uuid.uuid4())
+
+    with QA_JOBS_LOCK:
+        QA_JOBS[job_id] = {
+            "job_id": job_id,
+            "mode": mode,
+            "command": " ".join(cmd),
+            "cwd": str(root),
+            "status": "queued",
+            "success": None,
+            "exit_code": None,
+            "duration_seconds": None,
+            "output": "[QA] Job enfileirado...\n",
+            "created_at": time.time(),
+            "started_at": None,
+            "finished_at": None,
+            "pid": None,
+            "canceled": False,
+        }
+
+    threading.Thread(target=_run_qa_job, args=(job_id, cmd, root), daemon=True).start()
+    return {"job_id": job_id, "status": "queued"}
+
+
+@router.get("/qa/suites")
+def listar_suites_qa(
+    _: str = Depends(require_dev),
+):
+    """Lista suites QA disponiveis para renderizacao dinamica no Portal Dev."""
+    return {"suites": _qa_suites_catalog()}
+
+
+@router.get("/qa/jobs/{job_id}")
+def status_suite_qa(
+    job_id: str,
+    _: str = Depends(require_dev),
+):
+    """Retorna status e logs incrementais de um job QA iniciado no Portal Dev."""
+    with QA_JOBS_LOCK:
+        job = QA_JOBS.get(job_id)
+        if not job:
+            raise HTTPException(status_code=404, detail="Job QA nao encontrado.")
+        return dict(job)
+
+
+@router.post("/qa/jobs/{job_id}/cancelar")
+def cancelar_suite_qa(
+    job_id: str,
+    _: str = Depends(require_dev),
+):
+    """Solicita cancelamento de um job QA em execucao ou em fila."""
+    with QA_JOBS_LOCK:
+        job = QA_JOBS.get(job_id)
+        if not job:
+            raise HTTPException(status_code=404, detail="Job QA nao encontrado.")
+
+        status = job.get("status")
+        if status in {"success", "failed", "canceled"}:
+            return {
+                "job_id": job_id,
+                "status": status,
+                "message": "Job ja finalizado.",
+            }
+
+        if status == "queued":
+            job["status"] = "canceled"
+            job["canceled"] = True
+            job["success"] = False
+            job["exit_code"] = -2
+            job["duration_seconds"] = 0
+            job["finished_at"] = time.time()
+            job["output"] = _truncate_output((job.get("output") or "") + "\n[QA] Job cancelado antes de iniciar.\n")
+            return {
+                "job_id": job_id,
+                "status": "canceled",
+                "message": "Job cancelado antes de iniciar.",
+            }
+
+        job["status"] = "canceling"
+        job["canceled"] = True
+        job["output"] = _truncate_output((job.get("output") or "") + "\n[QA] Cancelamento solicitado pelo Portal Dev...\n")
+        proc = QA_PROCESSES.get(job_id)
+
+    if proc is not None:
+        try:
+            proc.terminate()
+            proc.wait(timeout=3)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+        except Exception:
+            pass
+
+    return {
+        "job_id": job_id,
+        "status": "canceling",
+        "message": "Solicitacao de cancelamento enviada.",
     }
 
 

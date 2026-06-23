@@ -469,6 +469,69 @@
         </div>
       </div>
 
+      <!-- ── ABA: Suite QA (Pytest) ─────────────────────────────────────── -->
+      <div v-if="abaAtiva === 'qa_suite'">
+        <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
+          <div>
+            <h2 class="text-xl font-bold text-white">Suite QA (Pytest)</h2>
+            <p class="text-slate-500 text-xs mt-0.5">Execucao oficial de QA diretamente do Portal Dev.</p>
+          </div>
+          <button @click="qaExecResultado = null; qaExecErro = ''"
+                  class="text-xs px-3 py-1.5 bg-dev-card border border-dev-border text-slate-400 hover:text-slate-200 rounded-lg transition">
+            Limpar Resultado
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+          <div v-for="suite in qaSuites" :key="suite.mode"
+               class="bg-dev-card border border-dev-border rounded-xl p-4 hover:border-indigo-500/40 transition">
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <h3 class="text-sm font-bold text-white">{{ suite.nome }}</h3>
+              <span class="text-[10px] px-2 py-0.5 rounded-full border border-dev-border text-slate-400 uppercase font-bold">{{ suite.mode }}</span>
+            </div>
+            <p class="text-xs text-slate-500 mb-3 leading-relaxed">{{ suite.desc }}</p>
+            <p class="text-[10px] text-indigo-300 font-mono bg-dev-panel border border-dev-border rounded-lg px-2 py-1 mb-3 break-all">{{ suite.cmd }}</p>
+            <button @click="executarQASuite(suite.mode)" :disabled="qaExecCarregando"
+                    class="w-full bg-indigo-600/20 border border-indigo-500/40 text-indigo-300 hover:bg-indigo-600/30 rounded-lg py-2 text-xs font-semibold transition disabled:opacity-60">
+              {{ qaExecCarregando ? 'Executando...' : 'Executar' }}
+            </button>
+          </div>
+        </div>
+
+        <div v-if="qaSuitesCarregando" class="mb-4 text-xs text-slate-500">Carregando catalogo de suites...</div>
+
+        <div v-if="qaExecErro" class="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-xs text-red-300">
+          {{ qaExecErro }}
+        </div>
+
+        <div v-if="qaExecJob" class="mb-4 p-3 bg-dev-card border border-dev-border rounded-lg text-xs text-slate-300 flex items-center justify-between gap-3 flex-wrap">
+          <div class="font-mono">Job: {{ qaExecJob.job_id }}</div>
+          <div class="flex items-center gap-2">
+            <span :class="qaStatusClass(qaExecJob.status)" class="text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase">{{ qaExecJob.status }}</span>
+            <span v-if="qaExecJob.pid" class="text-[10px] text-slate-500 font-mono">pid={{ qaExecJob.pid }}</span>
+            <button @click="cancelarQASuite"
+                    :disabled="qaCancelando || !podeCancelarQa(qaExecJob.status)"
+                    class="text-[10px] px-2 py-1 rounded border border-red-500/30 text-red-300 bg-red-500/10 hover:bg-red-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition">
+              {{ qaCancelando ? 'Cancelando...' : 'Cancelar' }}
+            </button>
+          </div>
+        </div>
+
+        <div v-if="qaExecResultado" class="bg-dev-card border border-dev-border rounded-xl overflow-hidden">
+          <div class="px-4 py-3 border-b border-dev-border flex items-center justify-between gap-2 flex-wrap">
+            <div class="text-xs text-slate-300 font-mono">{{ qaExecResultado.command }}</div>
+            <div class="flex items-center gap-2">
+              <span :class="qaStatusClass(qaExecResultado.status || (qaExecResultado.success ? 'success' : 'failed'))"
+                    class="text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase">
+                {{ qaStatusLabel(qaExecResultado.status || (qaExecResultado.success ? 'success' : 'failed')) }}
+              </span>
+              <span class="text-[10px] text-slate-500 font-mono">exit={{ qaExecResultado.exit_code }} | {{ qaExecResultado.duration_seconds }}s</span>
+            </div>
+          </div>
+          <pre class="p-4 text-[11px] font-mono text-slate-300 bg-dev-panel overflow-auto max-h-[420px] whitespace-pre-wrap">{{ qaExecResultado.output }}</pre>
+        </div>
+      </div>
+
       <!-- ── ABA: Testadores QA ───────────────────────────────────────────── -->
       <div v-if="abaAtiva === 'qa_testers'">
         <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
@@ -1054,7 +1117,7 @@
 </div>
 
 <script>
-const { createApp, ref, reactive, computed, onMounted } = Vue;
+const { createApp, ref, reactive, computed, onMounted, onBeforeUnmount } = Vue;
 
 const API = '/api/v1';
 
@@ -1073,6 +1136,7 @@ createApp({
       { id: 'dashboard',    icon: '◈', label: 'Dashboard' },
       { id: 'solicitacoes', icon: '⊞', label: 'Solicitações' },
       { id: 'agencias',     icon: '🏢', label: 'Agências' },
+      { id: 'qa_suite',     icon: '✅', label: 'Suite QA' },
       { id: 'qa_testers',   icon: '🧪', label: 'Testadores QA' },
       { id: 'delegacoes_ad', icon: '👤', label: 'Delegações AD' },
       { id: 'logs',         icon: '⌨', label: 'Logs do Sistema' },
@@ -1105,7 +1169,167 @@ createApp({
       { method: 'GET',  path: '/dev/agencias',                         perfil: 'dev',      desc: 'Listar agências' },
       { method: 'GET',  path: '/dev/config',                           perfil: 'dev',      desc: 'Configuração ativa' },
       { method: 'GET',  path: '/dev/atividade',                        perfil: 'dev',      desc: 'Feed de atividade recente' },
+      { method: 'GET',  path: '/dev/qa/suites',                        perfil: 'dev',      desc: 'Lista suites QA disponiveis' },
+      { method: 'POST', path: '/dev/qa/executar?mode={padrao|integration|completa}', perfil: 'dev', desc: 'Executa suite pytest no servidor' },
+      { method: 'GET',  path: '/dev/qa/jobs/{job_id}',                 perfil: 'dev',      desc: 'Consulta status/logs de uma execucao QA' },
+      { method: 'POST', path: '/dev/qa/jobs/{job_id}/cancelar',        perfil: 'dev',      desc: 'Solicita cancelamento da execucao QA' },
     ];
+
+    const qaSuites = ref([
+      {
+        mode: 'padrao',
+        nome: 'Suite Padrao',
+        desc: 'Testes rapidos de QA sem dependencias externas.',
+        cmd: '.\\venv\\Scripts\\python.exe -m pytest tests -m "not integration"',
+      },
+      {
+        mode: 'integration',
+        nome: 'Suite Integracao (PostgreSQL)',
+        desc: 'Valida schema e conectividade real com banco PostgreSQL.',
+        cmd: '.\\venv\\Scripts\\python.exe -m pytest tests -m integration',
+      },
+      {
+        mode: 'completa',
+        nome: 'Suite Completa',
+        desc: 'Executa todos os testes da pasta tests em uma unica rodada.',
+        cmd: '.\\venv\\Scripts\\python.exe -m pytest tests',
+      },
+    ]);
+    const qaExecCarregando = ref(false);
+    const qaExecResultado = ref(null);
+    const qaExecErro = ref('');
+    const qaExecJob = ref(null);
+    const qaPollTimer = ref(null);
+    const qaCancelando = ref(false);
+    const qaSuitesCarregando = ref(false);
+
+    function qaStatusClass(status) {
+      if (status === 'success') return 'text-green-400 border-green-500/40 bg-green-500/10';
+      if (status === 'failed') return 'text-red-400 border-red-500/40 bg-red-500/10';
+      if (status === 'running') return 'text-amber-300 border-amber-500/40 bg-amber-500/10';
+      if (status === 'canceling') return 'text-amber-300 border-amber-500/40 bg-amber-500/10';
+      if (status === 'canceled') return 'text-slate-300 border-slate-500/40 bg-slate-500/10';
+      return 'text-slate-300 border-slate-500/40 bg-slate-500/10';
+    }
+
+    function qaStatusLabel(status) {
+      if (status === 'success') return 'Sucesso';
+      if (status === 'failed') return 'Falha';
+      if (status === 'running') return 'Em execucao';
+      if (status === 'canceling') return 'Cancelando';
+      if (status === 'canceled') return 'Cancelado';
+      return 'Em fila';
+    }
+
+    function podeCancelarQa(status) {
+      return status === 'queued' || status === 'running' || status === 'canceling';
+    }
+
+    async function carregarQASuites() {
+      qaSuitesCarregando.value = true;
+      try {
+        const res = await fetch(`${API}/dev/qa/suites`, { headers: authHeaders() });
+        const d = await res.json();
+        if (!res.ok) return;
+        if (Array.isArray(d.suites) && d.suites.length) {
+          qaSuites.value = d.suites;
+        }
+      } catch (_e) {
+        // fallback silencioso para lista local
+      } finally {
+        qaSuitesCarregando.value = false;
+      }
+    }
+
+    function pararPollingQa() {
+      if (qaPollTimer.value) {
+        clearInterval(qaPollTimer.value);
+        qaPollTimer.value = null;
+      }
+    }
+
+    async function buscarStatusQaJobSilencioso() {
+      if (!qaExecJob.value?.job_id) return;
+      try {
+        const res = await fetch(`${API}/dev/qa/jobs/${encodeURIComponent(qaExecJob.value.job_id)}`, {
+          headers: authHeaders(),
+        });
+        const d = await res.json();
+        if (!res.ok) return;
+
+        qaExecResultado.value = d;
+        qaExecJob.value = d;
+
+        if (d.status === 'success' || d.status === 'failed' || d.status === 'canceled') {
+          qaExecCarregando.value = false;
+          qaCancelando.value = false;
+          pararPollingQa();
+        }
+      } catch (_e) {
+        // polling silencioso
+      }
+    }
+
+    async function cancelarQASuite() {
+      if (!qaExecJob.value?.job_id || !podeCancelarQa(qaExecJob.value.status)) return;
+      qaCancelando.value = true;
+      qaExecErro.value = '';
+      try {
+        const res = await fetch(`${API}/dev/qa/jobs/${encodeURIComponent(qaExecJob.value.job_id)}/cancelar`, {
+          method: 'POST',
+          headers: authHeaders(),
+        });
+        const d = await res.json();
+        if (!res.ok) {
+          qaExecErro.value = d.detail || 'Erro ao cancelar execucao QA.';
+          qaCancelando.value = false;
+          return;
+        }
+        await buscarStatusQaJobSilencioso();
+      } catch (_e) {
+        qaExecErro.value = 'Falha de comunicacao ao cancelar execucao QA.';
+        qaCancelando.value = false;
+      }
+    }
+
+    async function executarQASuite(mode) {
+      pararPollingQa();
+      qaExecCarregando.value = true;
+      qaCancelando.value = false;
+      qaExecErro.value = '';
+      qaExecResultado.value = null;
+      qaExecJob.value = null;
+      try {
+        const res = await fetch(`${API}/dev/qa/executar?mode=${encodeURIComponent(mode)}`, {
+          method: 'POST',
+          headers: authHeaders(),
+        });
+        const d = await res.json();
+        if (!res.ok) {
+          qaExecErro.value = d.detail || 'Erro ao executar suite QA.';
+          qaExecCarregando.value = false;
+          return;
+        }
+
+        qaExecJob.value = d;
+        qaExecResultado.value = {
+          command: `pytest (${mode})`,
+          status: 'queued',
+          success: null,
+          exit_code: '-',
+          duration_seconds: '-',
+          output: '[QA] Aguardando inicio da execucao...\n',
+        };
+
+        await buscarStatusQaJobSilencioso();
+        qaPollTimer.value = setInterval(buscarStatusQaJobSilencioso, 1000);
+      } catch (e) {
+        qaExecErro.value = 'Falha de comunicacao ao executar suite QA.';
+        qaExecCarregando.value = false;
+      } finally {
+        // carregando encerra quando job finalizar
+      }
+    }
 
     const statusOpcoes = [
       'AGUARDANDO_N1','AGUARDANDO_N2','PENDENTE_PRE_APROVACAO_SETOR',
@@ -1318,6 +1542,10 @@ createApp({
           }
         } catch { logout(); }
       }
+    });
+
+    onBeforeUnmount(() => {
+      pararPollingQa();
     });
 
     // ── Grandes Resultados (Consultas SQL) ─────────────────────────────
@@ -1902,6 +2130,7 @@ ORDER BY COALESCE(SUM(valor_credito_gerado), 0) DESC;`
       if (aba === 'agencias' && !agencias.value.length) carregarAgencias();
       if (aba === 'config' && !config.value) carregarConfig();
       if (aba === 'qa_testers') carregarQATesters();
+      if (aba === 'qa_suite') carregarQASuites();
       
       // Controla polling de logs
       if (aba === 'logs') {
@@ -1940,6 +2169,8 @@ ORDER BY COALESCE(SUM(valor_credito_gerado), 0) DESC;`
       config, configCarregando, configGrupos, carregarConfig,
       corStatus, corBarraStatus, formatarData, formatarTempo, formatarCnpj,
       qaTesters, qaTestersCarregando, qaForm, qaFormErro, qaFormOk, qaFormLoading, carregarQATesters, salvarQATester, removerQATester,
+      qaSuites, qaSuitesCarregando, qaExecCarregando, qaExecResultado, qaExecErro, qaExecJob, qaCancelando,
+      qaStatusClass, qaStatusLabel, podeCancelarQa, executarQASuite, cancelarQASuite, carregarQASuites,
       logServico, logLinhas, logPausado, logConteudo, logCaminho, logCarregando, carregarLogs, limparLogsConsole, logsFormatados,
       logsAcesso, logsAcessoCarregando, logsAcessoInterval, carregarLogsAcesso, formatarDataHora,
       excluirModal, solicitarExcluir, confirmarExclusaoCascade,
