@@ -1134,8 +1134,7 @@
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
               <div>
                 <span class="text-gray-400 block mb-0.5">Tipo</span>
-                <strong class="text-gray-700 uppercase">{{ detalhe.tipo_solicitacao_cancelamento || 'CANCELAR'
-                  }}</strong>
+                <strong class="text-gray-700 uppercase">{{ detalhe.tipo_solicitacao_cancelamento || 'CANCELAR' }}</strong>
               </div>
               <div>
                 <span class="text-gray-400 block mb-0.5">Itens a Cancelar</span>
@@ -1143,8 +1142,7 @@
               </div>
               <div class="col-span-2">
                 <span class="text-gray-400 block mb-0.5">Motivo Informado</span>
-                <p class="text-gray-700 italic font-medium">"{{ detalhe.motivo_cancelamento || 'Sem justificativa
-                  informada' }}"</p>
+                <p class="text-gray-700 italic font-medium">"{{ detalhe.motivo_cancelamento || 'Sem justificativa informada' }}"</p>
               </div>
             </div>
 
@@ -1163,8 +1161,7 @@
               <div>
                 <span class="text-gray-400 block mb-0.5">Crédito Gerado</span>
                 <strong class="text-blue-600 text-sm font-mono">R$ {{ fmtValor(detalhe.valor_credito_gerado) }} <span
-                    class="text-[10px] text-gray-500 font-sans" v-if="detalhe.companhia_credito">({{
-                    detalhe.companhia_credito }})</span></strong>
+                    class="text-[10px] text-gray-500 font-sans" v-if="detalhe.companhia_credito">({{ detalhe.companhia_credito }})</span></strong>
               </div>
             </div>
 
@@ -1388,6 +1385,7 @@
             </div>
           </div>
 
+		<--! -->
           <!-- Preferências de Hospedagem -->
           <div v-if="detalhe.tipo_servico && detalhe.tipo_servico.includes('Hotel')" class="mt-4">
             <div class="flex items-center gap-2 border-t border-labs-border pt-4 mb-3">
