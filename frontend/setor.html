@@ -21,6 +21,7 @@
   <script src="/js/services/http-errors.js?v=1"></script>
   <script src="/js/services/auth-session.js?v=1"></script>
   <script src="/js/services/api-client.js?v=1"></script>
+  <script src="/js/services/setor-api.js?v=1"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -1727,6 +1728,8 @@
           },
         });
 
+        const setorApi = window.VLSetorApi.create(apiClient);
+
         // ── LGPD: Consentimento de Gestor ──
         const mostrandoModalLGPDGestor = ref(false);
         const aceitouLGPDGestor = ref(false);
@@ -1842,14 +1845,11 @@
           registrandoConsentimentoGestor.value = true;
           erroConsentimentoGestor.value = '';
           try {
-            const r = await apiClient.request('/lgpd/consentimento', {
-              method: 'POST',
-              body: JSON.stringify({
+            const r = await setorApi.registrarConsentimentoLGPD({
                 aceito: true,
                 versao_politica: '1.0',
                 tipo: 'gestor_operador' // diferencia do consentimento de viajante
-              })
-            });
+              });
             if (r.ok) {
               aceitouLGPDGestor.value = true;
               mostrandoModalLGPDGestor.value = false;
@@ -1896,7 +1896,7 @@
             if (filtros.periodo) p.set('periodo_dias', filtros.periodo);
             if (filtros.agencia) p.set('agencia', filtros.agencia);
             if (filtros.busca) p.set('busca', filtros.busca);
-            const resp = await apiClient.request(`/setor/solicitacoes?${p}`);
+            const resp = await setorApi.listarSolicitacoes(p.toString());
             if (!resp.ok) return;
             solicitacoes.value = resp.data || [];
           } catch (e) {
@@ -1914,7 +1914,7 @@
         const abrirDetalhe = async (s) => {
           acaoErro.value = '';
           try {
-            const resp = await apiClient.request(`/setor/solicitacoes/${s.id}`);
+            const resp = await setorApi.obterDetalhesSolicitacao(s.id);
             if (!resp.ok) return;
             detalhe.value = resp.data || {};
             modalAberto.value = true;
@@ -1946,10 +1946,8 @@
 
           try {
             // Exceção técnica intencional: este endpoint retorna arquivo binário (PDF)
-            // para abertura em nova aba via Blob URL, fluxo não coberto pelo apiClient atual.
-            const resp = await fetch(url, {
-              headers: { Authorization: `Bearer ${token.value}` },
-            });
+            // para abertura em nova aba via Blob URL, agora encapsulada no setor-api.
+            const resp = await setorApi.baixarPdfAssinado(url);
 
             if (resp.status === 401 || resp.status === 403) {
               throw new Error('Não foi possível autenticar a visualização do PDF. Faça login novamente.');
@@ -1981,10 +1979,7 @@
           acaoCarregando.value = true;
           acaoErro.value = '';
           try {
-            const resp = await apiClient.request(`/setor/solicitacoes/${sol.id}/acao`, {
-              method: 'POST',
-              body: JSON.stringify({ acao, observacao: '' }),
-            });
+            const resp = await setorApi.decidirSolicitacao(sol.id, { acao, observacao: '' });
             const dados = resp.data || {};
             if (!resp.ok) throw new Error(dados.detail || 'Erro ao executar ação.');
 
@@ -2003,10 +1998,7 @@
           acaoCarregando.value = true;
           acaoErro.value = '';
           try {
-            const resp = await apiClient.request(`/setor/solicitacoes/${sol.id}/decidir-cancelamento`, {
-              method: 'POST',
-              body: JSON.stringify({ acao, observacao }),
-            });
+            const resp = await setorApi.cancelarSolicitacao(sol.id, { acao, observacao });
             const dados = resp.data || {};
             if (!resp.ok) throw new Error(dados.detail || 'Erro ao decidir cancelamento/remarcação.');
 
@@ -2268,7 +2260,7 @@
         const carregarCasamentos = async () => {
           casamentos.value = [];
           try {
-            const res = await apiClient.request('/setor/casamentos');
+            const res = await setorApi.listarCasamentos();
             if (!res.ok) return;
             const lista = res.data || [];
             casamentos.value = lista;
@@ -2280,9 +2272,7 @@
           casamentoMsgOk.value = '';
           casamentoMsgErr.value = '';
           try {
-            const res = await apiClient.request(`/setor/casamentos/${id}/${acao}`, {
-              method: 'POST',
-            });
+            const res = await setorApi.decidirCasamento(id, acao);
             const dados = res.data || {};
             if (!res.ok) { casamentoMsgErr.value = dados.detail || 'Erro.'; return; }
             casamentoMsgOk.value = acao === 'vincular'
@@ -2307,13 +2297,13 @@
         const carregarTicketsTerceiros = async () => {
           try {
             const statusFiltro = filtroTerceirosStatus.value;
-            const res = await apiClient.request(`/terceiros/admin/todos${statusFiltro ? '?status_filtro=' + statusFiltro : ''}`);
+            const res = await setorApi.listarTerceiros(statusFiltro);
             if (res.ok) {
               ticketsTerceiros.value = res.data || [];
             }
 
             // Carrega também a contagem de pendentes para o badge da barra lateral
-            const resP = await apiClient.request('/terceiros/admin/todos?status_filtro=PENDENTE');
+            const resP = await setorApi.listarTerceiros('PENDENTE');
             if (resP.ok) {
               const pendentes = resP.data || [];
               ticketsTerceirosPendentesCount.value = pendentes.length;
@@ -2329,11 +2319,7 @@
             formData.append('acao', acao);
             formData.append('observacao', obs || '');
 
-            const res = await apiClient.request(`/terceiros/admin/${id}/decisao`, {
-              method: 'PATCH',
-              json: false,
-              body: formData
-            });
+            const res = await setorApi.decidirTerceiro(id, formData);
             if (res.ok) {
               // Limpa campo de observações para este ticket
               delete ticketObs.value[id];
@@ -2388,7 +2374,7 @@
           cnpjErro.value = '';
           cnpjBuscando.value = true;
           try {
-            const res = await apiClient.request(`/setor/proxy/cnpj/${cnpj}`);
+            const res = await setorApi.buscarCnpj(cnpj);
             if (!res.ok) { cnpjErro.value = 'CNPJ não encontrado ou erro na consulta.'; return; }
             const d = res.data || {};
             agenciaForm.value.razao_social = d.razao_social || '';
@@ -2411,7 +2397,7 @@
           const cep = agenciaForm.value.cep.replace(/\D/g, '');
           if (cep.length !== 8) return;
           try {
-            const res = await apiClient.request(`/setor/proxy/cep/${cep}`);
+            const res = await setorApi.buscarCep(cep);
             if (!res.ok) return;
             const d = res.data || {};
             if (d.street) agenciaForm.value.logradouro = d.street;
@@ -2426,7 +2412,7 @@
           if (!cod) return;
           bancoBuscando.value = true;
           try {
-            const res = await apiClient.request(`/setor/proxy/bank/${cod}`);
+            const res = await setorApi.buscarBanco(cod);
             if (!res.ok) return;
             const d = res.data || {};
             agenciaForm.value.banco_nome = d.name || d.fullName || agenciaForm.value.banco_nome;
@@ -2438,7 +2424,7 @@
           agenciaMsgOk.value = '';
           agenciaMsgErr.value = '';
           try {
-            const res = await apiClient.request('/setor/agencias');
+            const res = await setorApi.listarAgencias();
             if (!res.ok) { agenciaMsgErr.value = 'Erro ao carregar agências.'; return; }
             agencias.value = res.data || [];
           } catch (e) { agenciaMsgErr.value = 'Erro de conexão.'; }
@@ -2474,10 +2460,7 @@
 
             const url = ed ? `/setor/agencias/${ed.id}` : '/setor/agencias';
             const method = ed ? 'PUT' : 'POST';
-            const res = await apiClient.request(url, {
-              method,
-              body: JSON.stringify(payload),
-            });
+            const res = await setorApi.salvarAgencia(url, method, payload);
             if (!res.ok) { const d = res.data || {}; agenciaFormErr.value = d.detail || 'Erro ao salvar.'; return; }
             agenciaMsgOk.value = ed ? '✔ Agência atualizada.' : '✔ Agência cadastrada com sucesso.';
             fecharModalAgencia();
@@ -2490,10 +2473,7 @@
           agenciaMsgOk.value = '';
           agenciaMsgErr.value = '';
           try {
-            const res = await apiClient.request(`/setor/agencias/${ag.id}`, {
-              method: 'PUT',
-              body: JSON.stringify({ ativo: !ag.ativo }),
-            });
+            const res = await setorApi.alternarStatusAgencia(ag.id, { ativo: !ag.ativo });
             if (!res.ok) { const d = res.data || {}; agenciaMsgErr.value = d.detail || 'Erro.'; return; }
             agenciaMsgOk.value = ag.ativo ? '✔ Agência desativada.' : '✔ Agência ativada.';
             await carregarAgencias();
@@ -2505,9 +2485,7 @@
           agenciaMsgOk.value = '';
           agenciaMsgErr.value = '';
           try {
-            const res = await apiClient.request(`/setor/agencias/${ag.id}`, {
-              method: 'DELETE',
-            });
+            const res = await setorApi.excluirAgencia(ag.id);
             if (res.status === 204) {
               agenciaMsgOk.value = `✔ Agência "${ag.agencia_nome}" excluída.`;
               await carregarAgencias();
@@ -2520,7 +2498,7 @@
 
         const carregarStatsAdicionais = async () => {
           try {
-            const resp = await apiClient.request('/setor/stats');
+            const resp = await setorApi.obterStats();
             if (resp.ok) {
               const dados = resp.data || {};
               ativosHoje.value = dados.ativos_hoje || 0;
@@ -2532,7 +2510,7 @@
 
         const carregarAlertasAcesso = async () => {
           try {
-            const resp = await apiClient.request('/setor/alertas-acesso');
+            const resp = await setorApi.obterAlertasAcesso();
             if (resp.ok) {
               alertasAcesso.value = resp.data || [];
             }
