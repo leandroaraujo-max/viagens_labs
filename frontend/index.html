@@ -133,7 +133,7 @@
                         <button @click="abaAtiva = 'nova_solicitacao'"
                             :class="abaAtiva === 'nova_solicitacao' ? 'bg-blue-600/15 text-blue-400 border-l-4 border-blue-500 font-bold rounded-lg' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/20 border-l-4 border-transparent rounded-lg'"
                             class="w-full flex items-center gap-3 px-3 py-2.5 text-xs transition-all duration-200 text-left">
-                            <span class="text-base shrink-0">➕</span>
+                            <i class="ph ph-plus text-xl text-slate-400"></i>
                             <span v-if="!menuRecolhido" class="truncate flex-1">Nova Solicitação</span>
                         </button>
 
