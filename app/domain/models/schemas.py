@@ -110,6 +110,7 @@ class LoginCredentials(BaseModel):
 class TokenResponse(BaseModel):
     """Schema para a devolução do Token JWT gerado."""
     access_token: str
+    refresh_token: str
     token_type: str = "bearer"
     nome_usuario: str
     username: str          # username do AD — usado para busca no BQ

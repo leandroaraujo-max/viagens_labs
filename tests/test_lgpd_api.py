@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from app.infrastructure.orm.models import LGPDConsentimentoModel, SolicitacaoModel
+from app.infrastructure.orm.models import LGPDConsentimentoModel, LGPDSolicitacaoDelecaoModel, SolicitacaoModel
 
 
 def test_consentimento_registra_no_banco(client, db_session):
@@ -87,11 +87,52 @@ def test_revogar_sem_consentimento_retorna_info(client):
     assert body["status"] == "info"
 
 
+def test_solicitar_delecao_registra_pendente(client, db_session):
+    response = client.post("/api/v1/lgpd/solicitar-delecao")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "ok"
+    assert "protocolo" in body
+    assert "data_execucao" in body
+
+    row = (
+        db_session.query(LGPDSolicitacaoDelecaoModel)
+        .filter(LGPDSolicitacaoDelecaoModel.usuario_id == "qa.user")
+        .order_by(LGPDSolicitacaoDelecaoModel.id.desc())
+        .first()
+    )
+    assert row is not None
+    assert row.status == "PENDENTE"
+
+
+def test_solicitar_delecao_retorna_info_se_ja_existir_pendente(client, db_session):
+    db_session.add(
+        LGPDSolicitacaoDelecaoModel(
+            usuario_id="qa.user",
+            status="PENDENTE",
+            data_solicitacao=datetime(2026, 6, 23, 10, 0, 0),
+            data_execucao=datetime(2026, 7, 23, 10, 0, 0),
+            observacao="solicitacao anterior",
+        )
+    )
+    db_session.commit()
+
+    response = client.post("/api/v1/lgpd/solicitar-delecao")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "info"
+    assert "data_execucao" in body
+
+
 def test_endpoints_lgpd_exigem_token_valido(client_no_auth):
     r1 = client_no_auth.post("/api/v1/lgpd/consentimento", json={"aceito": True})
     r2 = client_no_auth.get("/api/v1/lgpd/meus-dados")
     r3 = client_no_auth.post("/api/v1/lgpd/revogar-consentimento")
+    r4 = client_no_auth.post("/api/v1/lgpd/solicitar-delecao")
 
     assert r1.status_code == 401
     assert r2.status_code == 401
     assert r3.status_code == 401
+    assert r4.status_code == 401

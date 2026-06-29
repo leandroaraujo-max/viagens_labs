@@ -1,12 +1,21 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
 import logging
+from jose import jwt, JWTError
 
 from app.domain.models import schemas
 from app.api.dependencies import get_db_session
 from app.infrastructure.ldap_service import ActiveDirectoryService
 from app.infrastructure.bigquery_service import BigQueryService
-from app.core.security import create_access_token
+
+# Importamos os itens de segurança necessários
+from app.core.security import (
+    create_access_token, 
+    create_refresh_token, 
+    SECRET_KEY, 
+    ALGORITHM
+)
 
 router = APIRouter()
 
@@ -17,6 +26,10 @@ _bq_service = BigQueryService(
     table_funcionarios="maga-bigdata.mlpap.mag_v_funcionarios_ativos",
 )
 
+# --- Modelo novo para receber o token na rota de refresh ---
+class TokenRefreshRequest(BaseModel):
+    refresh_token: str
+# -----------------------------------------------------------
 
 @router.post("/login", response_model=schemas.TokenResponse)
 def login(
@@ -26,17 +39,16 @@ def login(
 ):
     """
     Valida as credenciais via Active Directory e busca o perfil no BigQuery.
-    Retorna JWT + nome de exibição + username AD.
+    Retorna JWT Access, JWT Refresh + nome de exibição + username AD.
     Agências não usam este endpoint — acesso exclusivo via link/GAS.
     """
     ad_service = ActiveDirectoryService()
-
     resultado_ad = {"autenticado": False, "perfil": None}
+
     try:
         resultado_ad = ad_service.autenticar_e_obter_perfil(credentials.username, credentials.password)
     except Exception as e:
         logging.error(f"Falha de comunicação com o AD: {e}")
-        # Mesmo se houver erro 500 no AD, gravamos como BLOQUEADO/Erro de Conexão
         try:
             from app.infrastructure.orm.models import LogAcessoModel
             ip_origem = request.client.host if request.client else "127.0.0.1"
@@ -55,7 +67,6 @@ def login(
         raise HTTPException(status_code=500, detail="Erro de conexão com servidor de autenticação interna.")
 
     if not resultado_ad["autenticado"]:
-        # Gravar bloqueio no banco de dados antes de levantar exceção
         try:
             from app.infrastructure.orm.models import LogAcessoModel
             ip_origem = request.client.host if request.client else "127.0.0.1"
@@ -84,7 +95,6 @@ def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Buscar nome real no BigQuery usando o username AD
     colaborador_dados = None
     try:
         colaborador_dados = _bq_service.buscar_colaborador(credentials.username)
@@ -92,10 +102,8 @@ def login(
         logging.warning(f"Erro ao consultar BQ no login (não crítico): {e}")
 
     nome_final = colaborador_dados.get("nome") if colaborador_dados else credentials.username
-    # perfil vem do grupo AD: "setor" para ADMINS, "dev" para DEV, "viajante" para demais
     perfil_acesso = resultado_ad["perfil"] or "viajante"
 
-    # Gravar sucesso no banco de dados de forma resiliente
     try:
         from app.infrastructure.orm.models import LogAcessoModel
         ip_origem = request.client.host if request.client else "127.0.0.1"
@@ -112,15 +120,64 @@ def login(
     except Exception as db_err:
         logging.error(f"Erro ao salvar log de sucesso no banco: {db_err}")
 
+    # GERAÇÃO DA DUPLA DE TOKENS
     token_jwt = create_access_token(
+        subject=credentials.username,
+        perfil=perfil_acesso
+    )
+    
+    refresh_jwt = create_refresh_token(
         subject=credentials.username,
         perfil=perfil_acesso
     )
 
     return schemas.TokenResponse(
         access_token=token_jwt,
+        refresh_token=refresh_jwt,
+        token_type="bearer",
         nome_usuario=nome_final,
         username=credentials.username,
         perfil=perfil_acesso
     )
 
+
+@router.post("/refresh")
+def refresh_token(request: TokenRefreshRequest):
+    """
+    Rota silenciosa usada pelo Frontend para manter o usuário logado
+    enquanto ele estiver ativo no sistema.
+    """
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Sessão expirada por inatividade. Faça login novamente.",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    try:
+        payload = jwt.decode(request.refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+        
+        # Trava de Segurança: impede o uso de um Access Token aqui
+        if payload.get("type") != "refresh":
+            raise credentials_exception
+            
+        username: str = payload.get("sub")
+        perfil: str = payload.get("perfil")
+        
+        if not username or not perfil:
+            raise credentials_exception
+            
+    except JWTError:
+        # Passou das 4 horas sem uso
+        raise credentials_exception
+
+    # O usuário está ativo! Gera tokens novos zerando o cronômetro
+    novo_access_token = create_access_token(subject=username, perfil=perfil)
+    novo_refresh_token = create_refresh_token(subject=username, perfil=perfil)
+
+    # Não precisamos retornar o schemas.TokenResponse inteiro aqui porque o 
+    # frontend já tem o "nome" e "perfil" salvos no LocalStorage desde o login
+    return {
+        "access_token": novo_access_token,
+        "refresh_token": novo_refresh_token,
+        "token_type": "bearer"
+    }

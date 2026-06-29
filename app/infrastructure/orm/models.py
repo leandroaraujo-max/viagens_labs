@@ -367,3 +367,31 @@ class LGPDConsentimentoModel(Base):
     ip_origem             = Column(String(50), nullable=True)
     user_agent            = Column(String(500), nullable=True)
     criado_em             = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+
+
+class LGPDSolicitacaoDelecaoModel(Base):
+    """Solicitações de deleção/anonimização de dados conforme direito do titular (LGPD)."""
+    __tablename__ = "lgpd_solicitacao_delecao"
+
+    id = Column(Integer, primary_key=True, index=True)
+    usuario_id = Column(String(100), nullable=False, index=True)
+    status = Column(String(20), default='PENDENTE', index=True)  # PENDENTE | PROCESSADA | CANCELADA
+    data_solicitacao = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    data_execucao = Column(DateTime(timezone=True), nullable=False)
+    data_processamento = Column(DateTime(timezone=True), nullable=True)
+    observacao = Column(Text, default='')
+    criado_em = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+
+
+class AuditoriaLGPDModel(Base):
+    """Trilha dedicada para auditoria de acesso a endpoints com dados sensíveis."""
+    __tablename__ = "auditoria_lgpd"
+
+    id = Column(Integer, primary_key=True, index=True)
+    usuario_id = Column(String(100), nullable=False, index=True)
+    acao = Column(String(20), nullable=False)  # GET | POST | PATCH | DELETE
+    recurso = Column(String(255), nullable=False, index=True)
+    dados_acessados = Column(String(255), default='dados_pessoais')
+    ip_origem = Column(String(50), default='0.0.0.0')
+    user_agent = Column(String(255), nullable=True)
+    criado_em = Column(DateTime(timezone=True), server_default=func.now(), index=True)

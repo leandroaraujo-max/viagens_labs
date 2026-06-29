@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from app.api.dependencies import get_db_session, require_auth
-from app.infrastructure.orm.models import LGPDConsentimentoModel, SolicitacaoModel
+from app.infrastructure.orm.models import LGPDConsentimentoModel, SolicitacaoModel, LGPDSolicitacaoDelecaoModel
 from app.domain.models import schemas
 
 router = APIRouter(prefix="/lgpd", tags=["LGPD"])
@@ -153,4 +153,59 @@ def revogar_consentimento(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao revogar consentimento: {str(e)}"
+        )
+
+
+@router.post("/solicitar-delecao")
+def solicitar_delecao(
+    auth_info: tuple = Depends(require_auth),
+    db: Session = Depends(get_db_session)
+):
+    """
+    Registra solicitação de deleção/anonimização de dados do titular.
+    A execução fica agendada para 30 dias após a solicitação.
+    """
+    usuario_id, _perfil = auth_info
+
+    try:
+        pendente = (
+            db.query(LGPDSolicitacaoDelecaoModel)
+            .filter(
+                LGPDSolicitacaoDelecaoModel.usuario_id == usuario_id,
+                LGPDSolicitacaoDelecaoModel.status == "PENDENTE",
+            )
+            .order_by(LGPDSolicitacaoDelecaoModel.data_solicitacao.desc())
+            .first()
+        )
+        if pendente:
+            return {
+                "status": "info",
+                "msg": "Ja existe solicitacao de delecao pendente para este usuario.",
+                "data_execucao": pendente.data_execucao.isoformat() if pendente.data_execucao else None,
+            }
+
+        agora = datetime.utcnow()
+        solicitacao = LGPDSolicitacaoDelecaoModel(
+            usuario_id=usuario_id,
+            status="PENDENTE",
+            data_solicitacao=agora,
+            data_execucao=agora + timedelta(days=30),
+            observacao="Solicitacao criada pelo proprio titular via portal LGPD.",
+        )
+        db.add(solicitacao)
+        db.commit()
+        db.refresh(solicitacao)
+
+        return {
+            "status": "ok",
+            "msg": "Solicitacao de delecao registrada. O processamento ocorrera em ate 30 dias.",
+            "protocolo": solicitacao.id,
+            "data_execucao": solicitacao.data_execucao.isoformat(),
+        }
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao solicitar delecao: {str(e)}",
         )
