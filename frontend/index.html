@@ -140,21 +140,21 @@
                         <button @click="abaAtiva = 'minhas_viagens'; carregarHistorico();"
                             :class="abaAtiva === 'minhas_viagens' ? 'bg-blue-600/15 text-blue-400 border-l-4 border-blue-500 font-bold rounded-lg' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/20 border-l-4 border-transparent rounded-lg'"
                             class="w-full flex items-center gap-3 px-3 py-2.5 text-xs transition-all duration-200 text-left">
-                            <span class="text-base shrink-0">✈️</span>
+                            <i class="ph ph-airplane-tilt text-xl text-slate-400"></i>
                             <span v-if="!menuRecolhido" class="truncate flex-1">Minhas Viagens</span>
                         </button>
 
                         <button @click="abaAtiva = 'autorizacoes'; carregarAutorizacoesTerceiros();"
                             :class="abaAtiva === 'autorizacoes' ? 'bg-blue-600/15 text-blue-400 border-l-4 border-blue-500 font-bold rounded-lg' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/20 border-l-4 border-transparent rounded-lg'"
                             class="w-full flex items-center gap-3 px-3 py-2.5 text-xs transition-all duration-200 text-left">
-                            <span class="text-base shrink-0">🛡️</span>
+                            <i class="ph ph-shield-check text-xl text-slate-400"></i>
                             <span v-if="!menuRecolhido" class="truncate flex-1">Acesso Terceiros</span>
                         </button>
 
                         <button @click="abaAtiva = 'gestao_creditos'; carregarMeusCreditos();"
                             :class="abaAtiva === 'gestao_creditos' ? 'bg-blue-600/15 text-blue-400 border-l-4 border-blue-500 font-bold rounded-lg' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/20 border-l-4 border-transparent rounded-lg'"
                             class="w-full flex items-center gap-3 px-3 py-2.5 text-xs transition-all duration-200 text-left">
-                            <span class="text-base shrink-0">💳</span>
+                            <i class="ph ph-credit-card text-xl text-slate-400"></i>
                             <span v-if="!menuRecolhido" class="truncate flex-1">Gestão de Créditos</span>
                         </button>
 
@@ -163,12 +163,12 @@
                             <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider px-3">Administrativo</p>
                             <a href="#" @click.prevent="vlNavigate('/setor.html')"
                                class="flex items-center gap-3 px-3 py-2 text-xs text-slate-400 hover:text-slate-200 hover:bg-slate-800/20 rounded-lg transition-all animate-none">
-                                <span class="text-base">🏢</span>
+                                <i class="ph ph-building text-xl text-slate-400"></i>
                                 <span>Painel do Setor</span>
                             </a>
                             <a v-if="perfilUsuario === 'dev'" href="#" @click.prevent="vlNavigate('/dev.html')"
                                class="flex items-center gap-3 px-3 py-2 text-xs text-slate-400 hover:text-slate-200 hover:bg-slate-800/20 rounded-lg transition-all animate-none">
-                                <span class="text-base">🧪</span>
+                                <i class="ph ph-flask text-xl text-slate-400"></i>
                                 <span>Portal Dev</span>
                             </a>
                         </div>
