@@ -57,6 +57,7 @@
     <script src="/js/services/api-client.js?v=1"></script>
     <script src="/js/services/validators.js?v=1"></script>
     <script src="/js/services/formatters.js?v=1"></script>
+    <script src="/js/services/index-api.js?v=1"></script>
 </head>
 
 <body
@@ -1763,6 +1764,8 @@
                     },
                 });
 
+                const indexApi = window.VLIndexApi.create(apiClient);
+
                 const badgePerfil = computed(() => {
                     if (perfilUsuario.value === 'setor') return 'Setor de Viagens';
                     if (perfilUsuario.value === 'dev') return 'Desenvolvedor';
@@ -1861,7 +1864,7 @@
                     if (!token.value) return;
                     historicoCarregando.value = true;
                     try {
-                        const r = await apiClient.request('/viagens/minhas');
+                        const r = await indexApi.listarMinhasViagens();
                         if (r.ok) historico.value = r.data;
                     } catch (e) { /* silencioso */ }
                     finally { historicoCarregando.value = false; }
@@ -1900,10 +1903,7 @@
                     registrandoConsentimento.value = true;
                     erroConsentimento.value = '';
                     try {
-                        const r = await apiClient.request('/lgpd/consentimento', {
-                            method: 'POST',
-                            body: JSON.stringify({ aceito: true, versao_politica: '1.0' })
-                        });
+                        const r = await indexApi.registrarConsentimentoLGPD({ aceito: true, versao_politica: '1.0' });
                         if (r.ok) {
                             aceitouLGPD.value = true;
                             mostrandoModalLGPD.value = false;
@@ -1995,7 +1995,7 @@
                     _ibgeTimer = setTimeout(async () => {
                         ac.carregando = true;
                         try {
-                            const response = await apiClient.request(`/brasil-api/lugares?q=${encodeURIComponent(termo)}`);
+                            const response = await indexApi.buscarLugares(termo);
                             if (!response.ok) throw new Error(`Falha ${response.status}`);
                             const dados = response.data || {};
                             const locais = dados.locais || [];
@@ -2133,7 +2133,7 @@
                             mostrarBuscaFallback.value = true;
                             return;
                         }
-                        const response = await apiClient.request(`/viagens/colaborador/${user_logado}`);
+                        const response = await indexApi.buscarColaborador(user_logado);
                         const r = response.data || {};
                         if (response.ok && r.sucesso) {
                             viajanteDados.value = r.dados;
@@ -2155,7 +2155,7 @@
                     buscandoColaborador.value = true;
                     viajanteDados.value = null;
                     try {
-                        const response = await apiClient.request(`/viagens/colaborador/${cpfBusca.value}`);
+                        const response = await indexApi.buscarColaborador(cpfBusca.value);
                         const r = response.data || {};
                         if (!response.ok) throw new Error(r.detail || 'Colaborador não encontrado.');
                         viajanteDados.value = r.dados;
@@ -2289,7 +2289,7 @@
                 const carregarPerfilViajante = async (username) => {
                     if (!username) return;
                     try {
-                        const resp = await apiClient.request(`/viagens/perfil/${username}`);
+                        const resp = await indexApi.obterPerfilViajante(username);
                         if (!resp.ok) return;
                         const perfil = resp.data || {};
                         if (perfil.celular) celularViajante.value = _mascaraTelStr(perfil.celular);
@@ -2308,10 +2308,7 @@
                     if (!viajanteDados.value?.user_name) return;
                     if (!celularViajante.value && !dataNascimentoViajante.value) return;
                     try {
-                        await apiClient.request(`/viagens/perfil/${viajanteDados.value.user_name}`, {
-                            method: 'PUT',
-                            body: JSON.stringify({ celular: celularViajante.value, data_nascimento: dataNascimentoViajante.value }),
-                        });
+                        await indexApi.salvarPerfilViajante(viajanteDados.value.user_name, { celular: celularViajante.value, data_nascimento: dataNascimentoViajante.value });
                         perfilSalvo.value = true;
                     } catch (e) {
                         console.warn('[perfil] erro ao salvar:', e.message);
@@ -2323,11 +2320,7 @@
                     semAcessoAd.value = false;
                     carregando.value = true;
                     try {
-                        const response = await apiClient.request('/auth/login', {
-                            method: 'POST',
-                            auth: false,
-                            body: JSON.stringify({ ...loginForm.value, agencia: null }),
-                        });
+                        const response = await indexApi.realizarLogin({ ...loginForm.value, agencia: null });
                         const dados = response.data || {};
                         if (response.status === 403) {
                             semAcessoAd.value = true;
@@ -2394,10 +2387,7 @@
                         viajante_data_nascimento: dataNascimentoViajante.value,
                     };
                     try {
-                        const response = await apiClient.request('/viagens/solicitacoes', {
-                            method: 'POST',
-                            body: JSON.stringify(payload),
-                        });
+                        const response = await indexApi.enviarSolicitacaoViagem(payload);
                         const dados = response.data || {};
                         if (!response.ok) throw new Error(dados.detail || 'Erro ao enviar solicitação.');
                         protocoloGerado.value = dados.protocolo;
@@ -2413,7 +2403,7 @@
                 // --- Carregar períodos de voo disponíveis ---
                 const carregarPeriodosVoo = async () => {
                     try {
-                        const resp = await apiClient.request('/brasil-api/periodos-voo');
+                        const resp = await indexApi.listarPeriodosVoo();
                         if (resp.ok) {
                             const dados = resp.data || {};
                             periodosVoo.value = dados.periodos || [];
@@ -2446,7 +2436,7 @@
                 const carregarAutorizacoesTerceiros = async () => {
                     if (!token.value) return;
                     try {
-                        const resp = await apiClient.request('/terceiros/minhas');
+                        const resp = await indexApi.listarAutorizacoesTerceiros();
                         if (resp.ok) autorizacoesTerceiros.value = resp.data;
                     } catch (e) {
                         console.warn('Erro ao carregar autorizações:', e);
@@ -2473,7 +2463,7 @@
                     }
                     terceiroBuscando.value = true;
                     try {
-                        const resp = await apiClient.request(`/terceiros/buscar/${terceiroBuscaMatricula.value.trim()}`);
+                        const resp = await indexApi.buscarTerceiroPorMatricula(terceiroBuscaMatricula.value.trim());
                         const dados = resp.data || {};
                         if (!resp.ok) throw new Error(dados.detail || 'Não foi possível encontrar este colaborador.');
                         terceiroEncontrado.value = dados;
@@ -2510,11 +2500,7 @@
                         formData.append('terceiro_email', terceiroEncontrado.value.email);
                         formData.append('pdf_autorizacao', pdfArquivo.value);
 
-                        const resp = await apiClient.request('/terceiros/solicitar', {
-                            method: 'POST',
-                            json: false,
-                            body: formData,
-                        });
+                        const resp = await indexApi.solicitarAutorizacaoTerceiro(formData);
                         const dados = resp.data || {};
                         if (!resp.ok) throw new Error(dados.detail || 'Erro ao submeter ticket.');
 
@@ -2541,7 +2527,7 @@
                     buscandoColaborador.value = true;
                     viajanteDados.value = null;
                     try {
-                        const response = await apiClient.request(`/viagens/colaborador/${novaAut.terceiro_username}`);
+                        const response = await indexApi.buscarColaborador(novaAut.terceiro_username);
                         const r = response.data || {};
                         if (!response.ok) throw new Error(r.detail || 'Colaborador não encontrado.');
                         viajanteDados.value = r.dados;
@@ -2568,7 +2554,7 @@
                 const carregarMeusCreditos = async () => {
                     if (!token.value) return;
                     try {
-                        const r = await apiClient.request('/viagens/creditos/meus');
+                        const r = await indexApi.listarMeusCreditos();
                         if (r.ok) meusCreditos.value = r.data;
                     } catch (e) { }
                 };
@@ -2592,12 +2578,9 @@
                     if (!viagemACancelar.value) return;
                     enviandoCancelar.value = true;
                     try {
-                        const r = await apiClient.request(`/viagens/solicitacoes/${viagemACancelar.value.id}/solicitar-cancelamento`, {
-                            method: 'POST',
-                            body: JSON.stringify({
+                        const r = await indexApi.solicitarCancelamento(viagemACancelar.value.id, {
                                 itens_a_cancelar: cancelarForm.itens.join(','),
                                 motivo_cancelamento: cancelarForm.motivo
-                            })
                         });
                         if (r.ok) {
                             mostrandoModalCancelar.value = false;
@@ -2619,13 +2602,10 @@
                     if (!viagemARemarcar.value) return;
                     enviandoRemarcar.value = true;
                     try {
-                        const r = await apiClient.request(`/viagens/solicitacoes/${viagemARemarcar.value.id}/solicitar-remarcacao`, {
-                            method: 'POST',
-                            body: JSON.stringify({
+                        const r = await indexApi.solicitarRemarcacao(viagemARemarcar.value.id, {
                                 data_ida: remarcarForm.data_ida,
                                 data_volta: remarcarForm.data_volta || null,
                                 motivo_cancelamento: remarcarForm.motivo
-                            })
                         });
                         if (r.ok) {
                             mostrandoModalRemarcar.value = false;
