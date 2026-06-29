@@ -14,9 +14,14 @@
   </style>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <link rel="stylesheet" href="/css/shared-ui.css?v=1">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
     rel="stylesheet">
   <script src="/js/transition.js?v=8"></script>
+  <script src="/js/services/http-errors.js?v=1"></script>
+  <script src="/js/services/auth-session.js?v=1"></script>
+  <script src="/js/services/api-client.js?v=1"></script>
+  <script src="/js/services/setor-api.js?v=1"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -36,18 +41,11 @@
     }
   </script>
   <style>
-    [v-cloak] {
-      display: none;
-    }
-
     /* Fundo com foto aérea igual ao portal do viajante */
     .bg-setor {
       background-image:
         linear-gradient(135deg, rgba(15, 23, 42, 0.92) 0%, rgba(0, 55, 180, 0.80) 100%),
-        url('/img/bg-aviao.jpg');
-      background-size: cover;
-      background-position: center;
-      background-attachment: fixed;
+        var(--vl-bg-aviao);
     }
 
     /* Card principal com glass-morphism */
@@ -102,16 +100,6 @@
     }
 
     /* Transições de fade */
-    .fade-enter-active,
-    .fade-leave-active {
-      transition: opacity .3s ease;
-    }
-
-    .fade-enter-from,
-    .fade-leave-to {
-      opacity: 0;
-    }
-
     /* Hover nas linhas da tabela */
     tr.row-hover {
       transition: background .15s;
@@ -201,8 +189,7 @@
             class="h-8 w-8 rounded-lg bg-[#0a0f1e] text-white flex items-center justify-center font-extrabold text-xs shadow-sm shrink-0">
             {{ nomeUsuario.charAt(0).toUpperCase() }}
           </div>
-          <button @click="sair"
-            class="ml-2 text-xs font-semibold text-red-500 hover:text-red-700 hover:bg-red-50 px-2.5 py-1.5 rounded-lg transition">
+          <button @click="sair" class="vl-btn-logout">
             Sair
           </button>
         </div>
@@ -764,7 +751,7 @@
               </div>
             </div>
 
-            <div v-if="pdfErro" class="mb-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+            <div v-if="pdfErro" class="mb-4 text-sm text-red-700 vl-red-error-surface px-4 py-3">
               {{ pdfErro }}
             </div>
 
@@ -882,16 +869,16 @@
           </div>
         </template>
 
-	<!-- Footer Política de Privacidade -->
-	 <div class="text-center text-xs text-gray-600 mt-8 space-y-1">
-      	  <a href="/politica-privacidade.html" target="_blank" class="hover:text-labs-blue transition">
+        <!-- Footer Política de Privacidade -->
+        <div class="text-center text-xs text-gray-600 mt-8 space-y-1">
+          <a href="/politica-privacidade.html" target="_blank" class="hover:text-labs-blue transition">
             Política de Privacidade
           </a>
           <span class="mx-2">•</span>
           <a href="mailto:dpo@luizalabs.com" class="hover:text-labs-blue transition">
-           Contato DPO
+            Contato DPO
           </a>
-    </div>
+        </div>
 
       </main><!-- fim área de conteúdo -->
     </div><!-- fim body layout -->
@@ -1315,10 +1302,8 @@
             <div class="grid grid-cols-1 gap-2 text-sm">
               <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-3">
                 <span class="text-xs font-bold text-indigo-500 block mb-1">Aprovador N1</span>
-                <span class="font-semibold text-labs-dark">{{ detalhe.aprovador_n1_nome || detalhe.aprovador_n1_email
-                  }}</span>
-                <span v-if="detalhe.aprovador_n1_nome" class="text-xs text-gray-500 block">{{ detalhe.aprovador_n1_email
-                  }}</span>
+                <span class="font-semibold text-labs-dark">{{ detalhe.aprovador_n1_nome || detalhe.aprovador_n1_email }}</span>
+                <span v-if="detalhe.aprovador_n1_nome" class="text-xs text-gray-500 block">{{ detalhe.aprovador_n1_email }}</span>
               </div>
               <div v-if="detalhe.aprovador_n2_email" class="bg-indigo-50 border border-indigo-100 rounded-xl p-3">
                 <span class="text-xs font-bold text-indigo-400 block mb-1">Aprovador N2</span>
@@ -1526,7 +1511,7 @@
 
         <!-- Footer -->
         <div class="px-6 py-4 border-t border-labs-border bg-labs-gray">
-          <div v-if="acaoErro" class="mb-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-4 py-2.5">
+          <div v-if="acaoErro" class="mb-3 text-sm text-red-700 vl-red-error-surface px-4 py-2.5">
             {{ acaoErro }}
           </div>
           <div class="flex flex-wrap gap-2 justify-end">
@@ -1598,7 +1583,7 @@
           <p class="text-sm text-gray-500 mb-5">
             Solicitação: <strong class="font-mono font-bold text-labs-blue">{{ confirmacao.sol?.protocolo }}</strong>
           </p>
-          <div v-if="acaoErro" class="mb-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+          <div v-if="acaoErro" class="mb-3 text-sm text-red-700 vl-red-error-surface px-3 py-2">
             {{ acaoErro }}
           </div>
           <div class="flex gap-2 justify-end">
@@ -1633,7 +1618,7 @@
               <strong>dados pessoais de colaboradores</strong> protegidos pela Lei nº 13.709/2018 (LGPD).
             </p>
 
-            <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-2 text-xs text-gray-700">
+            <div class="vl-amber-alert-surface p-4 space-y-2 text-xs text-gray-700">
               <p><strong>⚠️ Dados aos quais você terá acesso:</strong></p>
               <ul class="list-disc list-inside space-y-1 ml-1">
                 <li>Dados pessoais: Nome, CPF, data de nascimento, celular</li>
@@ -1655,7 +1640,7 @@
               </ul>
             </div>
 
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2 text-xs text-gray-700">
+            <div class="vl-blue-info-surface p-4 space-y-2 text-xs text-gray-700">
               <p><strong>✓ Uso legítimo dos dados:</strong></p>
               <ul class="list-disc list-inside space-y-1 ml-1">
                 <li>Pré-aprovar solicitações de viagem</li>
@@ -1671,15 +1656,14 @@
                 contrato de trabalho (Art. 7º, V, LGPD).
               </p>
               <p class="text-xs text-gray-600">
-                Leia nossa <a href="/politica-privacidade.html" target="_blank"
-                  class="text-blue-600 hover:underline font-semibold">Política de Privacidade Completa</a> para mais
+                Leia nossa <a href="/politica-privacidade.html" target="_blank" class="vl-link-primary">Política de
+                  Privacidade Completa</a> para mais
                 detalhes.
               </p>
             </div>
 
             <!-- Erro se houver -->
-            <div v-if="erroConsentimentoGestor"
-              class="bg-red-50 border border-red-200 rounded-lg p-3 text-xs text-red-700">
+            <div v-if="erroConsentimentoGestor" class="vl-red-error-surface p-3 text-xs text-red-700">
               {{ erroConsentimentoGestor }}
             </div>
           </div>
@@ -1706,9 +1690,26 @@
 
     createApp({
       setup() {
-        const token = ref(localStorage.getItem('token') || '');
-        const nomeUsuario = ref(localStorage.getItem('nome_usuario') || '');
-        const perfilUsuario = ref(localStorage.getItem('perfil') || 'setor');
+        const setorSession = window.VLAuthSession.createNamespace('portal');
+        const storage = window.localStorage;
+
+        function hydrateSessionFromLegacyStorage() {
+          const legacyToken = storage.getItem('token');
+          const legacyNome = storage.getItem('nome_usuario');
+          const legacyPerfil = storage.getItem('perfil');
+          const legacyUsername = storage.getItem('username_ad');
+
+          if (legacyToken && !setorSession.getToken()) setorSession.setToken(legacyToken);
+          if (legacyNome && !setorSession.getNome()) setorSession.setNome(legacyNome);
+          if (legacyPerfil && !setorSession.get('perfil')) setorSession.set('perfil', legacyPerfil);
+          if (legacyUsername && !setorSession.get('username_ad')) setorSession.set('username_ad', legacyUsername);
+        }
+
+        hydrateSessionFromLegacyStorage();
+
+        const token = ref(setorSession.getToken() || '');
+        const nomeUsuario = ref(setorSession.getNome() || '');
+        const perfilUsuario = ref(setorSession.get('perfil') || 'setor');
         const aba = ref('solicitacoes');
         const carregando = ref(false);
         const solicitacoes = ref([]);
@@ -1717,6 +1718,17 @@
         const alertasAcessoInterval = ref(null);
 
         const menuRecolhido = ref(false);
+
+        const apiClient = window.VLApiClient.create({
+          baseUrl: '/api/v1',
+          getToken: () => token.value || setorSession.getToken() || '',
+          onUnauthorized: () => {
+            token.value = '';
+            sair();
+          },
+        });
+
+        const setorApi = window.VLSetorApi.create(apiClient);
 
         // ── LGPD: Consentimento de Gestor ──
         const mostrandoModalLGPDGestor = ref(false);
@@ -1814,8 +1826,8 @@
         // ── LGPD: Verificar e Aceitar Consentimento ──────────────────────────────
         const verificarConsentimentoLGPDGestor = () => {
           // Verificar se já aceitou nesta sessão ou hoje no localStorage
-          const aceitouEstavez = localStorage.getItem('lgpd_gestor_aceito');
-          const dataAceito = localStorage.getItem('lgpd_gestor_data_aceito');
+          const aceitouEstavez = storage.getItem('lgpd_gestor_aceito');
+          const dataAceito = storage.getItem('lgpd_gestor_data_aceito');
           const hoje = new Date().toISOString().split('T')[0];
 
           // Se aceitou hoje, não mostrar novamente
@@ -1833,26 +1845,19 @@
           registrandoConsentimentoGestor.value = true;
           erroConsentimentoGestor.value = '';
           try {
-            const r = await fetch('/api/v1/lgpd/consentimento', {
-              method: 'POST',
-              headers: {
-                'Authorization': 'Bearer ' + token.value,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
+            const r = await setorApi.registrarConsentimentoLGPD({
                 aceito: true,
                 versao_politica: '1.0',
                 tipo: 'gestor_operador' // diferencia do consentimento de viajante
-              })
-            });
+              });
             if (r.ok) {
               aceitouLGPDGestor.value = true;
               mostrandoModalLGPDGestor.value = false;
               const hoje = new Date().toISOString().split('T')[0];
-              localStorage.setItem('lgpd_gestor_aceito', 'true');
-              localStorage.setItem('lgpd_gestor_data_aceito', hoje);
+              storage.setItem('lgpd_gestor_aceito', 'true');
+              storage.setItem('lgpd_gestor_data_aceito', hoje);
             } else {
-              const err = await r.json();
+              const err = r.data || {};
               erroConsentimentoGestor.value = err.detail || 'Erro ao registrar consentimento';
             }
           } catch (e) {
@@ -1867,7 +1872,7 @@
           // Sinaliza ao sistema de transição que o Vue montou com sucesso
           if (typeof window._vlReady === 'function') window._vlReady();
 
-          const perfil = localStorage.getItem('perfil');
+          const perfil = perfilUsuario.value || setorSession.get('perfil') || '';
           if (!token.value || (perfil !== 'setor' && perfil !== 'dev')) {
             vlNavigate('/index.html');
             return;
@@ -1891,11 +1896,9 @@
             if (filtros.periodo) p.set('periodo_dias', filtros.periodo);
             if (filtros.agencia) p.set('agencia', filtros.agencia);
             if (filtros.busca) p.set('busca', filtros.busca);
-            const resp = await fetch(`/api/v1/setor/solicitacoes?${p}`, {
-              headers: { Authorization: `Bearer ${token.value}` },
-            });
-            if (resp.status === 401 || resp.status === 403) { sair(); return; }
-            solicitacoes.value = await resp.json();
+            const resp = await setorApi.listarSolicitacoes(p.toString());
+            if (!resp.ok) return;
+            solicitacoes.value = resp.data || [];
           } catch (e) {
             console.error('[Setor] Falha ao carregar solicitações:', e);
           } finally {
@@ -1911,10 +1914,9 @@
         const abrirDetalhe = async (s) => {
           acaoErro.value = '';
           try {
-            const resp = await fetch(`/api/v1/setor/solicitacoes/${s.id}`, {
-              headers: { Authorization: `Bearer ${token.value}` },
-            });
-            detalhe.value = await resp.json();
+            const resp = await setorApi.obterDetalhesSolicitacao(s.id);
+            if (!resp.ok) return;
+            detalhe.value = resp.data || {};
             modalAberto.value = true;
           } catch (e) {
             console.error('[Setor] Erro ao buscar detalhe:', e);
@@ -1943,9 +1945,9 @@
           }
 
           try {
-            const resp = await fetch(url, {
-              headers: { Authorization: `Bearer ${token.value}` },
-            });
+            // Exceção técnica intencional: este endpoint retorna arquivo binário (PDF)
+            // para abertura em nova aba via Blob URL, agora encapsulada no setor-api.
+            const resp = await setorApi.baixarPdfAssinado(url);
 
             if (resp.status === 401 || resp.status === 403) {
               throw new Error('Não foi possível autenticar a visualização do PDF. Faça login novamente.');
@@ -1977,15 +1979,8 @@
           acaoCarregando.value = true;
           acaoErro.value = '';
           try {
-            const resp = await fetch(`/api/v1/setor/solicitacoes/${sol.id}/acao`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token.value}`,
-              },
-              body: JSON.stringify({ acao, observacao: '' }),
-            });
-            const dados = await resp.json();
+            const resp = await setorApi.decidirSolicitacao(sol.id, { acao, observacao: '' });
+            const dados = resp.data || {};
             if (!resp.ok) throw new Error(dados.detail || 'Erro ao executar ação.');
 
             confirmacao.aberto = false;
@@ -2003,15 +1998,8 @@
           acaoCarregando.value = true;
           acaoErro.value = '';
           try {
-            const resp = await fetch(`/api/v1/setor/solicitacoes/${sol.id}/decidir-cancelamento`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token.value}`,
-              },
-              body: JSON.stringify({ acao, observacao }),
-            });
-            const dados = await resp.json();
+            const resp = await setorApi.cancelarSolicitacao(sol.id, { acao, observacao });
+            const dados = resp.data || {};
             if (!resp.ok) throw new Error(dados.detail || 'Erro ao decidir cancelamento/remarcação.');
 
             confirmacao.aberto = false;
@@ -2176,7 +2164,13 @@
 
         // ── Helpers ───────────────────────────────────────────────────────────────
         const sair = () => {
-          localStorage.clear();
+          setorSession.clearAll();
+          setorSession.remove('perfil');
+          setorSession.remove('username_ad');
+          storage.removeItem('token');
+          storage.removeItem('nome_usuario');
+          storage.removeItem('perfil');
+          storage.removeItem('username_ad');
           vlNavigate('/index.html');
         };
 
@@ -2266,11 +2260,9 @@
         const carregarCasamentos = async () => {
           casamentos.value = [];
           try {
-            const res = await fetch('/api/v1/setor/casamentos', {
-              headers: { Authorization: `Bearer ${token.value}` },
-            });
+            const res = await setorApi.listarCasamentos();
             if (!res.ok) return;
-            const lista = await res.json();
+            const lista = res.data || [];
             casamentos.value = lista;
             casamentosCount.value = lista.length;
           } catch (e) { console.error('Erro ao carregar casamentos', e); }
@@ -2280,11 +2272,8 @@
           casamentoMsgOk.value = '';
           casamentoMsgErr.value = '';
           try {
-            const res = await fetch(`/api/v1/setor/casamentos/${id}/${acao}`, {
-              method: 'POST',
-              headers: { Authorization: `Bearer ${token.value}` },
-            });
-            const dados = await res.json();
+            const res = await setorApi.decidirCasamento(id, acao);
+            const dados = res.data || {};
             if (!res.ok) { casamentoMsgErr.value = dados.detail || 'Erro.'; return; }
             casamentoMsgOk.value = acao === 'vincular'
               ? `✔ Casamento vinculado! Grupo: ${dados.grupo_viagem}`
@@ -2308,19 +2297,15 @@
         const carregarTicketsTerceiros = async () => {
           try {
             const statusFiltro = filtroTerceirosStatus.value;
-            const res = await fetch(`/api/v1/terceiros/admin/todos${statusFiltro ? '?status_filtro=' + statusFiltro : ''}`, {
-              headers: { Authorization: `Bearer ${token.value}` }
-            });
+            const res = await setorApi.listarTerceiros(statusFiltro);
             if (res.ok) {
-              ticketsTerceiros.value = await res.json();
+              ticketsTerceiros.value = res.data || [];
             }
 
             // Carrega também a contagem de pendentes para o badge da barra lateral
-            const resP = await fetch('/api/v1/terceiros/admin/todos?status_filtro=PENDENTE', {
-              headers: { Authorization: `Bearer ${token.value}` }
-            });
+            const resP = await setorApi.listarTerceiros('PENDENTE');
             if (resP.ok) {
-              const pendentes = await resP.json();
+              const pendentes = resP.data || [];
               ticketsTerceirosPendentesCount.value = pendentes.length;
             }
           } catch (e) {
@@ -2334,17 +2319,13 @@
             formData.append('acao', acao);
             formData.append('observacao', obs || '');
 
-            const res = await fetch(`/api/v1/terceiros/admin/${id}/decisao`, {
-              method: 'PATCH',
-              headers: { Authorization: `Bearer ${token.value}` },
-              body: formData
-            });
+            const res = await setorApi.decidirTerceiro(id, formData);
             if (res.ok) {
               // Limpa campo de observações para este ticket
               delete ticketObs.value[id];
               await carregarTicketsTerceiros();
             } else {
-              const dados = await res.json();
+              const dados = res.data || {};
               alert('Erro ao processar decisão do ticket: ' + (dados.detail || 'Erro desconhecido.'));
             }
           } catch (e) {
@@ -2393,11 +2374,9 @@
           cnpjErro.value = '';
           cnpjBuscando.value = true;
           try {
-            const res = await fetch(`/api/v1/setor/proxy/cnpj/${cnpj}`, {
-              headers: { Authorization: `Bearer ${token.value}` },
-            });
+            const res = await setorApi.buscarCnpj(cnpj);
             if (!res.ok) { cnpjErro.value = 'CNPJ não encontrado ou erro na consulta.'; return; }
-            const d = await res.json();
+            const d = res.data || {};
             agenciaForm.value.razao_social = d.razao_social || '';
             agenciaForm.value.agencia_nome = agenciaForm.value.agencia_nome || d.nome_fantasia || '';
             agenciaForm.value.inscricao_estadual = d.descricao_situacao_cadastral || '';
@@ -2418,11 +2397,9 @@
           const cep = agenciaForm.value.cep.replace(/\D/g, '');
           if (cep.length !== 8) return;
           try {
-            const res = await fetch(`/api/v1/setor/proxy/cep/${cep}`, {
-              headers: { Authorization: `Bearer ${token.value}` },
-            });
+            const res = await setorApi.buscarCep(cep);
             if (!res.ok) return;
-            const d = await res.json();
+            const d = res.data || {};
             if (d.street) agenciaForm.value.logradouro = d.street;
             if (d.neighborhood) agenciaForm.value.bairro = d.neighborhood;
             if (d.city) agenciaForm.value.municipio = d.city;
@@ -2435,11 +2412,9 @@
           if (!cod) return;
           bancoBuscando.value = true;
           try {
-            const res = await fetch(`/api/v1/setor/proxy/bank/${cod}`, {
-              headers: { Authorization: `Bearer ${token.value}` },
-            });
+            const res = await setorApi.buscarBanco(cod);
             if (!res.ok) return;
-            const d = await res.json();
+            const d = res.data || {};
             agenciaForm.value.banco_nome = d.name || d.fullName || agenciaForm.value.banco_nome;
           } catch { } finally { bancoBuscando.value = false; }
         };
@@ -2449,11 +2424,9 @@
           agenciaMsgOk.value = '';
           agenciaMsgErr.value = '';
           try {
-            const res = await fetch('/api/v1/setor/agencias', {
-              headers: { Authorization: `Bearer ${token.value}` },
-            });
+            const res = await setorApi.listarAgencias();
             if (!res.ok) { agenciaMsgErr.value = 'Erro ao carregar agências.'; return; }
-            agencias.value = await res.json();
+            agencias.value = res.data || [];
           } catch (e) { agenciaMsgErr.value = 'Erro de conexão.'; }
         };
 
@@ -2485,14 +2458,10 @@
             if (!payload.agencia_nome?.trim()) { agenciaFormErr.value = 'Informe o nome fantasia.'; return; }
             if (!ed && !payload.email?.trim()) { agenciaFormErr.value = 'Informe o e-mail de contato.'; return; }
 
-            const url = ed ? `/api/v1/setor/agencias/${ed.id}` : '/api/v1/setor/agencias';
+            const url = ed ? `/setor/agencias/${ed.id}` : '/setor/agencias';
             const method = ed ? 'PUT' : 'POST';
-            const res = await fetch(url, {
-              method,
-              headers: { Authorization: `Bearer ${token.value}`, 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload),
-            });
-            if (!res.ok) { const d = await res.json(); agenciaFormErr.value = d.detail || 'Erro ao salvar.'; return; }
+            const res = await setorApi.salvarAgencia(url, method, payload);
+            if (!res.ok) { const d = res.data || {}; agenciaFormErr.value = d.detail || 'Erro ao salvar.'; return; }
             agenciaMsgOk.value = ed ? '✔ Agência atualizada.' : '✔ Agência cadastrada com sucesso.';
             fecharModalAgencia();
             await carregarAgencias();
@@ -2504,12 +2473,8 @@
           agenciaMsgOk.value = '';
           agenciaMsgErr.value = '';
           try {
-            const res = await fetch(`/api/v1/setor/agencias/${ag.id}`, {
-              method: 'PUT',
-              headers: { Authorization: `Bearer ${token.value}`, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ ativo: !ag.ativo }),
-            });
-            if (!res.ok) { const d = await res.json(); agenciaMsgErr.value = d.detail || 'Erro.'; return; }
+            const res = await setorApi.alternarStatusAgencia(ag.id, { ativo: !ag.ativo });
+            if (!res.ok) { const d = res.data || {}; agenciaMsgErr.value = d.detail || 'Erro.'; return; }
             agenciaMsgOk.value = ag.ativo ? '✔ Agência desativada.' : '✔ Agência ativada.';
             await carregarAgencias();
           } catch (e) { agenciaMsgErr.value = 'Erro de conexão.'; }
@@ -2520,15 +2485,12 @@
           agenciaMsgOk.value = '';
           agenciaMsgErr.value = '';
           try {
-            const res = await fetch(`/api/v1/setor/agencias/${ag.id}`, {
-              method: 'DELETE',
-              headers: { Authorization: `Bearer ${token.value}` },
-            });
+            const res = await setorApi.excluirAgencia(ag.id);
             if (res.status === 204) {
               agenciaMsgOk.value = `✔ Agência "${ag.agencia_nome}" excluída.`;
               await carregarAgencias();
             } else {
-              const d = await res.json();
+              const d = res.data || {};
               agenciaMsgErr.value = d.detail || 'Erro ao excluir.';
             }
           } catch (e) { agenciaMsgErr.value = 'Erro de conexão.'; }
@@ -2536,11 +2498,9 @@
 
         const carregarStatsAdicionais = async () => {
           try {
-            const resp = await fetch(`/api/v1/setor/stats`, {
-              headers: { Authorization: `Bearer ${token.value}` },
-            });
+            const resp = await setorApi.obterStats();
             if (resp.ok) {
-              const dados = await resp.json();
+              const dados = resp.data || {};
               ativosHoje.value = dados.ativos_hoje || 0;
             }
           } catch (e) {
@@ -2550,11 +2510,9 @@
 
         const carregarAlertasAcesso = async () => {
           try {
-            const resp = await fetch(`/api/v1/setor/alertas-acesso`, {
-              headers: { Authorization: `Bearer ${token.value}` },
-            });
+            const resp = await setorApi.obterAlertasAcesso();
             if (resp.ok) {
-              alertasAcesso.value = await resp.json();
+              alertasAcesso.value = resp.data || [];
             }
           } catch (e) {
             console.error('[Setor] Erro ao carregar alertas de acesso:', e);
