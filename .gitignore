@@ -46,3 +46,11 @@ htmlcov/
 
 # Distribuição
 *.spec
+
+# Uploads de usuários
+uploads/
+
+# Documentos e backups
+*.pdf
+backup nginx config/
+openapi.json
