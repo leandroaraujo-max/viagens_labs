@@ -1217,7 +1217,7 @@
                 <div class="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-200">
                     <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-5">
                         <div class="flex items-center gap-3">
-                            <span class="text-2xl">🔐</span>
+                            <i class="ph ph-lock-key text-2xl text-white"></i>
                             <h2 class="text-lg font-bold text-white">Lei Geral de Proteção de Dados (LGPD)</h2>
                         </div>
                     </div>
@@ -2048,6 +2048,17 @@ watch(() => formPreferencias.value.carro_data_devolucao, (novaDevolucao) => {
                     return iso.slice(11, 16);
                 };
 
+                const formatarData = (data) => {
+                    if (!data) return '—';
+                    try {
+                        const dataBase = data.split('T')[0];
+                        const [ano, mes, dia] = dataBase.split('-');
+                        return `${dia}/${mes}/${ano}`;
+                    } catch (e) {
+                        return data;
+                    }
+                };
+
                 const novasolicitacao = () => {
                     passoAtual.value = 1;
                     viajanteDados.value = null;
@@ -2110,8 +2121,18 @@ watch(() => formPreferencias.value.carro_data_devolucao, (novaDevolucao) => {
                 };
 
                 const lidarComUploadPDF = (e) => {
+                    terceiroErroSubmissao.value = ''; 
+                    terceiroMensagemSucesso.value = '';
                     const arquivo = e.target.files[0];
                     if (arquivo) {
+                        const tamanhoMaximo = 10 * 1024 * 1024;
+                        if (arquivo.size > tamanhoMaximo) {
+                        // 3. Se for maior que 10MB, exibe o erro e rejeita o arquivo
+                        terceiroErroSubmissao.value = 'O arquivo PDF selecionado é muito grande. O tamanho máximo permitido é 10 MB.';
+                        pdfArquivo.value = null;
+                        e.target.value = ''; // Limpa o campo visualmente
+                        return;
+                        }
                         pdfArquivo.value = arquivo;
                     }
                 };
@@ -2316,7 +2337,7 @@ watch(() => formPreferencias.value.carro_data_devolucao, (novaDevolucao) => {
                     historico, historicoCarregando, carregarHistorico, statusLabelMini, statusCorMini,
                     // Sugestões de Períodos
                     periodosVoo, periodoSelecionado, carregarPeriodosVoo,
-                    formatarHora,
+                    formatarHora, formatarData,
                     // Autocomplete Brasil API
                     acCidades, buscarCidadesIBGE, selecionarCidade, fecharAc,
                     // Gestão de Créditos & Cancelamento/Remarcação
