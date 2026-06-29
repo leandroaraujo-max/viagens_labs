@@ -1,8 +1,7 @@
-
-// ?? Estado da sess?o (Vindo do LocalStorage do novo Login JWT) ???????????????
-const SESSION_NOME  = localStorage.getItem('nome_usuario') || 'Colaborador';
-const SESSION_TOKEN = localStorage.getItem('token') || '';
-const SESSION_TELEFONE = ''; 
+const appSession = window.VLAuthSession?.createNamespace('portal');
+const SESSION_NOME = appSession?.getNome() || localStorage.getItem('nome_usuario') || 'Colaborador';
+const SESSION_TOKEN = appSession?.getToken() || localStorage.getItem('token') || '';
+const SESSION_TELEFONE = '';
 
 // ?? Loader global para chamadas ao servidor ???????????????????
 let _loaderAtivo = 0;
@@ -35,28 +34,26 @@ async function runServer(payload, onSuccess, onError, opts) {
   _mostrarLoader(msg);
 
   try {
-    // Roteamento inteligente: Decide para qual rota do Python mandar dependendo da "acao" do GAS
-    let endpoint = '/api/v1/viagens/gas-proxy'; // Criaremos essa rota de transi??o depois
-    let method = 'POST';
+    const apiClient = window.VLApiClient?.create({
+      baseUrl: '',
+      getToken: () => SESSION_TOKEN,
+      onUnauthorized: () => {
+        alert('Sessão expirada. Faça login novamente.');
+        fazerLogout();
+      }
+    });
 
-    const response = await fetch(endpoint, {
-      method: method,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + SESSION_TOKEN // Manda o token JWT de seguran?a
-      },
+    if (!apiClient) {
+      throw new Error('VLApiClient não inicializado. Carregue /js/services/api-client.js antes de app.js.');
+    }
+
+    const data = await apiClient.requestJson('/api/v1/viagens/gas-proxy', {
+      method: 'POST',
       body: JSON.stringify(payload)
     });
 
-    const data = await response.json();
-    
     _ocultarLoader();
-    
-    if (!response.ok) {
-        if(response.status === 401) { alert("Sess?o expirada. Fa?a login novamente."); fazerLogout(); return;}
-        throw new Error(data.detail || 'Erro na comunica??o com a API Python');
-    }
-    
+
     // O backend Python devolver? { sucesso: true, dados: {...} } como o seu backend GAS devolvia
     if (onSuccess) onSuccess(data);
 
@@ -68,6 +65,10 @@ async function runServer(payload, onSuccess, onError, opts) {
 }
 
 function fazerLogout() {
-  localStorage.clear();
+  appSession?.clearAll();
+  localStorage.removeItem('token');
+  localStorage.removeItem('nome_usuario');
+  localStorage.removeItem('perfil');
+  localStorage.removeItem('username_ad');
   window.location.href = '/login.html'; // Mudaremos o nome da tela de login inicial
 }

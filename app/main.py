@@ -35,7 +35,7 @@ db_logger.addHandler(db_handler)
 
 from app.infrastructure.database import Base, engine, SessionLocal
 from app.infrastructure.orm import models
-from app.infrastructure.orm.models import AuditoriaLGPDModel
+#from app.infrastructure.orm.models import # AuditoriaLGPDModel
 from app.api.v1.routers import api_router
 
 
@@ -264,16 +264,16 @@ def create_app() -> FastAPI:
                 user_agent = (request.headers.get("user-agent") or "")[:255]
                 try:
                     with SessionLocal() as db:
-                        db.add(
-                            AuditoriaLGPDModel(
-                                usuario_id=username,
-                                acao=request.method,
-                                recurso=path,
-                                dados_acessados="dados_pessoais",
-                                ip_origem=ip_origem,
-                                user_agent=user_agent,
-                            )
-                        )
+                        # db.add(
+                            #AuditoriaLGPDModel(
+                            #    usuario_id=username,
+                            #    acao=request.method,
+                            #    recurso=path,
+                            #    dados_acessados="dados_pessoais",
+                            #    ip_origem=ip_origem,
+                            #    user_agent=user_agent,
+                            #)
+                        #)
                         db.commit()
                 except Exception as exc:
                     logger.warning(f"Falha ao registrar auditoria LGPD em banco: {exc}")
