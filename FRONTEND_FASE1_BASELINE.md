@@ -326,12 +326,24 @@ Próximo alvo técnico imediato:
 
 ---
 
-## 6) Critérios de aceite da Fase 1
+## 6) Critérios de aceite da Fase 1 (Concluído)
 
-- [ ] Baseline documentado (este arquivo).
-- [ ] Hotspots e duplicações mapeados com evidências.
-- [ ] Top 20 backlog priorizado e sequenciado.
-- [ ] Ordem de implementação aprovada para início da execução.
+- [x] Baseline documentado (este arquivo).
+- [x] Hotspots e duplicações mapeados com evidências.
+- [x] Top 20 backlog priorizado e sequenciado.
+- [x] Ordem de implementação aprovada para início da execução.
+- [x] Fase 1 finalizada com sucesso.
+
+### Métricas Finais da Fase 1 (Fechamento)
+- **agencia.html**: 1.202 linhas
+- **dashboard.html**: 169 linhas
+- **dev.html**: 2.344 linhas
+- **index.html**: 2.708 linhas
+- **politica-privacidade.html**: 351 linhas
+- **portal_aprovacao.html**: 260 linhas
+- **setor.html**: 2.608 linhas
+- **Módulos extraídos**: `api-client.js`, `auth-session.js`, `http-errors.js`, `validators.js`, `formatters.js`, `shared-ui.css`.
+- **Fetch Direto e Auth Manual**: Eliminados dos hotspots principais (exceto justificativas técnicas como PDF via blob e geocoding externo).
 
 ---
 
