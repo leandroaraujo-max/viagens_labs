@@ -15,6 +15,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <link rel="stylesheet" href="/css/shared-ui.css?v=1">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
@@ -183,28 +184,28 @@
                         <button @click="abaAtiva = 'nova_solicitacao'"
                             :class="abaAtiva === 'nova_solicitacao' ? 'bg-blue-600/15 text-blue-400 border-l-4 border-blue-500 font-bold rounded-lg' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/20 border-l-4 border-transparent rounded-lg'"
                             class="w-full flex items-center gap-3 px-3 py-2.5 text-xs transition-all duration-200 text-left">
-                            <span class="text-base shrink-0">➕</span>
+                            <i class="ph ph-plus text-xl text-slate-400"></i>
                             <span v-if="!menuRecolhido" class="truncate flex-1">Nova Solicitação</span>
                         </button>
 
                         <button @click="abaAtiva = 'minhas_viagens'; carregarHistorico();"
                             :class="abaAtiva === 'minhas_viagens' ? 'bg-blue-600/15 text-blue-400 border-l-4 border-blue-500 font-bold rounded-lg' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/20 border-l-4 border-transparent rounded-lg'"
                             class="w-full flex items-center gap-3 px-3 py-2.5 text-xs transition-all duration-200 text-left">
-                            <span class="text-base shrink-0">✈️</span>
+                            <i class="ph ph-airplane-tilt text-xl text-slate-400"></i>
                             <span v-if="!menuRecolhido" class="truncate flex-1">Minhas Viagens</span>
                         </button>
 
                         <button @click="abaAtiva = 'autorizacoes'; carregarAutorizacoesTerceiros();"
                             :class="abaAtiva === 'autorizacoes' ? 'bg-blue-600/15 text-blue-400 border-l-4 border-blue-500 font-bold rounded-lg' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/20 border-l-4 border-transparent rounded-lg'"
                             class="w-full flex items-center gap-3 px-3 py-2.5 text-xs transition-all duration-200 text-left">
-                            <span class="text-base shrink-0">🛡️</span>
+                            <i class="ph ph-shield-check text-xl text-slate-400"></i>
                             <span v-if="!menuRecolhido" class="truncate flex-1">Acesso Terceiros</span>
                         </button>
 
                         <button @click="abaAtiva = 'gestao_creditos'; carregarMeusCreditos();"
                             :class="abaAtiva === 'gestao_creditos' ? 'bg-blue-600/15 text-blue-400 border-l-4 border-blue-500 font-bold rounded-lg' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/20 border-l-4 border-transparent rounded-lg'"
                             class="w-full flex items-center gap-3 px-3 py-2.5 text-xs transition-all duration-200 text-left">
-                            <span class="text-base shrink-0">💳</span>
+                            <i class="ph ph-credit-card text-xl text-slate-400"></i>
                             <span v-if="!menuRecolhido" class="truncate flex-1">Gestão de Créditos</span>
                         </button>
 
@@ -215,7 +216,7 @@
                             </p>
                             <a href="#" @click.prevent="vlNavigate('/setor.html')"
                                 class="flex items-center gap-3 px-3 py-2 text-xs text-slate-400 hover:text-slate-200 hover:bg-slate-800/20 rounded-lg transition-all animate-none">
-                                <span class="text-base">🏢</span>
+                                <i class="ph ph-building text-xl text-slate-400"></i>
                                 <span>Painel do Setor</span>
                             </a>
                             <a v-if="perfilUsuario === 'dev'" href="#" @click.prevent="vlNavigate('/dev.html')"
@@ -247,8 +248,12 @@
                             </span>
                             <span class="h-4 w-px bg-gray-200 hidden sm:block"></span>
                             <p class="text-xs text-gray-400 truncate hidden sm:block">
-                                {{ abaAtiva === 'nova_solicitacao' ? 'Preencha o formulário e crie uma nova solicitação corporativa.' : abaAtiva === 'minhas_viagens' ? 'Monitore e acompanhe o status de todas as suas solicitações.' : 'Solicite e gerencie permissões de delegação de acesso AD para terceiros.' }}
-                                as suas solicitações.' : 'Solicite e gerencie permissões de delegação de acesso AD para terceiros.' }}
+                                {{ abaAtiva === 'nova_solicitacao' ? 'Preencha o formulário e crie uma nova solicitação
+                                corporativa.' : abaAtiva === 'minhas_viagens' ? 'Monitore e acompanhe o status de todas
+                                as suas solicitações.' : 'Solicite e gerencie permissões de delegação de acesso AD para
+                                terceiros.' }}
+                                as suas solicitações.' : 'Solicite e gerencie permissões de delegação de acesso AD para
+                                terceiros.' }}
                             </p>
                         </div>
 
@@ -648,7 +653,8 @@
                                                         <span
                                                             class="ml-auto text-xs px-2 py-0.5 rounded-full font-bold uppercase"
                                                             :class="distanciaViagem >= 400 ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'">
-                                                            {{ distanciaViagem >= 400 ? 'Apto para voo' : 'Priorize terrestre' }}
+                                                            {{ distanciaViagem >= 400 ? 'Apto para voo' : 'Priorize
+                                                            terrestre' }}
                                                         </span>
                                                     </template>
                                                 </div>
@@ -858,7 +864,7 @@
                                             <div v-if="formViagem.tipo_servico.includes('Rodoviario')"
                                                 class="bg-emerald-50/60 rounded-xl border border-emerald-100 p-5 space-y-4">
                                                 <div class="flex items-center gap-2">
-                                                    <span class="text-xl">🚌</span>
+                                                    <i class="ph ph-bus text-xl text-emerald-800"></i>
                                                     <h4 class="font-bold text-emerald-800 text-sm">Preferências de
                                                         Ônibus</h4>
                                                 </div>
@@ -904,7 +910,7 @@
                                             <div v-if="formViagem.tipo_servico.includes('Hospedagem')"
                                                 class="bg-violet-50/60 rounded-xl border border-violet-100 p-5 space-y-4">
                                                 <div class="flex items-center gap-2">
-                                                    <span class="text-xl">🏨</span>
+                                                    <i class="ph ph-buildings text-xl text-violet-800"></i>
                                                     <h4 class="font-bold text-violet-800 text-sm">Preferências de
                                                         Hospedagem</h4>
                                                     <span v-if="viajanteDados && viajanteDados.categoria_hospedagem"
@@ -965,7 +971,7 @@
                                             <div v-if="formViagem.tipo_servico.includes('Carro')"
                                                 class="bg-orange-50/60 rounded-xl border border-orange-100 p-5 space-y-4">
                                                 <div class="flex items-center gap-2">
-                                                    <span class="text-xl">🚗</span>
+                                                    <i class="ph ph-car-profile text-xl text-orange-800"></i>
                                                     <h4 class="font-bold text-orange-800 text-sm">Preferências de
                                                         Veículo</h4>
                                                 </div>
@@ -977,6 +983,8 @@
                                                             de Retirada</label>
                                                         <input type="date"
                                                             :value="formPreferencias.carro_data_retirada ? toISO(formPreferencias.carro_data_retirada)?.split('T')[0] : ''"
+                                                            :min="formViagem.data_ida ? toISO(formViagem.data_ida)?.split('T')[0] : ''"
+                                                            :value="formPreferencias.carro_data_retirada ? toISO(formPreferencias.carro_data_retirada)?.split('T')[0] : ''"
                                                             @change="e => formPreferencias.carro_data_retirada = isoToDisplay(e.target.value)"
                                                             class="w-full px-3 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue text-sm">
                                                     </div>
@@ -986,6 +994,8 @@
                                                             class="block text-xs font-semibold text-gray-600 mb-1.5">Data
                                                             de Entrega</label>
                                                         <input type="date"
+                                                            :value="formPreferencias.carro_data_devolucao ? toISO(formPreferencias.carro_data_devolucao)?.split('T')[0] : ''"
+                                                            :min="formPreferencias.carro_data_retirada ? toISO(formPreferencias.carro_data_retirada)?.split('T')[0] : (formViagem.data_ida ? toISO(formViagem.data_ida)?.split('T')[0] : '')"
                                                             :value="formPreferencias.carro_data_devolucao ? toISO(formPreferencias.carro_data_devolucao)?.split('T')[0] : ''"
                                                             @change="e => formPreferencias.carro_data_devolucao = isoToDisplay(e.target.value)"
                                                             class="w-full px-3 py-2.5 rounded-lg border border-gray-300 focus:border-labs-blue text-sm">
@@ -1651,7 +1661,7 @@
                     class="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-200">
                     <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-5">
                         <div class="flex items-center gap-3">
-                            <span class="text-2xl">🔐</span>
+                            <i class="ph ph-lock-key text-2xl text-white"></i>
                             <h2 class="text-lg font-bold text-white">Lei Geral de Proteção de Dados (LGPD)</h2>
                         </div>
                     </div>
@@ -1923,10 +1933,10 @@
 
                 // --- Dados Estáticos ---
                 const servicosDisponiveis = [
-                    { valor: 'Aereo', label: 'Aéreo', icone: '✈️' },
-                    { valor: 'Rodoviario', label: 'Rodoviário', icone: '🚌' },
-                    { valor: 'Hospedagem', label: 'Hospedagem', icone: '🏨' },
-                    { valor: 'Carro', label: 'Carro', icone: '🚗' },
+                    { valor: 'Aereo', label: 'Aéreo', icone: 'ph ph-airplane-tilt' },
+                    { valor: 'Rodoviario', label: 'Rodoviário', icone: 'ph ph-bus' },
+                    { valor: 'Hospedagem', label: 'Hospedagem', icone: 'ph ph-building' },
+                    { valor: 'Carro', label: 'Carro', icone: 'ph ph-car-profile' },
                 ];
 
                 // --- Computados ---
@@ -2286,6 +2296,38 @@
                     }
                 });
 
+                // Regra 1: Retirada do carro não pode ser menor que a ida da viagem
+                watch(() => formPreferencias.value.carro_data_retirada, (novaRetirada) => {
+                    if (!novaRetirada || novaRetirada.length < 10) return;
+
+                    const dateRetirada = parseDateBR(novaRetirada);
+                    const dateIda = parseDateBR(formViagem.value.data_ida);
+
+                    // Se a retirada for ANTES da ida, força a ser igual à ida
+                    if (dateIda && dateRetirada < dateIda) {
+                        formPreferencias.value.carro_data_retirada = formViagem.value.data_ida;
+                    }
+
+                    // Efeito Cascata: Se arrastou a retirada pra frente, e a devolução ficou pra trás, ajusta a devolução
+                    const dateDevolucao = parseDateBR(formPreferencias.value.carro_data_devolucao);
+                    if (dateDevolucao && dateDevolucao < parseDateBR(formPreferencias.value.carro_data_retirada)) {
+                        formPreferencias.value.carro_data_devolucao = formPreferencias.value.carro_data_retirada;
+                    }
+                });
+
+                // Regra 2: Devolução do carro não pode ser menor que a retirada
+                watch(() => formPreferencias.value.carro_data_devolucao, (novaDevolucao) => {
+                    if (!novaDevolucao || novaDevolucao.length < 10) return;
+
+                    const dateDevolucao = parseDateBR(novaDevolucao);
+                    const dateRetirada = parseDateBR(formPreferencias.value.carro_data_retirada);
+
+                    // Se a devolução for ANTES da retirada, força a ser igual à retirada
+                    if (dateRetirada && dateDevolucao < dateRetirada) {
+                        formPreferencias.value.carro_data_devolucao = formPreferencias.value.carro_data_retirada;
+                    }
+                });
+
                 const carregarPerfilViajante = async (username) => {
                     if (!username) return;
                     try {
@@ -2338,6 +2380,7 @@
                         token.value = dados.access_token;
                         nomeUsuario.value = dados.nome_usuario;
                         perfilUsuario.value = dados.perfil;
+                        verificarConsentimentoLGPD();
                         // Setor é redirecionado para o painel; viajantes ficam no portal de solicitação
                         if (dados.perfil === 'setor') {
                             vlNavigate('/setor.html');
@@ -2400,6 +2443,22 @@
                     }
                 };
 
+                // Validação extra de Datas do Carro
+                if (formViagem.value.tipo_servico.includes('Carro')) {
+                    const dIda = parseDateBR(formViagem.value.data_ida);
+                    const dRetirada = parseDateBR(formPreferencias.value.carro_data_retirada);
+                    const dDevolucao = parseDateBR(formPreferencias.value.carro_data_devolucao);
+
+                    if (dRetirada && dIda && dRetirada < dIda) {
+                        erroEnvio.value = 'A data de retirada do carro não pode ser anterior à data de ida da viagem.';
+                        return;
+                    }
+                    if (dDevolucao && dRetirada && dDevolucao < dRetirada) {
+                        erroEnvio.value = 'A data de devolução do carro não pode ser anterior à data de retirada.';
+                        return;
+                    }
+                }
+
                 // --- Carregar períodos de voo disponíveis ---
                 const carregarPeriodosVoo = async () => {
                     try {
@@ -2415,6 +2474,17 @@
 
                 const formatarHora = (iso) => {
                     return window.VLFormatters.formatHourFromIso(iso);
+                };
+
+                const formatarData = (data) => {
+                    if (!data) return '—';
+                    try {
+                        const dataBase = data.split('T')[0];
+                        const [ano, mes, dia] = dataBase.split('-');
+                        return `${dia}/${mes}/${ano}`;
+                    } catch (e) {
+                        return data;
+                    }
                 };
 
                 const novasolicitacao = () => {
@@ -2475,8 +2545,18 @@
                 };
 
                 const lidarComUploadPDF = (e) => {
+                    terceiroErroSubmissao.value = '';
+                    terceiroMensagemSucesso.value = '';
                     const arquivo = e.target.files[0];
                     if (arquivo) {
+                        const tamanhoMaximo = 10 * 1024 * 1024;
+                        if (arquivo.size > tamanhoMaximo) {
+                            // 3. Se for maior que 10MB, exibe o erro e rejeita o arquivo
+                            terceiroErroSubmissao.value = 'O arquivo PDF selecionado é muito grande. O tamanho máximo permitido é 10 MB.';
+                            pdfArquivo.value = null;
+                            e.target.value = ''; // Limpa o campo visualmente
+                            return;
+                        }
                         pdfArquivo.value = arquivo;
                     }
                 };
@@ -2579,8 +2659,8 @@
                     enviandoCancelar.value = true;
                     try {
                         const r = await indexApi.solicitarCancelamento(viagemACancelar.value.id, {
-                                itens_a_cancelar: cancelarForm.itens.join(','),
-                                motivo_cancelamento: cancelarForm.motivo
+                            itens_a_cancelar: cancelarForm.itens.join(','),
+                            motivo_cancelamento: cancelarForm.motivo
                         });
                         if (r.ok) {
                             mostrandoModalCancelar.value = false;
@@ -2603,9 +2683,9 @@
                     enviandoRemarcar.value = true;
                     try {
                         const r = await indexApi.solicitarRemarcacao(viagemARemarcar.value.id, {
-                                data_ida: remarcarForm.data_ida,
-                                data_volta: remarcarForm.data_volta || null,
-                                motivo_cancelamento: remarcarForm.motivo
+                            data_ida: remarcarForm.data_ida,
+                            data_volta: remarcarForm.data_volta || null,
+                            motivo_cancelamento: remarcarForm.motivo
                         });
                         if (r.ok) {
                             mostrandoModalRemarcar.value = false;
@@ -2665,7 +2745,7 @@
                     historico, historicoCarregando, carregarHistorico, statusLabelMini, statusCorMini,
                     // Sugestões de Períodos
                     periodosVoo, periodoSelecionado, carregarPeriodosVoo,
-                    formatarHora,
+                    formatarHora, formatarData,
                     // Autocomplete Brasil API
                     acCidades, buscarCidadesIBGE, selecionarCidade, fecharAc,
                     // Gestão de Créditos & Cancelamento/Remarcação

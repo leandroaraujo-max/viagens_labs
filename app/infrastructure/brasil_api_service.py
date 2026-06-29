@@ -3,6 +3,7 @@ Integração com a Brasil API (Aeroportos/CPTEC) e Autocomplete de aeroportos br
 """
 import logging
 import requests
+import unicodedata
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -45,6 +46,13 @@ _AEROPORTOS_BRASIL = [
     {"iata": "NVT", "icao": "SBNF", "nome": "Aeroporto Internacional de Navegantes", "cidade": "Navegantes", "estado": "SC"},
 ]
 
+def remover_acentos(texto: str) -> str:
+    """Remove acentos de uma string e converte para maiúsculo para facilitar a busca."""
+    if not texto:
+        return ""
+    texto = texto.upper()
+    return ''.join(c for c in unicodedata.normalize('NFD', texto) if unicodedata.category(c) != 'Mn')
+
 class BrasilApiService:
     def __init__(self):
         self._base_url = settings.BRASIL_API_BASE_URL
@@ -53,6 +61,9 @@ class BrasilApiService:
         termo_clean = termo.strip().upper()
         if not termo_clean:
             return []
+            
+        # O pulo do gato: cria a versão sem acento do que o usuário digitou
+        termo_sem_acento = remover_acentos(termo_clean)
 
         # Se for um código ICAO, faz requisição para a Brasil API para obter as condições climáticas
         brasil_api_info = None
@@ -64,13 +75,18 @@ class BrasilApiService:
             except Exception as e:
                 logger.error(f"[Brasil API] Erro ao validar ICAO {termo_clean}: {e}")
 
-        # Filtra na nossa base de dados local
+        # Filtra na nossa base de dados local (Ignorando acentos)
         resultados = []
         for ap in _AEROPORTOS_BRASIL:
-            if (termo_clean in ap["iata"].upper() or 
-                termo_clean in ap["icao"].upper() or 
-                termo_clean in ap["nome"].upper() or 
-                termo_clean in ap["cidade"].upper()):
+            # Tira o acento do nome da cidade e do nome do aeroporto do banco
+            cidade_sem_acento = remover_acentos(ap["cidade"])
+            nome_sem_acento = remover_acentos(ap["nome"])
+            
+            # Compara tudo sem acento!
+            if (termo_sem_acento in ap["iata"].upper() or 
+                termo_sem_acento in ap["icao"].upper() or 
+                termo_sem_acento in nome_sem_acento or 
+                termo_sem_acento in cidade_sem_acento):
                 
                 # Se obtivemos dados climáticos da Brasil API para este aeroporto específico
                 clima_msg = ""
