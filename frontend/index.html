@@ -1942,6 +1942,7 @@ watch(() => formPreferencias.value.carro_data_devolucao, (novaDevolucao) => {
                         token.value = dados.access_token;
                         nomeUsuario.value = dados.nome_usuario;
                         perfilUsuario.value = dados.perfil;
+                        verificarConsentimentoLGPD();
                         // Setor é redirecionado para o painel; viajantes ficam no portal de solicitação
                         if (dados.perfil === 'setor') {
                             vlNavigate('/setor.html');
