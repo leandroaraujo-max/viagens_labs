@@ -32,6 +32,7 @@ class TokenRefreshRequest(BaseModel):
 # -----------------------------------------------------------
 
 @router.post("/login", response_model=schemas.TokenResponse)
+@limiter.limit("5/minute")
 def login(
     credentials: schemas.LoginCredentials,
     request: Request,
