@@ -1915,12 +1915,22 @@
                             const hoje = new Date().toISOString().split('T')[0];
                             storage.setItem(LGPD_ACCEPT_KEY, 'true');
                             storage.setItem(LGPD_ACCEPT_DATE_KEY, hoje);
+                        
+                        } else if (r.status === 401 || (r.data && r.data.detail && r.data.detail.toLowerCase().includes('token'))) {
+                            logout(); // Derruba a sessão presa
+                            erroLogin.value = 'Sua sessão expirou. Por favor, faça login novamente.';
+            
                         } else {
                             const err = r.data || {};
                             erroConsentimento.value = err.detail || 'Erro ao registrar consentimento';
                         }
                     } catch (e) {
+                        if (e.status === 401 || (e.response && e.response.status === 401)) {
+                            logout();
+                            erroLogin.value = 'Sua sessão expirou. Por favor, faça login novamente.';
+                        } else {
                         erroConsentimento.value = 'Erro de conexão ao registrar consentimento';
+                        }
                     } finally {
                         registrandoConsentimento.value = false;
                     }
@@ -2714,7 +2724,11 @@
                     nomeUsuario.value = '';
                     perfilUsuario.value = '';
                     viajanteDados.value = null;
-                    celularViajante.value = ''; dataNascimentoViajante.value = ''; perfilSalvo.value = false;
+                    celularViajante.value = ''; 
+                    dataNascimentoViajante.value = ''; 
+                    perfilSalvo.value = false;
+                    mostrandoModalLGPD.value = false;
+                    passoAtual.value = 1;
                 };
 
                 return {
