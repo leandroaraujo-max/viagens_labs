@@ -4,7 +4,7 @@
  */
 export function createIndexApi(apiClient) {
     if (!apiClient || typeof apiClient.request !== 'function') {
-        throw new Error('createIndexApi requer um apiClient válido com método request.');
+        throw new Error('createIndexApi requer um apiClient válido com método request.')
     }
 
     return {
@@ -14,7 +14,7 @@ export function createIndexApi(apiClient) {
                 method: 'POST',
                 auth: false,
                 body: JSON.stringify(payload),
-            });
+            })
         },
 
         // LGPD
@@ -22,70 +22,70 @@ export function createIndexApi(apiClient) {
             return apiClient.request('/lgpd/consentimento', {
                 method: 'POST',
                 body: JSON.stringify(payload),
-            });
+            })
         },
 
         // Viagens e solicitações
         listarMinhasViagens() {
-            return apiClient.request('/viagens/minhas');
+            return apiClient.request('/viagens/minhas')
         },
         enviarSolicitacaoViagem(payload) {
             return apiClient.request('/viagens/solicitacoes', {
                 method: 'POST',
                 body: JSON.stringify(payload),
-            });
+            })
         },
         solicitarCancelamento(id, payload) {
             return apiClient.request(`/viagens/solicitacoes/${id}/solicitar-cancelamento`, {
                 method: 'POST',
                 body: JSON.stringify(payload),
-            });
+            })
         },
         solicitarRemarcacao(id, payload) {
             return apiClient.request(`/viagens/solicitacoes/${id}/solicitar-remarcacao`, {
                 method: 'POST',
                 body: JSON.stringify(payload),
-            });
+            })
         },
         listarMeusCreditos() {
-            return apiClient.request('/viagens/creditos/meus');
+            return apiClient.request('/viagens/creditos/meus')
         },
 
         // Colaboradores e perfil
         buscarColaborador(identificador) {
-            return apiClient.request(`/viagens/colaborador/${identificador}`);
+            return apiClient.request(`/viagens/colaborador/${identificador}`)
         },
         obterPerfilViajante(username) {
-            return apiClient.request(`/viagens/perfil/${username}`);
+            return apiClient.request(`/viagens/perfil/${username}`)
         },
         salvarPerfilViajante(username, payload) {
             return apiClient.request(`/viagens/perfil/${username}`, {
                 method: 'PUT',
                 body: JSON.stringify(payload),
-            });
+            })
         },
 
         // Delegação e terceiros
         listarAutorizacoesTerceiros() {
-            return apiClient.request('/terceiros/minhas');
+            return apiClient.request('/terceiros/minhas')
         },
         buscarTerceiroPorMatricula(matricula) {
-            return apiClient.request(`/terceiros/buscar/${matricula}`);
+            return apiClient.request(`/terceiros/buscar/${matricula}`)
         },
         solicitarAutorizacaoTerceiro(formData) {
             return apiClient.request('/terceiros/solicitar', {
                 method: 'POST',
                 json: false,
                 body: formData,
-            });
+            })
         },
 
         // Proxies e APIs externas
         buscarLugares(termo) {
-            return apiClient.request(`/brasil-api/lugares?q=${encodeURIComponent(termo)}`);
+            return apiClient.request(`/brasil-api/lugares?q=${encodeURIComponent(termo)}`)
         },
         listarPeriodosVoo() {
-            return apiClient.request('/brasil-api/periodos-voo');
+            return apiClient.request('/brasil-api/periodos-voo')
         },
-    };
+    }
 }
