@@ -253,7 +253,8 @@ export default function IndexPage() {
                 <section className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
                     <h2 className="text-sm font-bold text-slate-800">Identificar viajante</h2>
                     <div className="flex gap-2">
-                        <input value={cpfBusca} onChange={(e) => setCpfBusca(e.target.value)} className="flex-1 px-3 py-2 rounded-lg border border-gray-300" placeholder="CPF ou matrícula" />
+                        <label htmlFor="busca-viajante" className="sr-only">CPF ou matrícula</label>
+                        <input id="busca-viajante" value={cpfBusca} onChange={(e) => setCpfBusca(e.target.value)} className="flex-1 px-3 py-2 rounded-lg border border-gray-300" placeholder="CPF ou matrícula" />
                         <button type="button" onClick={buscarColaborador} disabled={buscandoColaborador} className="min-h-11 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg">
                             {buscandoColaborador ? 'Buscando...' : 'Buscar'}
                         </button>
@@ -266,14 +267,16 @@ export default function IndexPage() {
                     ) : null}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <input value={celularViajante} onChange={(e) => setCelularViajante(maskPhoneBR(e.target.value))} className="px-3 py-2 rounded-lg border border-gray-300" placeholder="Celular" />
-                        <input value={dataNascimentoViajante} onChange={(e) => setDataNascimentoViajante(maskDateBR(e.target.value))} className="px-3 py-2 rounded-lg border border-gray-300" placeholder="Data de nascimento" />
+                        <label htmlFor="celular-viajante" className="sr-only">Celular</label>
+                        <input id="celular-viajante" value={celularViajante} onChange={(e) => setCelularViajante(maskPhoneBR(e.target.value))} className="px-3 py-2 rounded-lg border border-gray-300" placeholder="Celular" />
+                        <label htmlFor="data-nascimento-viajante" className="sr-only">Data de nascimento</label>
+                        <input id="data-nascimento-viajante" value={dataNascimentoViajante} onChange={(e) => setDataNascimentoViajante(maskDateBR(e.target.value))} className="px-3 py-2 rounded-lg border border-gray-300" placeholder="Data de nascimento" />
                     </div>
                 </section>
 
                 <nav className="flex gap-2 flex-wrap">
-                    <button type="button" onClick={() => setAbaAtiva('minhas_viagens')} className="px-3 py-2 rounded-lg border border-gray-300 text-xs font-semibold">Minhas viagens</button>
-                    <button type="button" onClick={() => setAbaAtiva('gestao_creditos')} className="px-3 py-2 rounded-lg border border-gray-300 text-xs font-semibold">Créditos</button>
+                    <button type="button" aria-pressed={abaAtiva === 'minhas_viagens'} onClick={() => setAbaAtiva('minhas_viagens')} className="px-3 py-2 rounded-lg border border-gray-300 text-xs font-semibold">Minhas viagens</button>
+                    <button type="button" aria-pressed={abaAtiva === 'gestao_creditos'} onClick={() => setAbaAtiva('gestao_creditos')} className="px-3 py-2 rounded-lg border border-gray-300 text-xs font-semibold">Créditos</button>
                 </nav>
 
                 {erroEnvio ? <p className="text-xs text-red-600">{erroEnvio}</p> : null}

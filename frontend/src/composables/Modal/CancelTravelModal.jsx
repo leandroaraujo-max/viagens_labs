@@ -29,7 +29,7 @@ export default function CancelTravelModal({ isOpen, loading, trip, onClose, onSu
                 <div className="absolute top-0 left-0 w-full h-[3px] bg-red-500" />
                 <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
                     <h3 id="cancel-modal-title" className="text-base font-bold text-gray-800">Solicitar Cancelamento de Viagem</h3>
-                    <button type="button" className="text-gray-400 hover:text-gray-600 text-sm" onClick={onClose}>✕</button>
+                    <button type="button" aria-label="Fechar modal de cancelamento" className="min-h-11 min-w-11 text-gray-400 hover:text-gray-600 text-sm" onClick={onClose}>✕</button>
                 </div>
 
                 <form className="p-6 overflow-y-auto space-y-4" onSubmit={enviar}>
