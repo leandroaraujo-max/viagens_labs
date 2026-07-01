@@ -1,3 +1,7 @@
+# Frontend – Vite build output e dependências
+frontend/dist/
+frontend/node_modules/
+
 # Python
 __pycache__/
 *.py[cod]

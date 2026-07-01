@@ -259,6 +259,45 @@ Próximos alvos (sem `index - Copy.html`):
 - ✅ `frontend/index.html`, `frontend/agencia.html`, `frontend/setor.html` e `frontend/portal_aprovacao.html` passaram a consumir `var(--vl-bg-aviao)` mantendo seus gradientes locais.
 - ✅ Validação pós-extração: sem erros (`get_errors`) e sem uso remanescente de `url('/img/bg-aviao.jpg')` nos HTMLs de escopo.
 
+---
+
+## 6) Fechamento consolidado — Migração para React (atualização 2026-07-01)
+
+### 6.1 Resultado técnico (estado atual)
+- ✅ Frontend principal operando em **React + Vite** com rotas ativas:
+  - `/`, `/setor`, `/agencia`, `/dashboard`, `/aprovacao`, `/dev`, `/politica-privacidade`.
+- ✅ Runtime Vue legado removido do `src` (páginas e estrutura antigas descontinuadas).
+- ✅ Serviços React consolidados em `frontend/src/services/*` com `createApiClient` e tratamento de erro padronizado.
+- ✅ Assets legados órfãos removidos (`frontend/js/**`, `frontend/app.js`, arquivos estáticos antigos não utilizados).
+- ✅ Warning de asset de fundo resolvido com migração da imagem para `src/assets/images`.
+- ✅ Melhorias de A11y aplicadas em formulários, modais e feedback de status dinâmico.
+
+### 6.2 Checklist de conclusão (Fase 1 → baseline React)
+- ✅ Bootstrap React/Vite estabilizado.
+- ✅ Migração das rotas críticas concluída.
+- ✅ Limpeza de legados HTML/CSS/JS órfãos concluída.
+- ✅ Padronização de estilo em services concluída.
+- ✅ Ajustes A11y iniciais concluídos (labels, `aria-live`, `aria-pressed`, botões de fechar com `aria-label`).
+- ✅ Build de produção validado nas etapas finais.
+
+### 6.3 Evidências (commits recentes)
+- `a5720f5` — migração rota dashboard para React
+- `d56d15d` — migração rota aprovação para React
+- `b7f1c50` — migração rota dev para React
+- `3cb9aae` — migração política de privacidade para React
+- `e49b9cf` — remoção de placeholders e legados HTML/CSS
+- `206aa31` — remoção de assets legados órfãos
+- `70672cf` — correção do warning de asset de fundo (`bg-aviao`)
+- `9053a16` — remoção de resquícios de legado Vue
+- `43cf701` — padronização de estilo dos services
+- `2bba23d` — melhoria de acessibilidade em formulários e modais
+- `065b9ee` — melhoria de feedback A11y em setor e agência
+
+### 6.4 Pendências recomendadas (próxima fase)
+- 🔜 Expandir cobertura de testes automatizados de frontend (fluxos críticos de login/solicitação/aprovação).
+- 🔜 Definir baseline de lint/format para React (`biome` ou stack equivalente) como gate de CI.
+- 🔜 Revisão A11y complementar com foco em navegação por teclado ponta-a-ponta e foco em diálogos.
+
 ### Próximo passo executado (continuação 13)
 - ✅ `frontend/css/shared-ui.css` recebeu utilitário compartilhado `.vl-shell-dark-card` para a casca visual de cards escuros (estrutura, blur, borda e sombra).
 - ✅ `frontend/index.html` migrou o card principal do login para `vl-shell-dark-card` mantendo modificadores locais (`transition-*`).

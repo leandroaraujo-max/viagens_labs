@@ -46,6 +46,9 @@ python-dateutil==2.9.0.post0
 python-dotenv==1.2.2
 python-jose==3.5.0
 python-multipart==0.0.29
+pytest==8.4.1
+pytest-asyncio==1.1.0
+pytest-cov==6.2.1
 requests==2.34.2
 rsa==4.9.1
 six==1.17.0
