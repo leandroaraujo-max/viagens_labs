@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 import { fileURLToPath, URL } from 'node:url'
 
 export default defineConfig({
-    // Vite usa src/ como raiz — os HTMLs legados em frontend/ permanecem intactos
+    // Vite usa src/ como raiz do frontend React
     root: 'src',
     plugins: [
         react(),
