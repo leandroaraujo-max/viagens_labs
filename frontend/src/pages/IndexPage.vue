@@ -152,25 +152,6 @@
           </header>
 
           <main class="w-full p-6 flex-grow space-y-6">
-            <section v-if="mostrandoModalLGPD" class="bg-white border border-amber-200 rounded-xl p-4" role="status" aria-live="polite">
-              <h2 class="text-sm font-bold text-slate-800">Consentimento LGPD</h2>
-              <p class="text-xs text-slate-600 mt-1">Para continuar utilizando o portal, confirme seu consentimento.</p>
-              <div v-if="erroConsentimento" class="mt-2 text-xs text-red-600">{{ erroConsentimento }}</div>
-              <div class="mt-3 flex gap-2">
-                <button type="button" @click="logout" class="px-3 py-2 border border-gray-300 text-gray-600 rounded-lg text-xs font-semibold hover:bg-gray-50 transition">
-                  Rejeitar e sair
-                </button>
-                <button
-                  type="button"
-                  @click="aceitarConsentimentoLGPD"
-                  :disabled="registrandoConsentimento"
-                  class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition disabled:opacity-50"
-                >
-                  {{ registrandoConsentimento ? 'Processando...' : 'Aceitar e continuar' }}
-                </button>
-              </div>
-            </section>
-
             <section v-show="abaAtiva === 'nova_solicitacao'" class="grid grid-cols-1 xl:grid-cols-3 gap-6">
               <article class="xl:col-span-2 bg-white rounded-2xl border border-gray-200 p-6 space-y-5">
                 <header class="flex items-center justify-between gap-2">
@@ -375,33 +356,6 @@
                     </button>
                   </div>
 
-                  <form v-if="cancelamentoAbertoId === item.id" class="grid grid-cols-1 md:grid-cols-3 gap-2 items-end" @submit.prevent="confirmarCancelarViagem(item)">
-                    <div class="md:col-span-2">
-                      <label :for="`motivo-cancel-${item.id}`" class="block text-xs text-gray-600 mb-1">Motivo do cancelamento</label>
-                      <input :id="`motivo-cancel-${item.id}`" v-model.trim="cancelarForm.motivo" type="text" class="w-full px-3 py-2 rounded-lg border border-gray-300" required />
-                    </div>
-                    <button type="submit" :disabled="enviandoCancelar" class="px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold disabled:opacity-50">
-                      {{ enviandoCancelar ? 'Enviando...' : 'Confirmar' }}
-                    </button>
-                  </form>
-
-                  <form v-if="remarcacaoAbertaId === item.id" class="grid grid-cols-1 md:grid-cols-4 gap-2 items-end" @submit.prevent="confirmarRemarcarViagem(item)">
-                    <div>
-                      <label :for="`nova-ida-${item.id}`" class="block text-xs text-gray-600 mb-1">Nova ida</label>
-                      <input :id="`nova-ida-${item.id}`" v-model="remarcarForm.data_ida" type="date" class="w-full px-3 py-2 rounded-lg border border-gray-300" required />
-                    </div>
-                    <div>
-                      <label :for="`nova-volta-${item.id}`" class="block text-xs text-gray-600 mb-1">Nova volta</label>
-                      <input :id="`nova-volta-${item.id}`" v-model="remarcarForm.data_volta" type="date" class="w-full px-3 py-2 rounded-lg border border-gray-300" />
-                    </div>
-                    <div class="md:col-span-2">
-                      <label :for="`motivo-remarca-${item.id}`" class="block text-xs text-gray-600 mb-1">Motivo da remarcação</label>
-                      <input :id="`motivo-remarca-${item.id}`" v-model.trim="remarcarForm.motivo" type="text" class="w-full px-3 py-2 rounded-lg border border-gray-300" required />
-                    </div>
-                    <button type="submit" :disabled="enviandoRemarcar" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold disabled:opacity-50">
-                      {{ enviandoRemarcar ? 'Enviando...' : 'Confirmar remarcação' }}
-                    </button>
-                  </form>
                 </article>
               </div>
             </section>
@@ -429,12 +383,39 @@
         </div>
       </div>
     </transition>
+
+    <LgpdConsentModal
+      :is-open="mostrandoModalLGPD"
+      :loading="registrandoConsentimento"
+      :error-message="erroConsentimento"
+      @accept="aceitarConsentimentoLGPD"
+      @reject="logout"
+    />
+
+    <CancelTravelModal
+      :is-open="cancelamentoAbertoId !== null"
+      :loading="enviandoCancelar"
+      :trip="viagemACancelar"
+      @close="fecharCancelamento"
+      @submit="confirmarCancelarViagem"
+    />
+
+    <RescheduleTravelModal
+      :is-open="remarcacaoAbertaId !== null"
+      :loading="enviandoRemarcar"
+      :trip="viagemARemarcar"
+      @close="fecharRemarcacao"
+      @submit="confirmarRemarcarViagem"
+    />
   </div>
 </template>
 
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import LgpdConsentModal from '../composables/Modal/LgpdConsentModal.vue'
+import CancelTravelModal from '../composables/Modal/CancelTravelModal.vue'
+import RescheduleTravelModal from '../composables/Modal/RescheduleTravelModal.vue'
 
 import { createApiClient } from '../services/api-client.js'
 import { createIndexApi } from '../services/index-api.js'
@@ -535,11 +516,11 @@ const historico = ref([])
 const historicoCarregando = ref(false)
 
 const meusCreditos = ref([])
+const viagemACancelar = ref(null)
+const viagemARemarcar = ref(null)
 
 const cancelamentoAbertoId = ref(null)
 const remarcacaoAbertaId = ref(null)
-const cancelarForm = reactive({ motivo: '', itens: [] })
-const remarcarForm = reactive({ data_ida: '', data_volta: '', motivo: '' })
 const enviandoCancelar = ref(false)
 const enviandoRemarcar = ref(false)
 
@@ -905,28 +886,39 @@ async function carregarMeusCreditos() {
 }
 
 function abrirCancelar(item) {
+  viagemACancelar.value = item
   cancelamentoAbertoId.value = item.id
   remarcacaoAbertaId.value = null
-  cancelarForm.motivo = ''
+  viagemARemarcar.value = null
 }
 
 function abrirRemarcacao(item) {
+  viagemARemarcar.value = item
   remarcacaoAbertaId.value = item.id
   cancelamentoAbertoId.value = null
-  remarcarForm.data_ida = ''
-  remarcarForm.data_volta = ''
-  remarcarForm.motivo = ''
+  viagemACancelar.value = null
 }
 
-async function confirmarCancelarViagem(item) {
+function fecharCancelamento() {
+  cancelamentoAbertoId.value = null
+  viagemACancelar.value = null
+}
+
+function fecharRemarcacao() {
+  remarcacaoAbertoId.value = null
+  viagemARemarcar.value = null
+}
+
+async function confirmarCancelarViagem(payload) {
+  if (!viagemACancelar.value?.id) return
   enviandoCancelar.value = true
   try {
-    const response = await indexApi.solicitarCancelamento(item.id, {
-      itens_a_cancelar: cancelarForm.itens.join(','),
-      motivo_cancelamento: cancelarForm.motivo,
+    const response = await indexApi.solicitarCancelamento(viagemACancelar.value.id, {
+      itens_a_cancelar: payload.itens.join(','),
+      motivo_cancelamento: payload.motivo,
     })
     await ensureOk(response, 'Erro ao solicitar cancelamento.')
-    cancelamentoAbertoId.value = null
+    fecharCancelamento()
     await carregarHistorico()
     await carregarMeusCreditos()
   } catch (error) {
@@ -936,16 +928,17 @@ async function confirmarCancelarViagem(item) {
   }
 }
 
-async function confirmarRemarcarViagem(item) {
+async function confirmarRemarcarViagem(payload) {
+  if (!viagemARemarcar.value?.id) return
   enviandoRemarcar.value = true
   try {
-    const response = await indexApi.solicitarRemarcacao(item.id, {
-      data_ida: remarcarForm.data_ida,
-      data_volta: remarcarForm.data_volta || null,
-      motivo_cancelamento: remarcarForm.motivo,
+    const response = await indexApi.solicitarRemarcacao(viagemARemarcar.value.id, {
+      data_ida: payload.data_ida,
+      data_volta: payload.data_volta || null,
+      motivo_cancelamento: payload.motivo,
     })
     await ensureOk(response, 'Erro ao solicitar remarcação.')
-    remarcacaoAbertaId.value = null
+    fecharRemarcacao()
     await carregarHistorico()
   } catch (error) {
     erroEnvio.value = parseApiError(error, 'Não foi possível solicitar remarcação.')
