@@ -41,12 +41,11 @@ pydantic==2.13.4
 pydantic-settings==2.14.1
 pydantic_core==2.46.4
 Pygments==2.20.0
-pytest==9.1.1
+pytest==8.4.1
 python-dateutil==2.9.0.post0
 python-dotenv==1.2.2
 python-jose==3.5.0
 python-multipart==0.0.29
-pytest==8.4.1
 pytest-asyncio==1.1.0
 pytest-cov==6.2.1
 requests==2.34.2
