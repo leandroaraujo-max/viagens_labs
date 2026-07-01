@@ -1,4 +1,227 @@
 <template>
-  <!-- TODO: migrar de politica-privacidade.html -->
-  <div>Política de Privacidade — em migração</div>
+  <main class="bg-gradient-to-br from-slate-50 to-blue-50 vl-font-inter">
+    <div class="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
+      <article class="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl p-8 sm:p-12">
+        <header class="mb-12 border-b border-slate-200 pb-8">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="text-4xl" aria-hidden="true">🔐</span>
+            <h1 class="text-3xl sm:text-4xl font-bold text-slate-900">Política de Privacidade</h1>
+          </div>
+          <p class="text-lg text-slate-600">Viagens Labs — Portal Corporativo de Viagens</p>
+          <p class="text-sm text-slate-500 mt-4">
+            <strong>Última atualização:</strong> 23 de junho de 2026
+          </p>
+        </header>
+
+        <div class="space-y-8 text-slate-700">
+          <section>
+            <h2 class="text-2xl font-bold text-slate-900 mb-4">1. Controlador de Dados</h2>
+            <div class="vl-blue-info-surface p-6 space-y-2 text-sm">
+              <p><strong>Empresa:</strong> Magazine Luiza S.A. (Luizalabs)</p>
+              <p><strong>Endereço:</strong> São Paulo, SP — Brasil</p>
+              <p>
+                <strong>E-mail de contato:</strong>
+                <a href="mailto:dpo@luizalabs.com" class="text-blue-600 hover:underline">dpo@luizalabs.com</a>
+              </p>
+              <p><strong>DPO (Encarregado de Proteção de Dados):</strong> Disponível em dpo@luizalabs.com</p>
+            </div>
+          </section>
+
+          <section>
+            <h2 class="text-2xl font-bold text-slate-900 mb-4">2. Dados Pessoais Coletados</h2>
+            <p class="mb-4">Ao utilizar o sistema Viagens Labs, coletamos:</p>
+            <ul class="space-y-3 ml-4">
+              <li class="flex gap-3">
+                <span class="text-blue-600 font-bold mt-0.5" aria-hidden="true">•</span>
+                <div><strong>Dados de Identificação:</strong> Nome completo, CPF, data de nascimento, e-mail corporativo</div>
+              </li>
+              <li class="flex gap-3">
+                <span class="text-blue-600 font-bold mt-0.5" aria-hidden="true">•</span>
+                <div><strong>Dados Profissionais:</strong> Usuário AD, cargo, filial, centro de custo, data de admissão</div>
+              </li>
+              <li class="flex gap-3">
+                <span class="text-blue-600 font-bold mt-0.5" aria-hidden="true">•</span>
+                <div>
+                  <strong>Dados de Viagem:</strong> Origem, destino, datas de ida/volta, tipo de serviço (aéreo,
+                  hotel, etc.), motivo da viagem
+                </div>
+              </li>
+              <li class="flex gap-3">
+                <span class="text-blue-600 font-bold mt-0.5" aria-hidden="true">•</span>
+                <div><strong>Dados de Aprovação:</strong> Histórico de aprovações/rejeições, observações de gestores</div>
+              </li>
+              <li class="flex gap-3">
+                <span class="text-blue-600 font-bold mt-0.5" aria-hidden="true">•</span>
+                <div><strong>Dados de Sistema:</strong> Endereço IP, user-agent, timestamps de acesso</div>
+              </li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 class="text-2xl font-bold text-slate-900 mb-4">3. Base Legal (Lei nº 13.709/2018 — LGPD)</h2>
+            <p class="mb-4">O processamento de seus dados é baseado em:</p>
+            <ul class="space-y-3 ml-4">
+              <li class="flex gap-3">
+                <span class="text-blue-600 font-bold mt-0.5" aria-hidden="true">•</span>
+                <div>
+                  <strong>Art. 7, Inciso V:</strong> Execução de contrato de trabalho — os dados são necessários para
+                  gerenciar solicitações de viagens corporativas no escopo da relação de emprego.
+                </div>
+              </li>
+              <li class="flex gap-3">
+                <span class="text-blue-600 font-bold mt-0.5" aria-hidden="true">•</span>
+                <div>
+                  <strong>Art. 7, Inciso II:</strong> Consentimento explícito — você pode revogar este consentimento a
+                  qualquer momento, entendendo o impacto no acesso ao sistema.
+                </div>
+              </li>
+              <li class="flex gap-3">
+                <span class="text-blue-600 font-bold mt-0.5" aria-hidden="true">•</span>
+                <div>
+                  <strong>Art. 7, Inciso I:</strong> Consentimento — para fins de auditoria, conformidade e melhorias do
+                  sistema.
+                </div>
+              </li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 class="text-2xl font-bold text-slate-900 mb-4">4. Finalidades do Processamento</h2>
+            <p class="mb-4">Seus dados são processados para:</p>
+            <ul class="space-y-2 ml-4 list-disc list-inside">
+              <li>Criar, gerenciar e acompanhar solicitações de viagem corporativa</li>
+              <li>Encaminhar para aprovação de gestores N1 e N2</li>
+              <li>Gerar cotações junto a agências de viagem parceiras</li>
+              <li>Processar reembolsos e pagamentos (integração com sistemas financeiros)</li>
+              <li>Comunicação via e-mail sobre status de solicitações</li>
+              <li>Auditoria interna e conformidade legal (art. 7, inc. II)</li>
+              <li>Melhoria contínua do sistema e análise de métricas</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 class="text-2xl font-bold text-slate-900 mb-4">5. Compartilhamento de Dados</h2>
+            <p class="mb-4">Seus dados podem ser compartilhados com:</p>
+            <ul class="space-y-3 ml-4">
+              <li class="flex gap-3"><span class="text-blue-600 font-bold mt-0.5" aria-hidden="true">•</span><div><strong>Gestores N1/N2:</strong> Para aprovação de suas solicitações</div></li>
+              <li class="flex gap-3"><span class="text-blue-600 font-bold mt-0.5" aria-hidden="true">•</span><div><strong>Setor de Viagens:</strong> Para pré-aprovação e seleção de agências vencedoras</div></li>
+              <li class="flex gap-3"><span class="text-blue-600 font-bold mt-0.5" aria-hidden="true">•</span><div><strong>Agências de Viagem Parceiras:</strong> Cadastradas conforme demanda do setor — para cotação de serviços</div></li>
+              <li class="flex gap-3"><span class="text-blue-600 font-bold mt-0.5" aria-hidden="true">•</span><div><strong>Sistemas Integrados:</strong> Google BigQuery, Gmail Relay, Google Apps Script (para processamento de aprovações)</div></li>
+              <li class="flex gap-3"><span class="text-blue-600 font-bold mt-0.5" aria-hidden="true">•</span><div><strong>Active Directory (LDAP):</strong> Para autenticação corporativa</div></li>
+              <li class="flex gap-3"><span class="text-blue-600 font-bold mt-0.5" aria-hidden="true">•</span><div><strong>Auditores Internos:</strong> Para conformidade e investigações</div></li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 class="text-2xl font-bold text-slate-900 mb-4">6. Período de Retenção de Dados</h2>
+            <p class="mb-4">Os dados são mantidos conforme o seguinte cronograma:</p>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm border border-slate-200" aria-label="Cronograma de retenção de dados pessoais">
+                <caption class="sr-only">Tabela de tipos de dados e período de retenção</caption>
+                <thead class="bg-slate-100">
+                  <tr>
+                    <th class="border border-slate-200 px-4 py-2 text-left font-semibold" scope="col">Tipo de Dado</th>
+                    <th class="border border-slate-200 px-4 py-2 text-left font-semibold" scope="col">Período</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="border border-slate-200 px-4 py-2">Solicitações de viagem (ativas)</td>
+                    <td class="border border-slate-200 px-4 py-2">Até conclusão + 3 anos (por auditoria)</td>
+                  </tr>
+                  <tr class="bg-slate-50">
+                    <td class="border border-slate-200 px-4 py-2">Histórico de aprovações</td>
+                    <td class="border border-slate-200 px-4 py-2">2 anos</td>
+                  </tr>
+                  <tr>
+                    <td class="border border-slate-200 px-4 py-2">Dados pessoais sensíveis (CPF, data nasc.)</td>
+                    <td class="border border-slate-200 px-4 py-2">Encriptados; deletados após solicitação (30 dias)</td>
+                  </tr>
+                  <tr class="bg-slate-50">
+                    <td class="border border-slate-200 px-4 py-2">Logs de auditoria LGPD</td>
+                    <td class="border border-slate-200 px-4 py-2">2 anos (obrigação legal)</td>
+                  </tr>
+                  <tr>
+                    <td class="border border-slate-200 px-4 py-2">Consentimentos</td>
+                    <td class="border border-slate-200 px-4 py-2">Permanente (prova de aceitar a política)</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="mt-4 text-sm text-slate-600">
+              <strong>Nota:</strong> Após expiração, os dados são anonimizados ou deletados, exceto quando requerido por lei.
+            </p>
+          </section>
+
+          <section>
+            <h2 class="text-2xl font-bold text-slate-900 mb-4">7. Seus Direitos LGPD</h2>
+            <p class="mb-4">Você possui os seguintes direitos:</p>
+            <ul class="space-y-3 ml-4">
+              <li class="flex gap-3"><span class="text-blue-600 font-bold mt-0.5" aria-hidden="true">✓</span><div><strong>Direito de Acesso (Art. 18):</strong> Solicitar cópia de todos os seus dados</div></li>
+              <li class="flex gap-3"><span class="text-blue-600 font-bold mt-0.5" aria-hidden="true">✓</span><div><strong>Direito de Retificação (Art. 19):</strong> Corrigir informações imprecisas</div></li>
+              <li class="flex gap-3"><span class="text-blue-600 font-bold mt-0.5" aria-hidden="true">✓</span><div><strong>Direito de Exclusão/Esquecimento (Art. 17):</strong> Solicitar exclusão dos dados (com prazo de 30 dias)</div></li>
+              <li class="flex gap-3"><span class="text-blue-600 font-bold mt-0.5" aria-hidden="true">✓</span><div><strong>Direito de Portabilidade (Art. 20):</strong> Receber dados em formato estruturado para transferência</div></li>
+              <li class="flex gap-3"><span class="text-blue-600 font-bold mt-0.5" aria-hidden="true">✓</span><div><strong>Direito de Revogar Consentimento (Art. 8, § 5º):</strong> Revogar o consentimento a qualquer momento</div></li>
+            </ul>
+            <p class="mt-6 vl-amber-alert-surface p-4 text-sm">
+              Para exercer qualquer destes direitos, envie uma solicitação para:<br>
+              <a href="mailto:dpo@luizalabs.com" class="vl-link-primary">dpo@luizalabs.com</a><br>
+              Prazo para resposta: até 30 dias a contar do recebimento
+            </p>
+          </section>
+
+          <section>
+            <h2 class="text-2xl font-bold text-slate-900 mb-4">8. Segurança dos Dados</h2>
+            <p class="mb-4">Implementamos medidas técnicas e administrativas para proteger seus dados:</p>
+            <ul class="space-y-2 ml-4 list-disc list-inside">
+              <li>Encriptação HTTPS (TLS 1.3) em trânsito</li>
+              <li>Encriptação em repouso para dados sensíveis (CPF, data de nascimento)</li>
+              <li>Autenticação via Active Directory com MFA quando aplicável</li>
+              <li>Auditoria contínua de acessos a dados sensíveis</li>
+              <li>Isolamento de ambiente (intranet corporativa)</li>
+              <li>Backup regular e plano de recuperação de desastres</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 class="text-2xl font-bold text-slate-900 mb-4">9. Processadores de Dados</h2>
+            <p class="mb-4">Utilizamos terceiros para processar seus dados:</p>
+            <ul class="space-y-3 ml-4">
+              <li>
+                <strong>Google Cloud (BigQuery, Apps Script):</strong> Armazenamento e processamento de dados de colaboradores
+                <br><a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" class="text-blue-600 text-sm hover:underline">Política de Privacidade do Google</a>
+              </li>
+              <li>
+                <strong>Microsoft (Active Directory):</strong> Autenticação corporativa
+                <br><a href="https://privacy.microsoft.com/" target="_blank" rel="noopener noreferrer" class="text-blue-600 text-sm hover:underline">Política de Privacidade da Microsoft</a>
+              </li>
+              <li>
+                <strong>Gmail Relay:</strong> Envio de e-mails corporativos
+                <br><a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" class="text-blue-600 text-sm hover:underline">Política de Privacidade do Google</a>
+              </li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 class="text-2xl font-bold text-slate-900 mb-4">10. Alterações nesta Política</h2>
+            <p>
+              Podemos atualizar esta Política de Privacidade periodicamente. Alterações significativas serão comunicadas via e-mail.
+              Você será solicitado a confirmar a aceitação da versão atualizada ao acessar o sistema.
+            </p>
+          </section>
+
+          <footer class="border-t border-slate-200 pt-8 mt-12">
+            <p class="text-sm text-slate-600 text-center">
+              <strong>Última atualização:</strong> 23 de junho de 2026<br>
+              <strong>Versão:</strong> 1.0<br>
+              <strong>Próxima revisão:</strong> 23 de junho de 2027
+            </p>
+            <p class="text-center mt-4">
+              <RouterLink to="/" class="text-blue-600 hover:underline">← Voltar ao Portal</RouterLink>
+            </p>
+          </footer>
+        </div>
+      </article>
+    </div>
+  </main>
 </template>
