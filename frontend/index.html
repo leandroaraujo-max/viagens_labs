@@ -5,15 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portal de Viagens | Luizalabs</title>
-    <!-- Fundo escuro aplicado antes de qualquer script para evitar flash branco -->
-    <style>
-        html,
-        body {
-            background: #0f172a !important
-        }
-    </style>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link rel="stylesheet" href="/index.css?v=1">
     <link rel="stylesheet" href="/css/shared-ui.css?v=1">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -35,23 +29,6 @@
             }
         }
     </script>
-    <style>
-        .bg-viagens {
-            background-image: linear-gradient(rgba(15, 23, 42, 0.75), rgba(15, 23, 42, 0.90)), var(--vl-bg-aviao);
-        }
-
-        .glass-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(12px);
-            border-radius: 16px;
-            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.4);
-        }
-
-        .fade-enter-active,
-        .fade-leave-active {
-            transition: opacity 0.4s ease;
-        }
-    </style>
     <script src="/js/transition.js?v=8"></script>
     <script src="/js/services/http-errors.js?v=1"></script>
     <script src="/js/services/auth-session.js?v=1"></script>
@@ -248,7 +225,10 @@
                             </span>
                             <span class="h-4 w-px bg-gray-200 hidden sm:block"></span>
                             <p class="text-xs text-gray-400 truncate hidden sm:block">
-                                {{ abaAtiva === 'nova_solicitacao' ? 'Preencha o formulário e crie uma nova solicitação corporativa.' : abaAtiva === 'minhas_viagens' ? 'Monitore e companhe o status de todas as suas solicitações.' : 'Solicite e gerencie permissões de delegação de acesso AD para terceiros.' }}
+                                {{ abaAtiva === 'nova_solicitacao' ? 'Preencha o formulário e crie uma nova solicitação
+                                corporativa.' : abaAtiva === 'minhas_viagens' ? 'Monitore e companhe o status de todas
+                                as suas solicitações.' : 'Solicite e gerencie permissões de delegação de acesso AD para
+                                terceiros.' }}
                             </p>
                         </div>
 
