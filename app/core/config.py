@@ -2,27 +2,27 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     # Banco de dados
-    DATABASE_URL: str = "postgresql://postgres:M%40Galu*2026@127.0.0.1:5432/solicitacao_viagens?client_encoding=utf8"
+    DATABASE_URL: str = "postgresql://postgres:Magazine%40123@127.0.0.1:5433/solicitacao_viagens?client_encoding=utf8"
 
     # SMTP — relay interno (sem autenticação)
     SMTP_HOST: str = "smtpml.magazineluiza.intranet"
     SMTP_PORT: int = 25
     SMTP_FROM: str = "viagenslabs@luizalabs.com"       # endereço sem caixa postal
     SMTP_FROM_NAME: str = "ViagensLabs | Luizalabs"
-    SMTP_REPLY_TO: str = "genison.santos@luizalabs.com"  # respostas redirecionadas aqui
+    SMTP_REPLY_TO: str = "rubia.paim@luizalabs.com"  # respostas redirecionadas aqui
 
     # URL pública do sistema (para links nos e-mails — painel setor, portal aprovação)
-    BASE_URL: str = "http://localhost"
+    BASE_URL: str = "http://viagenslabs.magazineluiza.intranet"
 
     # URL usada nos links enviados às AGÊNCIAS EXTERNAS (Tastur / Kontrip).
     # Pode ser diferente de BASE_URL: quando o sistema for exposto à internet ou VPN
     # disponível, basta trocar este valor no .env sem mexer no código.
-    BASE_URL_AGENCIA: str = "http://localhost"
+    BASE_URL_AGENCIA: str = "http://viagenslabs.magazineluiza.intranet"
 
     # URL usada nos links de APROVAÇÃO enviados por e-mail para gestores N1/N2.
     # Aprovadores podem acessar via celular fora da intranet — basta apontar para
     # a URL pública/VPN sem alterar código. Padrão: mesmo valor de BASE_URL.
-    BASE_URL_APROVACAO: str = "http://localhost"
+    BASE_URL_APROVACAO: str = "http://viagenslabs.magazineluiza.intranet"
 
     # ── Google Apps Script Relay ───────────────────────────────────────────────
     # Quando configurado, o GAS atua como portal público de aprovação (celular).

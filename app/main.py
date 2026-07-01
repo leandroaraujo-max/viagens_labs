@@ -4,6 +4,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+import app
+from app.core.limiter import limiter
+
 # Configura o root logger para ter timestamps na saída padrão
 logging.basicConfig(
     level=logging.INFO,
@@ -222,6 +227,9 @@ def create_app() -> FastAPI:
         redoc_url="/redoc",
         lifespan=lifespan
     )
+
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
     # Configura??o de CORS
     app.add_middleware(
