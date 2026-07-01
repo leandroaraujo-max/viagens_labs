@@ -7,7 +7,6 @@ import DashboardPage from './pages/DashboardPage.jsx'
 import AprovacaoPage from './pages/AprovacaoPage.jsx'
 import DevPage from './pages/DevPage.jsx'
 import PoliticaPrivacidadePage from './pages/PoliticaPrivacidadePage.jsx'
-import PlaceholderPage from './pages/PlaceholderPage.jsx'
 
 export default function App() {
     return (
