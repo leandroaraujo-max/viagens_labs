@@ -1,0 +1,10 @@
+/* Importa tokens e utilitários visuais do legado */
+@import './shared-ui.css';
+
+/* Tailwind CSS v4 – diretiva principal */
+@import "tailwindcss";
+
+/* Fonte padrão do sistema */
+body {
+    font-family: 'Inter', sans-serif;
+}
