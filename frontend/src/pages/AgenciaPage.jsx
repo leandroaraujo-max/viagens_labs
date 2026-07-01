@@ -186,8 +186,8 @@ export default function AgenciaPage() {
                 <section className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
                     <h2 className="text-base font-bold">Registrar cotação comercial</h2>
 
-                    {quoteError ? <p className="text-xs text-red-600">{quoteError}</p> : null}
-                    {quoteSuccess ? <p className="text-xs text-emerald-700">{quoteSuccess}</p> : null}
+                    {quoteError ? <p className="text-xs text-red-600" role="status" aria-live="polite">{quoteError}</p> : null}
+                    {quoteSuccess ? <p className="text-xs text-emerald-700" role="status" aria-live="polite">{quoteSuccess}</p> : null}
 
                     <form onSubmit={handleSubmitQuote} className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <label className="text-xs font-semibold text-slate-700">
@@ -228,8 +228,8 @@ export default function AgenciaPage() {
 
                 <section className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
                     <h2 className="text-base font-bold">Upload de vouchers</h2>
-                    {voucherError ? <p className="text-xs text-red-600">{voucherError}</p> : null}
-                    {voucherSuccess ? <p className="text-xs text-emerald-700">{voucherSuccess}</p> : null}
+                    {voucherError ? <p className="text-xs text-red-600" role="status" aria-live="polite">{voucherError}</p> : null}
+                    {voucherSuccess ? <p className="text-xs text-emerald-700" role="status" aria-live="polite">{voucherSuccess}</p> : null}
 
                     <div className="space-y-3">
                         {voucherTypes.map((type) => (

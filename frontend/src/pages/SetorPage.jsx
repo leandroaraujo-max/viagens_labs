@@ -134,7 +134,8 @@ export default function SetorPage() {
 
             <section className="bg-white rounded-xl border border-gray-200 p-4 overflow-x-auto">
                 <h2 className="text-sm font-bold mb-3">Solicitações</h2>
-                {loading ? <p className="text-xs text-slate-500">Carregando...</p> : null}
+                {loading ? <p className="text-xs text-slate-500" role="status" aria-live="polite">Carregando...</p> : null}
+                {!loading && !solicitacoes.length ? <p className="text-xs text-slate-500" role="status" aria-live="polite">Nenhuma solicitação encontrada para os filtros atuais.</p> : null}
                 <table className="w-full text-xs" aria-label="Tabela de solicitações">
                     <caption className="sr-only">Solicitações de viagem do setor</caption>
                     <thead>
