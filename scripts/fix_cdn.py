@@ -16,8 +16,6 @@ replacements = [
     ('https://cdn.tailwindcss.com', '/js/lib/tailwind.browser.min.js'),
     ('https://unpkg.com/vue@3/dist/vue.global.prod.js', '/js/lib/vue.global.prod.js'),
     ('https://unpkg.com/vue@3/dist/vue.global.js', '/js/lib/vue.global.prod.js'),
-    ('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap', '/css/inter-fallback.css'),
-    ('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap', '/css/inter-fallback.css'),
 ]
 
 for html_path in htmls:
