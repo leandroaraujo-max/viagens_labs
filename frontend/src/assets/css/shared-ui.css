@@ -1,5 +1,5 @@
 :root {
-    --vl-bg-aviao: url('/img/bg-aviao.jpg');
+    --vl-bg-aviao: url('../images/bg-aviao.jpg');
     --vl-alert-amber-bg: #fffbeb;
     --vl-alert-amber-border: #fde68a;
     --vl-info-blue-bg: #eff6ff;
