@@ -245,7 +245,7 @@ export default function IndexPage() {
     return (
         <div className="min-h-screen bg-[#f8fafc] text-slate-800">
             <header className="bg-white border-b border-gray-200/80 px-6 py-3 flex items-center justify-between sticky top-0 z-20">
-                <h1 className="text-sm font-bold text-gray-800">Portal do Viajante (React)</h1>
+                <h1 className="text-sm font-bold text-gray-800">Portal do Viajante</h1>
                 <button type="button" className="vl-btn-logout" onClick={logout}>Sair</button>
             </header>
 
