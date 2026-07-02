@@ -8,6 +8,7 @@ from app.domain.models import schemas
 from app.api.dependencies import get_db_session
 from app.infrastructure.ldap_service import ActiveDirectoryService
 from app.infrastructure.bigquery_service import BigQueryService
+from app.core.limiter import limiter
 
 # Importamos os itens de segurança necessários
 from app.core.security import (

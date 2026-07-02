@@ -8,6 +8,8 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
+_IBGE_MUNICIPIOS_URL = "https://servicodados.ibge.gov.br/api/v1/localidades/municipios"
+
 _AEROPORTOS_BRASIL = [
     {"iata": "GRU", "icao": "SBGR", "nome": "Aeroporto Internacional de Guarulhos", "cidade": "São Paulo", "estado": "SP"},
     {"iata": "CGH", "icao": "SBSP", "nome": "Aeroporto de Congonhas", "cidade": "São Paulo", "estado": "SP"},
@@ -57,8 +59,71 @@ class BrasilApiService:
     def __init__(self):
         self._base_url = settings.BRASIL_API_BASE_URL
 
+    def _buscar_cidades_ibge(self, termo: str, limite: int = 10) -> list[dict]:
+        """Busca municípios brasileiros no serviço público do IBGE."""
+        try:
+            resp = requests.get(
+                _IBGE_MUNICIPIOS_URL,
+                params={"nome": termo},
+                timeout=8,
+            )
+            if resp.status_code != 200:
+                logger.warning(f"[IBGE] retorno não-200 ao buscar municipios ({resp.status_code})")
+                return []
+
+            municipios = resp.json()
+            if not isinstance(municipios, list):
+                return []
+
+            termo_sem_acento = remover_acentos(termo)
+            resultados: list[dict] = []
+            vistos: set[tuple[str, str]] = set()
+
+            for m in municipios:
+                nome = (m.get("nome") or "").strip()
+                uf = (
+                    (m.get("microrregiao") or {})
+                    .get("mesorregiao", {})
+                    .get("UF", {})
+                    .get("sigla", "")
+                    .strip()
+                    .upper()
+                )
+                if not nome:
+                    continue
+
+                nome_sem_acento = remover_acentos(nome)
+                if termo_sem_acento not in nome_sem_acento:
+                    continue
+
+                chave = (nome_sem_acento, uf)
+                if chave in vistos:
+                    continue
+                vistos.add(chave)
+
+                resultados.append({
+                    "iata_code": f"CIDADE-{m.get('id', nome_sem_acento)}",
+                    "nome": nome,
+                    "cidade": f"{nome}/{uf}" if uf else nome,
+                    "pais": "Brasil",
+                    "tipo": "CIDADE",
+                    "nome_aeroporto": nome,
+                })
+
+            resultados.sort(
+                key=lambda c: (
+                    0 if remover_acentos(c["nome"]).startswith(termo_sem_acento) else 1,
+                    c["nome"],
+                )
+            )
+            return resultados[:limite]
+        except Exception as e:
+            logger.warning(f"[IBGE] falha ao buscar municipios para '{termo}': {e}")
+            return []
+
     def buscar_lugares(self, termo: str) -> list[dict]:
-        termo_clean = termo.strip().upper()
+        termo_original = termo.strip()
+        termo_clean = termo_original.upper()
         if not termo_clean:
             return []
             
@@ -76,7 +141,7 @@ class BrasilApiService:
                 logger.error(f"[Brasil API] Erro ao validar ICAO {termo_clean}: {e}")
 
         # Filtra na nossa base de dados local (Ignorando acentos)
-        resultados = []
+        resultados_aeroportos = []
         for ap in _AEROPORTOS_BRASIL:
             # Tira o acento do nome da cidade e do nome do aeroporto do banco
             cidade_sem_acento = remover_acentos(ap["cidade"])
@@ -96,7 +161,7 @@ class BrasilApiService:
                     if cond != "undefined" and temp != "undefined":
                         clima_msg = f" ({cond}, {temp}°C)"
                 
-                resultados.append({
+                resultados_aeroportos.append({
                     "iata_code": ap["iata"],
                     "nome": ap["nome"] + clima_msg,
                     "cidade": f"{ap['cidade']}/{ap['estado']}",
@@ -106,10 +171,10 @@ class BrasilApiService:
                 })
 
         # Se não encontrou na lista local mas a Brasil API confirmou a existência do código ICAO
-        if not resultados and brasil_api_info and "codigo_icao" in brasil_api_info:
+        if not resultados_aeroportos and brasil_api_info and "codigo_icao" in brasil_api_info:
             icao = brasil_api_info["codigo_icao"]
             iata = icao[1:] if len(icao) == 4 else icao
-            resultados.append({
+            resultados_aeroportos.append({
                 "iata_code": iata,
                 "nome": f"Aeroporto {icao}",
                 "cidade": "Aeroporto validado via Brasil API",
@@ -118,7 +183,24 @@ class BrasilApiService:
                 "nome_aeroporto": f"Aeroporto {icao}",
             })
 
-        return resultados[:8]
+        resultados_cidades = self._buscar_cidades_ibge(termo_original, limite=10)
+
+        # Prioriza cidades, mas mantém aeroportos como complemento sem duplicar cidade/UF.
+        resultados: list[dict] = []
+        vistos_cidade_uf: set[tuple[str, str]] = set()
+
+        for item in resultados_cidades + resultados_aeroportos:
+            cidade_uf = (item.get("cidade") or "").split("/", 1)
+            cidade = cidade_uf[0].strip()
+            uf = cidade_uf[1].strip().upper() if len(cidade_uf) > 1 else ""
+            chave = (remover_acentos(cidade), uf)
+            if cidade and chave in vistos_cidade_uf:
+                continue
+            if cidade:
+                vistos_cidade_uf.add(chave)
+            resultados.append(item)
+
+        return resultados[:10]
 
     def obter_periodos_voo(self) -> list[dict]:
         """

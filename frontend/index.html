@@ -587,6 +587,8 @@
                                                                     c.uf }}</span>
                                                             </li>
                                                         </ul>
+                                                        <p v-if="formViagem.origem_cidade.trim() && !origemInformadaValida"
+                                                            class="text-[11px] text-amber-600 mt-1">Selecione uma cidade válida da lista.</p>
                                                     </div>
                                                 </div>
                                                 <div>
@@ -622,6 +624,8 @@
                                                                     c.uf }}</span>
                                                             </li>
                                                         </ul>
+                                                        <p v-if="formViagem.destino_cidade.trim() && !destinoSelecionadoDaLista"
+                                                            class="text-[11px] text-red-500 mt-1">Selecione um destino válido da lista.</p>
                                                     </div>
                                                 </div>
                                                 <div>
@@ -1965,6 +1969,8 @@
                     const f = formViagem.value;
                     return (
                         f.destino_cidade.trim() !== '' &&
+                        destinoSelecionadoDaLista.value &&
+                        origemInformadaValida.value &&
                         f.data_ida.length === 10 &&
                         f.motivo_viagem.trim() !== '' &&
                         f.tipo_servico.length > 0
@@ -2000,6 +2006,40 @@
                     carroRet: { sugestoes: [], visivel: false, carregando: false },
                     carroDev: { sugestoes: [], visivel: false, carregando: false },
                 });
+
+                const cidadesSelecionadas = reactive({
+                    origem: { nome: '', uf: '' },
+                    destino: { nome: '', uf: '' },
+                });
+
+                const _normalizarTexto = (texto) => (texto || '')
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .trim()
+                    .toUpperCase();
+
+                const origemSelecionadaValida = () => {
+                    const cidadeAtual = formViagem.value.origem_cidade.trim();
+                    if (!cidadeAtual) return true;
+                    const estadoAtual = formViagem.value.origem_estado.trim().toUpperCase();
+                    return (
+                        _normalizarTexto(cidadeAtual) === _normalizarTexto(cidadesSelecionadas.origem.nome) &&
+                        estadoAtual === (cidadesSelecionadas.origem.uf || '').toUpperCase()
+                    );
+                };
+
+                const destinoSelecionadoValido = () => {
+                    const cidadeAtual = formViagem.value.destino_cidade.trim();
+                    if (!cidadeAtual) return false;
+                    const estadoAtual = formViagem.value.destino_estado.trim().toUpperCase();
+                    return (
+                        _normalizarTexto(cidadeAtual) === _normalizarTexto(cidadesSelecionadas.destino.nome) &&
+                        estadoAtual === (cidadesSelecionadas.destino.uf || '').toUpperCase()
+                    );
+                };
+
+                const origemInformadaValida = computed(() => origemSelecionadaValida());
+                const destinoSelecionadoDaLista = computed(() => destinoSelecionadoValido());
 
                 let _ibgeTimer = null;
 
@@ -2039,9 +2079,13 @@
                     if (chave === 'origem') {
                         formViagem.value.origem_cidade = cidade.nome;
                         formViagem.value.origem_estado = cidade.uf;
+                        cidadesSelecionadas.origem.nome = cidade.nome;
+                        cidadesSelecionadas.origem.uf = cidade.uf || '';
                     } else if (chave === 'destino') {
                         formViagem.value.destino_cidade = cidade.nome;
                         formViagem.value.destino_estado = cidade.uf;
+                        cidadesSelecionadas.destino.nome = cidade.nome;
+                        cidadesSelecionadas.destino.uf = cidade.uf || '';
                     } else if (chave === 'carroRet') {
                         formPreferencias.value.carro_cidade_retirada = `${cidade.nome} - ${cidade.uf}`;
                     } else if (chave === 'carroDev') {
@@ -2065,7 +2109,25 @@
                     erroBuscaProprioUsuario.value = '';
                     mostrarBuscaFallback.value = false;
                     distanciaViagem.value = null;
+                    cidadesSelecionadas.origem.nome = '';
+                    cidadesSelecionadas.origem.uf = '';
+                    cidadesSelecionadas.destino.nome = '';
+                    cidadesSelecionadas.destino.uf = '';
                     if (novoTipo === 'proprio') buscarProprioUsuario();
+                });
+
+                watch(() => [formViagem.value.origem_cidade, formViagem.value.origem_estado], () => {
+                    if (!origemSelecionadaValida()) {
+                        cidadesSelecionadas.origem.nome = '';
+                        cidadesSelecionadas.origem.uf = '';
+                    }
+                });
+
+                watch(() => [formViagem.value.destino_cidade, formViagem.value.destino_estado], () => {
+                    if (!destinoSelecionadoValido()) {
+                        cidadesSelecionadas.destino.nome = '';
+                        cidadesSelecionadas.destino.uf = '';
+                    }
                 });
 
                 // --- Cálculo de distância (Nominatim + Haversine · sem chave de API) ---
@@ -2130,7 +2192,7 @@
                     ([orig, dest]) => {
                         clearTimeout(_distanciaTimer);
                         distanciaViagem.value = null;
-                        if (orig.trim().length >= 3 && dest.trim().length >= 3) {
+                        if (orig.trim().length >= 3 && dest.trim().length >= 3 && origemSelecionadaValida() && destinoSelecionadoValido()) {
                             _distanciaTimer = setTimeout(calcularDistanciaViagem, 900);
                         }
                     }
@@ -2498,6 +2560,10 @@
                     celularViajante.value = ''; dataNascimentoViajante.value = ''; perfilSalvo.value = false;
                     tipo_solicitacao.value = 'proprio';
                     distanciaViagem.value = null;
+                    cidadesSelecionadas.origem.nome = '';
+                    cidadesSelecionadas.origem.uf = '';
+                    cidadesSelecionadas.destino.nome = '';
+                    cidadesSelecionadas.destino.uf = '';
                     formViagem.value = { origem_cidade: '', origem_estado: '', destino_cidade: '', destino_estado: '', data_ida: '', data_volta: '', motivo_viagem: '', tipo_servico: [], preferencia_voo: null, preferencia_voo_volta: null };
                     formPreferencias.value = { aereo_periodo_preferido: '', aereo_tipo_trecho: 'ambos', bagagem_extra: false, assento_especial: '', rodov_periodo_preferido: '', rodov_tipo_onibus: '', rodov_tipo_trecho: 'ambos', preferencia_hotel_nome: '', hosp_data_checkin: '', hosp_data_checkout: '', quarto_excecao_saude: false, carro_data_retirada: '', carro_hora_retirada: '', carro_cidade_retirada: '', carro_data_devolucao: '', carro_hora_devolucao: '', carro_cidade_devolucao: '', observacoes_viajante: '' };
                     protocoloGerado.value = null;
@@ -2745,7 +2811,7 @@
                     pdfArquivo, terceiroSubmetendo, terceiroMensagemSucesso, terceiroErroSubmissao, submeterTicketTerceiro, lidarComUploadPDF,
                     distanciaViagem, distanciaCalculando,
                     formViagem, formPreferencias, servicosDisponiveis,
-                    hojeISO, classificacaoAereo, passo2Valido,
+                    hojeISO, classificacaoAereo, passo2Valido, origemInformadaValida, destinoSelecionadoDaLista,
                     enviandoSolicitacao, erroEnvio, protocoloGerado, classificacaoGerada,
                     enviarSolicitacao, novasolicitacao,
                     // LGPD
