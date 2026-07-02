@@ -205,8 +205,23 @@ class AprovacaoService:
     # -------------------------------------------------------------------------
 
     def _processar_aprovacao(self, solicitacao: SolicitacaoModel, token: TokenAprovacaoModel) -> None:
-        # Fluxo: N1 aprova → Setor de Viagens (sempre)
-        # N2 só atua como escalação (N1 de férias / SLA vencido) — ao aprovar, também vai para o Setor
+        # Quando exige diretoria (ex.: remarcação emergencial), N1 aprovado abre etapa N2.
+        if token.nivel == "N1" and solicitacao.exige_aprovacao_diretoria:
+            if not solicitacao.aprovador_n2_email:
+                logger.warning(
+                    f"Solicitação {solicitacao.protocolo}: exige diretoria, mas N2 não informado. "
+                    "Marcando CADEIA_INCOMPLETA."
+                )
+                solicitacao.status = "CADEIA_INCOMPLETA"
+                return
+
+            solicitacao.status = "AGUARDANDO_N2"
+            self.db.flush()
+            token_n2 = self._criar_token(solicitacao, "N2")
+            self._enviar_email_aprovacao(solicitacao, token_n2)
+            return
+
+        # Fluxo padrão: N1/N2 aprovado → Setor de Viagens.
         if token.nivel in ("N1", "N2"):
             solicitacao.status = "PENDENTE_PRE_APROVACAO_SETOR"
             self.db.flush()

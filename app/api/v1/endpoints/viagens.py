@@ -281,6 +281,7 @@ def listar_minhas_solicitacoes(
             "status": s.status.lower() if s.status else "pendente",
             "classificacao": s.classificacao,
             "tipo_servico": s.tipo_servico,
+            "tipo_solicitacao_cancelamento": s.tipo_solicitacao_cancelamento,
             "viajante_nome": s.viajante_nome or "",
             "viajante_email": s.viajante_email or "",
             "solicitante_username": s.solicitante_username or "",
@@ -301,6 +302,16 @@ class RemarcarRequest(BaseModel):
     data_ida: str
     data_volta: Optional[str] = None
     motivo_cancelamento: str
+
+
+def _parse_data_remarcacao(valor: str, campo: str):
+    from datetime import datetime
+    try:
+        if "T" in valor:
+            return datetime.fromisoformat(valor.replace("Z", ""))
+        return datetime.strptime(valor, "%Y-%m-%d")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Formato de data inválido em {campo}: {str(e)}")
 
 
 @router.post("/solicitacoes/{solicitacao_id}/solicitar-cancelamento", status_code=200)
@@ -367,7 +378,7 @@ def solicitar_remarcacao_viagem(
     db: Session = Depends(get_db_session),
     username: str = Depends(get_current_username),
 ):
-    """Permite ao criador, viajante ou terceiro delegado solicitar a remarcação de uma viagem."""
+    """Permite ao criador, viajante ou terceiro delegado solicitar remarcação com novo fluxo de aprovação."""
     from app.infrastructure.orm.models import SolicitacaoModel, AutorizacaoTerceiroModel
     from datetime import datetime
     
@@ -397,40 +408,58 @@ def solicitar_remarcacao_viagem(
         
     if sol.status in ["REPROVADA", "CANCELADA"]:
         raise HTTPException(status_code=400, detail="Esta solicitação já está cancelada ou encerrada.")
-        
-    # Salva as novas datas e o status
-    sol.status = "PENDENTE_REMARCACAO"
-    sol.tipo_solicitacao_cancelamento = "REMARCAR"
-    
-    # Registra datas originais e novas no motivo_cancelamento
+
+    nova_data_ida = _parse_data_remarcacao(req.data_ida, "data_ida")
+    nova_data_volta = _parse_data_remarcacao(req.data_volta, "data_volta") if req.data_volta else None
+
+    hoje = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    if nova_data_ida.replace(hour=0, minute=0, second=0, microsecond=0) < hoje:
+        raise HTTPException(status_code=400, detail="A nova data de ida não pode ser anterior a hoje.")
+
+    if nova_data_volta and nova_data_volta < nova_data_ida:
+        raise HTTPException(status_code=400, detail="A nova data de volta não pode ser anterior à nova data de ida.")
+
+    antecedencia_dias = (nova_data_ida - datetime.now()).days
+    servicos = [s.strip() for s in (sol.tipo_servico or "").split(",") if s.strip()]
+    tem_aereo = "Aereo" in servicos
+    remarcacao_emergencial = tem_aereo and antecedencia_dias < 15
+
+    # Registra histórico da mudança de datas no campo já existente
     data_ida_orig = sol.data_ida.strftime("%d/%m/%Y %H:%M") if sol.data_ida else "N/A"
     data_volta_orig = sol.data_volta.strftime("%d/%m/%Y %H:%M") if sol.data_volta else "N/A"
-    
+
     sol.motivo_cancelamento = (
         f"Remarcação Solicitada. Nova Ida: {req.data_ida}, Nova Volta: {req.data_volta or 'N/A'}. "
         f"Ida Anterior: {data_ida_orig}, Volta Anterior: {data_volta_orig}. "
+        f"Classificação da remarcação: {'Emergencial' if remarcacao_emergencial else 'Comum'}. "
         f"Justificativa: {req.motivo_cancelamento}"
     )
-    
-    # Atualiza as datas no modelo para a agência cotar corretamente
-    try:
-        # date input usually in YYYY-MM-DD or YYYY-MM-DDTHH:MM
-        if "T" in req.data_ida:
-            sol.data_ida = datetime.fromisoformat(req.data_ida.replace("Z", ""))
-        else:
-            sol.data_ida = datetime.strptime(req.data_ida, "%Y-%m-%d")
-            
-        if req.data_volta:
-            if "T" in req.data_volta:
-                sol.data_volta = datetime.fromisoformat(req.data_volta.replace("Z", ""))
-            else:
-                sol.data_volta = datetime.strptime(req.data_volta, "%Y-%m-%d")
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Formato de data inválido: {str(e)}")
-        
+
+    # Atualiza dados e reinicia fluxo de aprovação dos gestores
+    sol.data_ida = nova_data_ida
+    sol.data_volta = nova_data_volta
+    sol.antecedencia_dias = antecedencia_dias
+    sol.classificacao = "Emergencial" if remarcacao_emergencial else "Comum"
+    sol.exige_aprovacao_diretoria = remarcacao_emergencial
+    sol.tipo_solicitacao_cancelamento = "REMARCAR"
+    sol.status = "AGUARDANDO_N1"
     sol.data_atualizacao = datetime.now()
+    db.flush()
+
+    try:
+        from app.services.aprovacao_service import AprovacaoService
+        AprovacaoService(db).iniciar_fluxo_aprovacao(sol)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao iniciar fluxo de aprovação da remarcação: {str(e)}")
+
     db.commit()
-    return {"protocolo": sol.protocolo, "status": sol.status, "mensagem": "Solicitação de remarcação enviada com sucesso."}
+    return {
+        "protocolo": sol.protocolo,
+        "status": sol.status,
+        "classificacao": sol.classificacao,
+        "exige_aprovacao_diretoria": sol.exige_aprovacao_diretoria,
+        "mensagem": "Remarcação registrada e reenviada para aprovação do gestor."
+    }
 
 
 @router.get("/creditos/meus", status_code=200)

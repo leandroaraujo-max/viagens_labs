@@ -320,8 +320,8 @@
                     </td>
                     <td class="px-4 py-3">
                       <span
-                        :class="['text-[10px] font-semibold rounded-full px-2 py-0.5 whitespace-nowrap border', statusCor(s.status)]">
-                        {{ statusLabel(s.status) }}
+                        :class="['text-[10px] font-semibold rounded-full px-2 py-0.5 whitespace-nowrap border', statusCor(s)]">
+                        {{ statusLabel(s) }}
                       </span>
                     </td>
                     <td class="px-4 py-3 text-right">
@@ -1079,8 +1079,8 @@
           <div>
             <h2 class="text-base font-bold text-labs-dark font-mono tracking-tight">{{ detalhe.protocolo }}</h2>
             <div class="flex items-center gap-2 mt-1.5">
-              <span :class="['text-xs font-semibold rounded-full px-3 py-0.5 border', statusCor(detalhe.status)]">
-                {{ statusLabel(detalhe.status) }}
+              <span :class="['text-xs font-semibold rounded-full px-3 py-0.5 border', statusCor(detalhe)]">
+                {{ statusLabel(detalhe) }}
               </span>
               <span v-if="detalhe.classificacao === 'Emergencial'"
                 class="text-xs font-bold bg-red-50 text-red-600 border border-red-200 px-2.5 py-0.5 rounded-full">
@@ -2188,6 +2188,8 @@
         const STATUS_LABELS = {
           AGUARDANDO_N1: 'Ag. Aprovação N1',
           AGUARDANDO_N2: 'Ag. Aprovação N2',
+          REMARCACAO_AGUARDANDO_N1: 'Remarcação em Aprovação N1',
+          REMARCACAO_AGUARDANDO_N2: 'Remarcação em Aprovação N2',
           PENDENTE_PRE_APROVACAO_SETOR: 'Pré-Aprovar',
           AGUARDANDO_COTACAO: 'Ag. Cotação',
           COTACAO_ENVIADA: 'Cot. Enviada',
@@ -2201,9 +2203,22 @@
           PENDENTE_APROVACAO_REMARCACAO: 'Revisar Remarcação',
           CANCELADA: 'Cancelada',
         };
-        const statusLabel = (s) => STATUS_LABELS[s] || s;
+        const statusKey = (itemOrStatus) => {
+          if (typeof itemOrStatus === 'string') return itemOrStatus;
+          const status = itemOrStatus?.status || '';
+          const tipo = (itemOrStatus?.tipo_solicitacao_cancelamento || '').toUpperCase();
+          if (tipo === 'REMARCAR' && status === 'AGUARDANDO_N1') return 'REMARCACAO_AGUARDANDO_N1';
+          if (tipo === 'REMARCAR' && status === 'AGUARDANDO_N2') return 'REMARCACAO_AGUARDANDO_N2';
+          return status;
+        };
 
-        const statusCor = (s) => {
+        const statusLabel = (itemOrStatus) => {
+          const key = statusKey(itemOrStatus);
+          return STATUS_LABELS[key] || key;
+        };
+
+        const statusCor = (itemOrStatus) => {
+          const s = statusKey(itemOrStatus);
           const m = {
             PENDENTE_PRE_APROVACAO_SETOR: 'bg-yellow-50 text-yellow-700 border-yellow-200',
             AGUARDANDO_COTACAO: 'bg-blue-50 text-labs-blue border-blue-200',
@@ -2213,6 +2228,8 @@
             REPROVADA: 'bg-red-50 text-red-600 border-red-200',
             AGUARDANDO_N1: 'bg-gray-50 text-gray-600 border-gray-200',
             AGUARDANDO_N2: 'bg-orange-50 text-orange-600 border-orange-200',
+            REMARCACAO_AGUARDANDO_N1: 'bg-fuchsia-100 text-fuchsia-700 border-fuchsia-200 animate-pulse',
+            REMARCACAO_AGUARDANDO_N2: 'bg-purple-100 text-purple-700 border-purple-200 animate-pulse',
             CADEIA_INCOMPLETA: 'bg-gray-100 text-gray-500 border-gray-200',
             PENDENTE_CANCELAMENTO: 'bg-amber-50 text-amber-700 border-amber-200',
             PENDENTE_REMARCACAO: 'bg-amber-50 text-amber-700 border-amber-200',
